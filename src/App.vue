@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 // import { ElMessage, ElSpin } from 'element-plus';
 import { FullScreen, Filter } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 
 
 
@@ -13,7 +14,8 @@ const axios = internalInstance?.appContext.config.globalProperties.$axios;
 const showFilters = ref(false);
 const tasks = ref([]);
 const departments = ref(['所有部门']);
-const projects = ref(['所有项目']);
+const projects = ref([]);
+const projectsData = ref([]); // 存储原始项目数据
 const selectedDept = ref('所有部门');
 const selectedProject = ref('所有项目');
 const activeTab = ref('filters');
@@ -42,6 +44,37 @@ const toggleFullScreen = () => {
 };
 let refreshInterval = null;
 const API_URL = '/dingTask/getTaskInfo';
+
+// 获取项目数据
+const fetchProjects = async () => {
+  if (!axios) {
+    ElMessage.error('Axios未正确初始化');
+    return;
+  }
+
+  try {
+    const response = await axios.get('http://localhost:8083/dingTask/getProjectInfo');
+    if (response.data.code === 200) {
+      projectsData.value = response.data.data;
+      
+      // 按创建时间排序，最新的项目排在前面
+      projectsData.value.sort((a, b) => new Date(b.created) - new Date(a.created));
+      
+      // 更新项目筛选选项
+      projects.value = ['所有项目', ...projectsData.value.map(p => p.name)];
+      
+      // 默认选中最新创建的项目
+      if (projectsData.value.length > 0) {
+        selectedProject.value = projectsData.value[0].name;
+      }
+    } else {
+      ElMessage.warning(`获取项目数据失败: ${response.data.msg || '未知错误'}`);
+    }
+  } catch (error) {
+    console.error('获取项目数据失败:', error);
+    ElMessage.error('网络错误，无法获取项目信息');
+  }
+};
 
 // 获取任务数据
 const fetchTasks = async () => {
@@ -79,10 +112,7 @@ const updateFilters = () => {
   });
   departments.value = ['所有部门', ...Array.from(deptSet)];
 
-  // 提取所有项目
-  const projectSet = new Set();
-  tasks.value.forEach(task => projectSet.add(task.projectName));
-  projects.value = ['所有项目', ...Array.from(projectSet)];
+  // 项目筛选选项已通过fetchProjects更新
 };
 
 // 更新最后刷新时间
@@ -145,10 +175,14 @@ const completedTasks = () => {
 
 // 组件生命周期
 onMounted(() => {
-  // 立即获取一次数据
+  // 立即获取项目和任务数据
+  fetchProjects();
   fetchTasks();
   // 设置30秒刷新一次
-  refreshInterval = setInterval(fetchTasks, 30000);
+  refreshInterval = setInterval(() => {
+    fetchProjects();
+    fetchTasks();
+  }, 30000);
 });
 
 onUnmounted(() => {
@@ -248,7 +282,7 @@ onUnmounted(() => {
               :data="person.tasks"
               border
               size="small"
-              max-height="300"
+              max-height="380"
               class="task-table"
               :scroll="{ x: 'max-content' }"
             >
@@ -604,28 +638,13 @@ onUnmounted(() => {
 .person-task-group {
   max-width: 100%;
   box-sizing: border-box;
-  padding: 0 10px;
-  margin-bottom: 16px;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 0 10px;
-  margin-bottom: 16px;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 0 12px;
-  margin-bottom: 16px;
-  max-width: 100%;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border-radius: 8px;
-  max-width: 100%;
-  padding: 0 10px;
-  margin-bottom: 20px;
-  padding: 20px;
+  padding: 8px;
+  margin-bottom: 10px;
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  min-height: 320px;
+  height: 500px;
+  overflow-y: auto;
 }
 
 .person-header {
