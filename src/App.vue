@@ -181,7 +181,7 @@ const groupedTasks = () => {
     });
   });
 
-  return Object.values(groups);
+  return Object.values(groups).sort((a, b) => b.tasks.length - a.tasks.length);
 };
 
 // 获取任务状态样式和文本
