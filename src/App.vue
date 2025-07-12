@@ -147,10 +147,16 @@ const groupedTasks = () => {
       groups[task.executorId] = {
         executorId: task.executorId,
         executorName: task.executorName,
-        tasks: []
+        tasks: [],
+        completedCount: 0
       };
     }
-    groups[task.executorId].tasks.push(task);
+    // 分离已完成任务
+    if (task.taskStatus === '已完成') {
+      groups[task.executorId].completedCount++;
+    } else {
+      groups[task.executorId].tasks.push(task);
+    }
   });
   // 按项目创建时间升序排序，再按任务剩余时间升序排列
   Object.values(groups).forEach(group => {
@@ -183,6 +189,8 @@ const getStatusInfo = (status) => {
   switch (status) {
     case '未接收':
       return { class: 'status-pending', text: '未接收', icon: 'clock' };
+    case '已接收':
+      return { class: 'status-received', text: '已接收', icon: 'check-circle' };
     case '进行中':
       return { class: 'status-progress', text: '进行中', icon: 'loading' };
     case '已完成':
@@ -296,7 +304,7 @@ onUnmounted(() => {
             </ElAvatar> -->
             <div class="person-info">
               <h3 class="person-name">{{ person.executorName || '未知用户' }}</h3>
-              <p class="task-count">{{ person.tasks.length }} 个任务</p>
+              <div class="task-count">未完成 {{ person.tasks.length }} 个，已完成 {{ person.completedCount }} 个</div>
             </div>
           </div>
           <div style="overflow-x: auto;">
@@ -327,7 +335,11 @@ onUnmounted(() => {
                 </div>
               </template>
             </ElTableColumn>
-<ElTableColumn prop="startDate" label="开始时间" :width="110"></ElTableColumn>
+<ElTableColumn label="开始时间" :width="110">
+              <template #default="{ row }">
+                {{ row.startDate ? row.startDate : '未设置' }}
+              </template>
+            </ElTableColumn>
             <ElTableColumn prop="dueDate" label="截止日期" :width="110"></ElTableColumn>
             <ElTableColumn label="剩余时间" :width="100">
               <template #default="{ row }">
@@ -833,13 +845,16 @@ onUnmounted(() => {
 }
 
 .status-pending {
-  background-color: #fff1f0;
-  color: #e53e3e;
+  background-color: #f7fafc;
+  color: #718096;
 }
-
+.status-received {
+  background-color: #fff3bf;
+  color: #d69e2e;
+}
 .status-progress {
-  background-color: #fff8e6;
-  color: #ed8936;
+  background-color: #ebf8ff;
+  color: #3182ce;
 }
 
 .status-completed {
@@ -848,8 +863,8 @@ onUnmounted(() => {
 }
 
 .status-default {
-  background-color: #f7fafc;
-  color: #718096;
+  background-color: #fff5f5;
+  color: #e53e3e;
 }
 
 .task-title {
