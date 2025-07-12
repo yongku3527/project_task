@@ -152,6 +152,29 @@ const groupedTasks = () => {
     }
     groups[task.executorId].tasks.push(task);
   });
+  // 按项目创建时间升序排序，再按任务剩余时间升序排列
+  Object.values(groups).forEach(group => {
+    // 创建项目名称到创建时间的映射
+    const projectCreationMap = {};
+    projectsData.value.forEach(project => {
+      projectCreationMap[project.name] = project.created;
+    });
+
+    group.tasks.sort((a, b) => {
+      // 获取项目创建时间
+      const aProjectCreated = new Date(projectCreationMap[a.projectName] || 0);
+      const bProjectCreated = new Date(projectCreationMap[b.projectName] || 0);
+
+      // 按项目创建时间升序排序（早创建的在前）
+      if (aProjectCreated.getTime() !== bProjectCreated.getTime()) {
+        return bProjectCreated - aProjectCreated;
+      }
+
+      // 同一项目内按剩余时间升序排序
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
+  });
+
   return Object.values(groups);
 };
 
@@ -180,9 +203,8 @@ onMounted(() => {
   fetchTasks();
   // 设置30秒刷新一次
   refreshInterval = setInterval(() => {
-    fetchProjects();
-    fetchTasks();
-  }, 30000);
+      fetchTasks();
+    }, 30000);
 });
 
 onUnmounted(() => {
