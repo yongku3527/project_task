@@ -261,7 +261,7 @@ onUnmounted(() => {
                   <ElCheckbox label="未接收" value="unreceived" />
                   <ElCheckbox label="进行中" value="inProgress" />
                   <ElCheckbox label="已完成" value="completed" />
-                  <ElCheckbox label="已延期" value="delayed" />
+                  <ElCheckbox label="已逾期" value="delayed" />
                 </ElCheckboxGroup>
               </div>
             </div>
@@ -366,40 +366,15 @@ onUnmounted(() => {
 /* 全局样式 */
 .app-container {
   width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  padding: 0 12px;
-  width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  padding: 0 12px;
-  width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  padding: 0 12px;
-  width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  padding: 0 12px;
-  width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  width: 100vw;
-  min-height: 100vh;
-  box-sizing: border-box;
   max-width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0 ; /* 保留合理内边距，避免内容贴边 */
   overflow-x: hidden;
   box-sizing: border-box;
-  padding: 0;
-  min-height: 100vh;
-  width: 100vw;
-  margin: 0;
-  background-color: #f5f7fa;
+  /* TODO */
+  background-color: #145fce;
+  /* background-color: #f5f7fa; */
 }
 
 .button-group { display: flex; gap: 12px; position: fixed; top: 20px; right: 20px; z-index: 1000; }
@@ -639,7 +614,7 @@ onUnmounted(() => {
   padding: 8px 8px 40px;
   position: relative;
   width: 100%;
-  max-height: calc(100vh - 90px);
+  max-height: calc(100vh - 5px);
   overflow-y: auto;
   transition: margin-left 0.3s ease;
 }
@@ -677,7 +652,8 @@ onUnmounted(() => {
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  height: 500px;
+  /* TODO 固定的卡片宽度 */
+  height: 520px;
   overflow-y: auto;
 }
 
@@ -885,6 +861,7 @@ onUnmounted(() => {
 
 .task-details {
   padding: 0 5px;
+
 }
 
 .task-meta {
