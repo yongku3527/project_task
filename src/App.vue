@@ -654,14 +654,15 @@ onUnmounted(() => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   /* TODO 固定的卡片开端都 */
   height: 520px;
-  overflow-y: auto;
+  /* 避免双层滚动条 */
+  /* overflow-y: auto; */
 }
 
 .person-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #f0f0f0;
 }
 
