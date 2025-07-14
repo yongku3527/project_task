@@ -312,7 +312,7 @@ onUnmounted(() => {
               :data="person.tasks"
               border
               size="small"
-              max-height="380"
+              max-height= 440
               class="task-table"
               :scroll="{ x: 'max-content' }"
             >
@@ -652,7 +652,7 @@ onUnmounted(() => {
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  /* TODO 固定的卡片宽度 */
+  /* TODO 固定的卡片开端都 */
   height: 520px;
   overflow-y: auto;
 }
@@ -752,7 +752,7 @@ onUnmounted(() => {
 .task-table-container {
   overflow-x: auto;
   width: 100%;
-  padding: 0 20px;
+  height: auto;
 }
 
 .task-grid.fullscreen {
@@ -768,10 +768,7 @@ onUnmounted(() => {
   padding: 0;
 }
 
-.task-table-container {
-  overflow-x: auto;
-  width: 100%;
-}
+
 
 
 
