@@ -697,19 +697,26 @@ onUnmounted(() => {
 .person-tasks-table {
   margin-top: 10px;
 }
-
+/* 
 .task-table .el-table__cell {
   padding: 8px 10px;
   font-size: 0.9rem;
   min-width: 0;
   box-sizing: border-box !important;
   word-wrap: break-word;
+} */
+
+::v-deep .task-table .el-table__cell {
+  padding: 0px 1px;
+  font-size: 16px; /* 表格内容文本大小 */
+  word-wrap: break-word;
 }
 
-.task-table .el-table__header th {
-  padding: 8px 10px;
-  font-size: 0.85rem;
+::v-deep .task-table .el-table__header th {
+  padding: 8px 1px;
+  font-size: 1rem;
   background-color: #f5f7fa;
+
   box-sizing: border-box !important;
 }
 
@@ -772,11 +779,7 @@ onUnmounted(() => {
 
 
 
-.task-table .el-table__header th {
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  background-color: #f5f7fa;
-}
+
 
 .page-loading {
   position: absolute;
