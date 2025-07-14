@@ -53,7 +53,7 @@ const fetchProjects = async () => {
   }
 
   try {
-    const response = await axios.get('http://localhost:8083/dingTask/getProjectInfo');
+    const response = await axios.get('http://192.168.100.43:5173/dingTask/getProjectInfo');
     if (response.data.code === 200) {
       projectsData.value = response.data.data;
       

@@ -7,6 +7,7 @@ export default defineConfig({
  
   ],
   server: {
+    host: '192.168.100.43',
     proxy: {
       '/dingTask': {
         target: 'http://localhost:8083',
