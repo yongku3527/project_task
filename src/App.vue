@@ -63,10 +63,7 @@ const fetchProjects = async () => {
       // 更新项目筛选选项
       projects.value = ['所有项目', ...projectsData.value.map(p => p.name)];
       
-      // 默认选中最新创建的项目
-      if (projectsData.value.length > 0) {
-        selectedProject.value = projectsData.value[0].name;
-      }
+
     } else {
       ElMessage.warning(`获取项目数据失败: ${response.data.msg || '未知错误'}`);
     }
@@ -373,8 +370,8 @@ onUnmounted(() => {
   overflow-x: hidden;
   box-sizing: border-box;
   /* TODO */
-  background-color: #145fce;
-  /* background-color: #f5f7fa; */
+  /* background-color: #145fce; */
+  background-color: #e4e5e7;
 }
 
 .button-group { display: flex; gap: 12px; position: fixed; top: 20px; right: 20px; z-index: 1000; }
@@ -707,13 +704,13 @@ onUnmounted(() => {
   word-wrap: break-word;
 } */
 
-::v-deep .task-table .el-table__cell {
+:deep(.task-table .el-table__cell) {
   padding: 0px 1px;
   font-size: 16px; /* 表格内容文本大小 */
   word-wrap: break-word;
 }
 
-::v-deep .task-table .el-table__header th {
+:deep(.task-table .el-table__header th) {
   padding: 8px 1px;
   font-size: 1rem;
   background-color: #f5f7fa;
