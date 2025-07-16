@@ -756,17 +756,19 @@ onUnmounted(() => {
   word-wrap: break-word;
 } */
 
-:deep(.task-table .el-table__cell) {
-  padding: 0px 1px;
-  font-size: 16px; /* 表格内容文本大小 */
-  word-wrap: break-word;
-}
 
-:deep(.task-table .el-table__header th), :deep(.task-table .el-table__cell) {
+
+:deep(.task-table .el-table__header th) {
   padding: 8px 10px;
-  font-size: 1rem;
+  font-size: 1.13rem;
   background-color: #f5f7fa;
   box-sizing: border-box !important;
+}
+:deep(.task-table .el-table__cell) {
+  padding: 6px 6px;
+  font-size: 1.13rem;
+  background-color: #eff2f8;
+  word-wrap: break-word;
 }
 
 .task-table {
@@ -838,7 +840,7 @@ onUnmounted(() => {
   gap: 5px;
   padding: 3px 10px;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 1.13rem;
   font-weight: 500;
   margin-bottom: 10px;
 }
