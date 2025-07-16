@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
+import { ref, onMounted, onUnmounted, getCurrentInstance, computed, watch } from 'vue';
 // import { ElMessage, ElSpin } from 'element-plus';
 import { FullScreen, Filter } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
@@ -16,11 +16,31 @@ const tasks = ref([]);
 const departments = ref(['所有部门']);
 const projects = ref([]);
 const projectsData = ref([]); // 存储原始项目数据
+const statusData = ref([]); // 存储所有状态数据
 const selectedDept = ref('所有部门');
 const selectedProject = ref('所有项目');
 const activeTab = ref('filters');
 const activeFilters = ref(['basic']);
 const selectedStatus = ref([]);
+
+// 动态状态选项计算属性
+const dynamicStatusOptions = computed(() => {
+  if (selectedProject.value === '所有项目') return [];
+  const selectedProj = projectsData.value.find(p => p.name === selectedProject.value);
+  return selectedProj ? statusData.value
+    .filter(s => s.projectId === selectedProj.projectId)
+    // 排除已完成状态
+    .filter(status => status.statusName !== '已完成')
+    // 仅保留有对应任务的状态
+    .filter(status => tasks.value.some(task => task.taskStatus === status.statusName))
+    // 基于statusId去重，保留第一个出现的状态
+    .reduce((unique, status) => {
+      if (!unique.some(s => s.statusName === status.statusName)) {
+        unique.push(status);
+      }
+      return unique;
+    }, []) : [];
+});
 
 const lastRefreshTime = ref('');
 const isLoading = ref(false);
@@ -44,6 +64,26 @@ const toggleFullScreen = () => {
 };
 let refreshInterval = null;
 const API_URL = '/dingTask/getTaskInfo';
+
+// 获取状态数据
+const fetchStatusInfo = async () => {
+  if (!axios) {
+    ElMessage.error('Axios未正确初始化');
+    return;
+  }
+
+  try {
+    const response = await axios.get('http://192.168.100.43:5173/dingTask/getStatusInfo');
+    if (response.data.code === 200) {
+      statusData.value = response.data.data;
+    } else {
+      ElMessage.warning(`获取状态数据失败: ${response.data.msg || '未知错误'}`);
+    }
+  } catch (error) {
+    console.error('获取状态数据失败:', error);
+    ElMessage.error('网络错误，无法获取状态信息');
+  }
+};
 
 // 获取项目数据
 const fetchProjects = async () => {
@@ -130,8 +170,14 @@ const filteredTasks = () => {
   return tasks.value.filter(task => {
     const deptMatch = selectedDept.value === '所有部门' || task.deptNameList.includes(selectedDept.value);
     const projectMatch = selectedProject.value === '所有项目' || task.projectName === selectedProject.value;
-    const statusMap = { unreceived: '未接收', inProgress: '进行中', completed: '已完成', delayed: '已逾期' };
-  const statusMatch = selectedStatus.value.length === 0 || selectedStatus.value.some(status => statusMap[status] === task.taskStatus);
+    // 根据选中项目筛选状态
+const selectedProj = projectsData.value.find(p => p.name === selectedProject.value);
+const dynamicStatusMap = selectedProj ? statusData.value
+  .filter(s => s.projectId === selectedProj.projectId)
+  .reduce((acc, s) => ({ ...acc, [s.statusId]: s.statusName }), {}) : {};
+
+const statusMatch = selectedStatus.value.length === 0 || 
+  selectedStatus.value.some(statusId => dynamicStatusMap[statusId] === task.taskStatus);
     return deptMatch && projectMatch && statusMatch;
   });
 };
@@ -203,13 +249,19 @@ const completedTasks = () => {
 
 // 组件生命周期
 onMounted(() => {
-  // 立即获取项目和任务数据
+  // 立即获取项目、状态和任务数据
   fetchProjects();
+  fetchStatusInfo();
   fetchTasks();
   // 设置30秒刷新一次
   refreshInterval = setInterval(() => {
       fetchTasks();
     }, 30000);
+
+  // 监听项目选择变化，清空状态选择
+  watch(selectedProject, () => {
+    selectedStatus.value = [];
+  });
 });
 
 onUnmounted(() => {
@@ -252,14 +304,21 @@ onUnmounted(() => {
                   <ElOption v-for="project in projects" :key="project" :label="project" :value="project" />
                 </ElSelect>
               </div>
-              <div class="filter-item">
+              <div class="filter-item" v-if="selectedProject.value !== '所有项目'">
                 <label class="filter-label">任务状态:</label>
                 <ElCheckboxGroup v-model="selectedStatus" class="status-checkbox-group">
-                  <ElCheckbox label="未接收" value="unreceived" />
-                  <ElCheckbox label="进行中" value="inProgress" />
-                  <ElCheckbox label="已完成" value="completed" />
-                  <ElCheckbox label="已逾期" value="delayed" />
+                  <ElCheckbox 
+                    v-for="status in dynamicStatusOptions"
+                    :key="status.statusId"
+                    :label="status.statusId"
+                  >
+                    {{ status.statusName }}
+                  </ElCheckbox>
                 </ElCheckboxGroup>
+              </div>
+              <div class="filter-item" v-else>
+                <label class="filter-label">任务状态:</label>
+                <div class="status-placeholder">请先选择具体项目</div>
               </div>
             </div>
         </ElTabPane>
@@ -520,6 +579,7 @@ onUnmounted(() => {
 .filter-group { padding: 10px 0; }
 
 .status-checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.status-placeholder { color: #909399; font-size: 0.9rem; padding: 8px 0; }
 
 .filter-item { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
 
@@ -637,7 +697,7 @@ onUnmounted(() => {
   max-width: 100%;
   box-sizing: border-box;
   padding: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
