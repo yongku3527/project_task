@@ -304,18 +304,19 @@ onUnmounted(() => {
               <div class="task-count">未完成 {{ person.tasks.length }} 个，已完成 {{ person.completedCount }} 个</div>
             </div>
           </div>
-          <div style="overflow-x: auto;">
+          <div class="task-table-container">
             <ElTable
               :data="person.tasks"
               border
               size="small"
               max-height= 440
               class="task-table"
-              :scroll="{ x: 'max-content' }"
+              :scroll="{ x: '945px' }"
             >
-            <ElTableColumn prop="taskName" label="任务名称" :width="200"></ElTableColumn>
+              <ElTableColumn prop="projectName" label="项目" :width="160"></ElTableColumn>
+            <ElTableColumn prop="taskName" label="任务名称" :width="250"></ElTableColumn>
 
-            <ElTableColumn label="状态" :width="100">
+            <ElTableColumn label="状态" :width="130">
               <template #default="{ row }">
                 <div class="task-status-badge" :class="getStatusInfo(row.taskStatus).class">
                   <i :class="'el-icon-' + getStatusInfo(row.taskStatus).icon"></i>
@@ -323,22 +324,13 @@ onUnmounted(() => {
                 </div>
               </template>
             </ElTableColumn>
-            <ElTableColumn prop="projectName" label="项目" :width="130"></ElTableColumn>
-
-            <ElTableColumn label="部门" :width="150">
-              <template #default="{ row }">
-                <div class="dept-tags">
-                  <ElTag v-for="dept in row.deptNameList" :key="dept" size="small">{{ dept }}</ElTag>
-                </div>
-              </template>
-            </ElTableColumn>
-<ElTableColumn label="开始时间" :width="110">
+<ElTableColumn label="开始时间" :width="130">
               <template #default="{ row }">
                 {{ row.startDate ? row.startDate : '未设置' }}
               </template>
             </ElTableColumn>
-            <ElTableColumn prop="dueDate" label="截止日期" :width="110"></ElTableColumn>
-            <ElTableColumn label="剩余时间" :width="100">
+            <ElTableColumn prop="dueDate" label="截止日期" :width="130"></ElTableColumn>
+            <ElTableColumn label="剩余时间" :width="130">
               <template #default="{ row }">
                 <span class="remain-time" :class="row.remainTimeDays <= 3 ? 'urgent' : ''">
                   {{ row.remainTimeDays }} 天
@@ -710,11 +702,10 @@ onUnmounted(() => {
   word-wrap: break-word;
 }
 
-:deep(.task-table .el-table__header th) {
-  padding: 8px 1px;
+:deep(.task-table .el-table__header th), :deep(.task-table .el-table__cell) {
+  padding: 8px 10px;
   font-size: 1rem;
   background-color: #f5f7fa;
-
   box-sizing: border-box !important;
 }
 
@@ -722,42 +713,16 @@ onUnmounted(() => {
   width: 100% !important;
   table-layout: fixed;
   --el-table-border-color: #ebeef5;
-  overflow: hidden;
-  width: 100% !important;
-  table-layout: auto;
-  --el-table-border-color: #ebeef5;
-  overflow: hidden;
-  width: 100% !important;
-  table-layout: auto;
-  --el-table-border-color: #ebeef5;
-  overflow: hidden;
-  width: 100% !important;
-  table-layout: auto;
-  min-width: 100%;
-  --el-table-border-color: #ebeef5;
-  overflow: hidden;
-  width: 100% !important;
-  table-layout: auto;
-  min-width: unset;
   --el-table-header-bg-color: #f8f9fa;
-  width: 100% !important;
-  table-layout: auto;
-  min-width: unset;
-  --el-table-header-bg-color: #f8f9fa;
-  width: 100% !important;
-  min-width: unset;
-  table-layout: auto;
-  width: 100% !important;
-  max-width: 100%;
-  width: auto !important;
-  min-width: 900px;
-  table-layout: fixed;
+  overflow: hidden;
 }
 
 .task-table-container {
   overflow-x: auto;
   width: 100%;
+  min-width: 930px;
   height: auto;
+  box-sizing: border-box;
 }
 
 .task-grid.fullscreen {
