@@ -636,7 +636,7 @@ onUnmounted(() => {
 .person-task-group {
   max-width: 100%;
   box-sizing: border-box;
-  padding: 8px;
+  padding: 5px;
   margin-bottom: 10px;
   background-color: white;
   border-radius: 12px;
