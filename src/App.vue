@@ -129,7 +129,7 @@ const fetchStatusInfo = async () => {
   }
 
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getStatusInfo');
+    const response = await axios.get('http://192.168.70.56:8083/dingTask/getStatusInfo');
     if (response.data.code === 200) {
       statusData.value = response.data.data;
     } else {
@@ -149,7 +149,7 @@ const fetchProjects = async () => {
   }
 
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getProjectInfo');
+    const response = await axios.get('http://192.168.70.56:8083/dingTask/getProjectInfo');
     if (response.data.code === 200) {
       projectsData.value = response.data.data;
       
@@ -178,7 +178,7 @@ const fetchTasks = async () => {
 
   isLoading.value = true;
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getTaskInfo');
+    const response = await axios.get('http://192.168.70.56:8083/dingTask/getTaskInfo');
     if (response.data.code === 200) {
       tasks.value = response.data.data;
       updateFilters();
@@ -749,7 +749,7 @@ onUnmounted(() => {
   padding: 8px 8px 40px;
   position: relative;
   width: 100%;
-  max-height: calc(100vh - 5px);
+  max-height: calc(100vh - 0px);
   overflow-y: auto;
   transition: margin-left 0.3s ease;
 }
