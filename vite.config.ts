@@ -6,13 +6,8 @@ export default defineConfig({
     vue(),
  
   ],
-  server: {
-    host: '192.168.100.43',
-    proxy: {
-      '/dingTask': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-      }
-    }
+ server: {
+    port: 8081,
+    host: '0.0.0.0' // 允许局域网访问
   }
 })
