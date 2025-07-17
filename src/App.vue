@@ -11,6 +11,10 @@ const internalInstance = getCurrentInstance();
 const axios = internalInstance?.appContext.config.globalProperties.$axios;
 
 // 状态管理
+const currentPage = ref(1);
+const pageSize = ref(4);
+const totalPages = ref(1);
+const isFullScreen = ref(false);
 const showFilters = ref(false);
 const tasks = ref([]);
 const departments = ref(['所有部门']);
@@ -48,6 +52,58 @@ const isLoading = ref(false);
 // 筛选面板控制
 const toggleFilters = () => {
   showFilters.value = !showFilters.value;
+};
+
+// 全屏控制
+const handleFullScreenChange = () => {
+  isFullScreen.value = !!document.fullscreenElement;
+  if (!isFullScreen.value) {
+    currentPage.value = 1; // 退出全屏时重置页码
+  }
+};
+
+// 自动分页定时器
+let pageTimer = null;
+
+// 启动自动分页
+const startPageTimer = () => {
+  if (!pageTimer && isFullScreen.value) {
+    pageTimer = setInterval(() => {
+      if (totalPages.value > 1) {
+        currentPage.value = currentPage.value % totalPages.value + 1;
+      }
+    }, 90000);
+  }
+};
+
+// 停止自动分页
+const stopPageTimer = () => {
+  if (pageTimer) {
+    clearInterval(pageTimer);
+    pageTimer = null;
+  }
+};
+
+// 监听全屏状态变化
+watch(isFullScreen, (newVal) => {
+  if (newVal) {
+    startPageTimer();
+  } else {
+    stopPageTimer();
+  }
+});
+
+// 分页控制方法
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
 };
 
 // 全屏控制
@@ -184,37 +240,45 @@ const statusMatch = selectedStatus.value.length === 0 ||
 
 // 按人员分组任务
 const groupedTasks = () => {
-  const groups = {};
+  const allGroups = [];
   filteredTasks().forEach(task => {
-    if (!groups[task.executorId]) {
-      groups[task.executorId] = {
+    let group = allGroups.find(g => g.executorId === task.executorId);
+    if (!group) {
+      group = {
         executorId: task.executorId,
         executorName: task.executorName,
         tasks: [],
         completedCount: 0
       };
+      allGroups.push(group);
     }
-    // 分离已完成任务
     if (task.taskStatus === '已完成') {
-      groups[task.executorId].completedCount++;
+      group.completedCount++;
     } else {
-      groups[task.executorId].tasks.push(task);
+      group.tasks.push(task);
     }
   });
-  // 按项目创建时间升序排序，再按任务剩余时间升序排列
-  Object.values(groups).forEach(group => {
-    // 创建项目名称到创建时间的映射
+
+  allGroups.sort((a, b) => b.tasks.length - a.tasks.length);
+  
+  // 不全屏时显示所有任务卡片，全屏时分页
+  if (!isFullScreen.value) {
+    return allGroups;
+  }
+  
+  totalPages.value = Math.ceil(allGroups.length / pageSize.value);
+  // 按项目创建时间和任务剩余时间排序任务
+  allGroups.forEach(group => {
     const projectCreationMap = {};
     projectsData.value.forEach(project => {
       projectCreationMap[project.name] = project.created;
     });
 
     group.tasks.sort((a, b) => {
-      // 获取项目创建时间
       const aProjectCreated = new Date(projectCreationMap[a.projectName] || 0);
       const bProjectCreated = new Date(projectCreationMap[b.projectName] || 0);
 
-      // 按项目创建时间升序排序（早创建的在前）
+      // 按项目创建时间降序排序（晚创建的在前）
       if (aProjectCreated.getTime() !== bProjectCreated.getTime()) {
         return bProjectCreated - aProjectCreated;
       }
@@ -224,7 +288,8 @@ const groupedTasks = () => {
     });
   });
 
-  return Object.values(groups).sort((a, b) => b.tasks.length - a.tasks.length);
+  totalPages.value = Math.ceil(allGroups.length / pageSize.value);
+  return allGroups.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value);
 };
 
 // 获取任务状态样式和文本
@@ -249,6 +314,7 @@ const completedTasks = () => {
 
 // 组件生命周期
 onMounted(() => {
+  document.addEventListener('fullscreenchange', handleFullScreenChange);
   // 立即获取项目、状态和任务数据
   fetchProjects();
   fetchStatusInfo();
@@ -265,6 +331,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullScreenChange);
   if (refreshInterval) {
     clearInterval(refreshInterval);
   }
@@ -352,6 +419,23 @@ onUnmounted(() => {
 
     <!-- 任务卡片区域 -->
     <main class="task-grid" :class="{'filter-active': showFilters}" >
+  <!-- 分页控制按钮 -->
+  <div class="pagination-controls" v-if="isFullScreen">
+    <!-- <el-button 
+      @click="prevPage"
+      :disabled="currentPage === 1"
+      size="small"
+      icon="ArrowLeft"
+      class="page-btn prev-btn"
+    ></el-button>
+    <el-button 
+      @click="nextPage"
+      :disabled="currentPage >= totalPages"
+      size="small"
+      icon="ArrowRight"
+      class="page-btn next-btn"
+    ></el-button> -->
+  </div>
       <ElSpin v-if="isLoading" class="page-loading" size="large" />
       <div v-for="person in groupedTasks()" :key="person.executorId" class="person-task-group">
           <div class="person-header">
@@ -426,6 +510,8 @@ onUnmounted(() => {
 }
 
 .button-group { display: flex; gap: 12px; position: fixed; top: 20px; right: 20px; z-index: 1000; }
+
+.pagination-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; }
 
 
 
