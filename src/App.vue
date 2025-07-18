@@ -1,6 +1,7 @@
 <template>
   <div class="app-container">
     <el-menu 
+      v-if="!isFullScreen || route.path !== '/task-info'"
       :default-active="route.path" 
       class="main-nav" 
       mode="horizontal"
@@ -29,9 +30,24 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { House, Menu as MenuIcon, Grid } from '@element-plus/icons-vue';
 
 const route = useRoute();
+const isFullScreen = ref(false);
+
+// 监听全屏状态变化
+const handleFullScreenChange = () => {
+  isFullScreen.value = !!document.fullscreenElement;
+};
+
+onMounted(() => {
+  document.addEventListener('fullscreenchange', handleFullScreenChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullScreenChange);
+});
 </script>
 
 <style scoped>
