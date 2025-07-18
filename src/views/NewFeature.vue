@@ -57,7 +57,7 @@ const initChart = () => {
   // 为每个项目创建一个nextTick，确保DOM渲染完成
   projectNames.value.forEach(async (projectName) => {
     await nextTick(); // 等待当前项目的DOM渲染完成
-    
+
     // 准备当前项目的图表数据
     // 过滤无效日期并排序
     const projectTasks = projects[projectName]
@@ -68,11 +68,32 @@ const initChart = () => {
       console.warn(`项目${projectName}没有任务数据`);
       return;
     }
-    
+
+    const currentDate = new Date().toISOString().split('T')[0];
     const seriesData = [{
       name: projectName,
       type: 'scatter',
       symbolSize: 12,
+
+      markLine: {
+        symbol: 'none', // 隐藏箭头
+        silent: true,   // 禁止交互（鼠标悬停无效果）
+        animation: false,
+        data: [{
+          xAxis: currentDate,
+          lineStyle: {
+            color: '#A5AAA3',
+            width: 2,
+            type: 'solid'
+          },
+          label: {
+            formatter: '当前日期',
+            color: '#A5AAA3',
+            fontSize: 12,
+            
+          }
+        }]
+      },
       data: projectTasks.map((task, index) => ({
         name: task.taskName,
         value: [
@@ -118,21 +139,26 @@ const initChart = () => {
         }
       },
       grid: {
-        left: '5%',
-        right: '10%',
-        bottom: '15%',
-        top: '5%'
+        left: '15%',
+        right: '15%',
+        bottom: '25%',
+        top: '10%'
       },
       xAxis: {
         type: 'time',
         name: '截止日期',
         axisLabel: {
           formatter: '{yyyy}-{MM}-{dd}',
-          rotate: 30
+          rotate: 30,
+          interval: 'auto',
+
         },
         // 设置X轴范围以确保所有数据可见
         min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 2 : null,
-        max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 2 : null
+        max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 2 : null,
+        // 确保X轴标签不重叠
+        interval: 'auto',
+
       },
       yAxis: {
         type: 'category',
