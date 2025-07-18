@@ -118,10 +118,10 @@ const initChart = () => {
         }
       },
       grid: {
-        left: '10%',
+        left: '5%',
         right: '10%',
         bottom: '15%',
-        top: '20%'
+        top: '5%'
       },
       xAxis: {
         type: 'time',
