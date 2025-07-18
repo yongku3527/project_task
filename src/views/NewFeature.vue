@@ -139,7 +139,7 @@ const initChart = () => {
         name: '任务',
         // data: projectTasks.map(task => task.taskName),
         axisLabel: {
-          interval: 0,
+          interval: 0.5,
           rotate: 30
         }
       },
@@ -182,8 +182,7 @@ onMounted(async () => {
 
 <style scoped>
 .new-feature-container {
-  padding: 20px;
-  max-width: 1200px;
+  padding: 0;
   margin: 0 auto;
 }
 
@@ -206,11 +205,12 @@ h1 {
 
 .chart-container {
   width: 100%;
-  height: 400px;
-  margin: 20px auto;
+  height: 100vh;
+  margin: 0;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
   padding: 10px;
+  box-sizing: border-box;
 }
 
 .chart-container h2 {
