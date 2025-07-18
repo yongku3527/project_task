@@ -1,22 +1,24 @@
 <template>
   <div class="new-feature-container">
-    <h1>项目任务时间轴</h1>
+
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">错误: {{ error }}</div>
-    <div v-else class="content">
-      <div class="chart-container">
-        <div id="taskTimeline" class="chart"></div>
+    <div class="content">
+      <div v-for="projectName in projectNames" :key="projectName" class="chart-container">
+        <h2>{{ projectName }}</h2>
+        <div :id="'taskTimeline-' + projectName" class="chart"></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, nextTick } from 'vue';
 import axios from 'axios';
 import * as echarts from 'echarts';
 
 const tasks = ref<any[]>([]);
+const projectNames = ref<string[]>([]);
 const loading = ref(true);
 const error = ref('');
 
@@ -50,33 +52,45 @@ const initChart = () => {
     projects[task.projectName].push(task);
   });
 
-  // 准备图表数据
-  const projectNames = Object.keys(projects);
-  const seriesData = projectNames.map(projectName => {
-    const projectTasks = projects[projectName].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-    return {
-      name: projectName,
-      type: 'scatter',
-      data: projectTasks.map(task => ({
-        name: task.taskName,
-        value: [
-          new Date(task.dueDate).getTime(),
-          projectNames.indexOf(projectName),
-          task.remainTimeDays
-        ],
-        itemStyle: {
-          color: getStatusColor(task.taskStatus)
-        },
-        taskStatus: task.taskStatus,
-        executorName: task.executorName,
-        startDate: task.startDate,
-        dueDate: task.dueDate
-      }))
-    };
-  });
+  projectNames.value = Object.keys(projects);
 
-  // 获取图表容器并初始化
-  const chartDom = document.getElementById('taskTimeline');
+  projectNames.value.forEach(projectName => {
+  if (tasks.value.length === 0) return;
+
+  // 准备当前项目的图表数据
+  // 过滤无效日期并排序
+  const projectTasks = projects[projectName]
+    .filter(task => !isNaN(new Date(task.dueDate).getTime()))
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  console.log(`项目${projectName}任务数据:`, projectTasks);
+  if (projectTasks.length === 0) {
+    console.warn(`项目${projectName}没有任务数据`);
+    return;
+  }
+  const seriesData = [{
+    name: projectName,
+    type: 'scatter',
+    symbolSize: 12,
+    data: projectTasks.map((task, index) => ({
+      name: task.taskName,
+      value: [
+        // 验证日期格式
+        new Date(task.dueDate).getTime() || Date.now(),
+        index, // 使用任务索引作为Y轴值
+        task.remainTimeDays
+      ],
+      itemStyle: {
+        color: getStatusColor(task.taskStatus)
+      },
+      taskStatus: task.taskStatus,
+      executorName: task.executorName,
+      startDate: task.startDate,
+      dueDate: task.dueDate
+    }))
+  }];
+
+  // 获取当前项目的图表容器并初始化
+  const chartDom = document.getElementById('taskTimeline-' + projectName);
   if (!chartDom) return;
 
   const myChart = echarts.init(chartDom);
@@ -85,7 +99,7 @@ const initChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: params => {
+      formatter: (params: any) => {
         const task = params.data;
         return `
           <div style="font-weight: bold;">${task.name}</div>
@@ -102,32 +116,43 @@ const initChart = () => {
       left: '10%',
       right: '10%',
       bottom: '15%',
-      top: '15%'
+      top: '20%'
     },
     xAxis: {
       type: 'time',
       name: '截止日期',
       axisLabel: {
-        formatter: '{yyyy}-{MM}-{dd}'
-      }
+        formatter: '{yyyy}-{MM}-{dd}',
+        rotate: 45
+      },
+      // 设置X轴范围以确保所有数据可见
+      min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 2 : null,
+      max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 2 : null
     },
     yAxis: {
       type: 'category',
-      name: '项目名称',
-      data: projectNames,
+      name: '任务',
+      data: projectTasks.map(task => task.taskName),
       axisLabel: {
-        interval: 0
+        interval: 0,
+        rotate: 30
       }
     },
-    series: seriesData
+      series: seriesData
   };
 
   myChart.setOption(option);
 
   // 响应窗口大小变化
-  window.addEventListener('resize', () => {
+  const handleResize = () => {
     myChart.resize();
-  });
+  };
+  window.addEventListener('resize', handleResize);
+
+  // 存储resize处理函数以便后续清理
+  (window as any)[`resizeHandler_${projectName}`] = handleResize;
+
+}); // 项目循环结束
 };
 
 // 根据任务状态获取颜色
@@ -145,7 +170,9 @@ const getStatusColor = (status: string): string => {
 // 页面加载时获取数据并初始化图表
 onMounted(async () => {
   await fetchTasks();
-  initChart();
+  nextTick(() => {
+    initChart();
+  });
 });
 </script>
 
@@ -175,8 +202,17 @@ h1 {
 
 .chart-container {
   width: 100%;
-  height: 600px;
-  margin-top: 20px;
+  height: 400px;
+  margin: 20px auto;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.chart-container h2 {
+  margin-bottom: 15px;
+  padding-left: 10px;
+  border-left: 4px solid #40a9ff;
 }
 
 .chart {
