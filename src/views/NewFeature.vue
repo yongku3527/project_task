@@ -113,7 +113,7 @@ const initChart = () => {
             <div>状态: <span style="color: ${getStatusColor(task.taskStatus)}">${task.taskStatus}</span></div>
             <div>开始日期: ${task.startDate}</div>
             <div>截止日期: ${task.dueDate}</div>
-            <div>剩余时间: ${task.remainTimeDays >= 0 ? task.remainTimeDays + '天' : '已逾期' + Math.abs(task.remainTimeDays) + '天'}</div>
+            <div>剩余时间: ${(() => { const due = new Date(task.dueDate); const today = new Date(); const diffTime = due.getTime() - today.getTime(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); return diffDays >= 0 ? diffDays + '天' : '已逾期' + Math.abs(diffDays) + '天'; })()}</div>
           `;
         }
       },
@@ -128,7 +128,7 @@ const initChart = () => {
         name: '截止日期',
         axisLabel: {
           formatter: '{yyyy}-{MM}-{dd}',
-          rotate: 45
+          rotate: 30
         },
         // 设置X轴范围以确保所有数据可见
         min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 2 : null,
