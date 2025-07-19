@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+import dayjs from 'dayjs';
 import { ref, onMounted, nextTick } from 'vue';
 import axios from 'axios';
 import * as echarts from 'echarts';
@@ -73,7 +74,7 @@ const initChart = () => {
     const seriesData = [{
       name: projectName,
       type: 'scatter',
-      symbolSize: 12,
+      symbolSize: 16,
 
       markLine: {
         symbol: 'none', // 隐藏箭头
@@ -87,9 +88,9 @@ const initChart = () => {
             type: 'solid'
           },
           label: {
-            formatter: '当前日期',
+            formatter: function() { return dayjs().format('YYYY-MM-DD'); },
             color: '#A5AAA3',
-            fontSize: 12,
+            fontSize: 16,
             
           }
         }]
@@ -139,9 +140,9 @@ const initChart = () => {
         }
       },
       grid: {
-        left: '15%',
-        right: '15%',
-        bottom: '25%',
+        left: '5%',
+        right: '5%',
+        bottom: '15%',
         top: '10%'
       },
       xAxis: {
@@ -154,8 +155,8 @@ const initChart = () => {
 
         },
         // 设置X轴范围以确保所有数据可见
-        min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 2 : null,
-        max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 2 : null,
+        min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 5 : null,
+        max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 5 : null,
         // 确保X轴标签不重叠
         interval: 'auto',
 
@@ -191,7 +192,14 @@ const getStatusColor = (status: string): string => {
     case '已逾期':
       return '#ff4d4f';
     case '未接收':
-      return '#faad14';
+      //灰色
+      return '#A5AAA3';
+    case '已接收':
+      //黄色
+      return '#FFC107';
+    case '进行中':
+      //蓝色
+      return '#40A9FF';
     default:
       return '#1890ff';
   }
