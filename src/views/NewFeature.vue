@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { ref, onMounted, nextTick } from 'vue';
 import axios from 'axios';
 import * as echarts from 'echarts';
+import { tr } from 'element-plus/es/locales.mjs';
 
 const tasks = ref<any[]>([]);
 const projectNames = ref<string[]>([]);
@@ -75,8 +76,8 @@ const initChart = () => {
       name: projectName,
       type: 'line',
       data: projectTasks.map((task) => ([
-          new Date(task.dueDate).getTime() || Date.now(),
-          0
+        new Date(task.dueDate).getTime() || Date.now(),
+        0
       ])),
       smooth: false,
       symbol: 'circle',
@@ -88,22 +89,23 @@ const initChart = () => {
         disabled: true
       }
     },
-     {
+    {
       name: projectName,
       type: 'scatter',
       symbolSize: 25,
       label: {
         show: true,
-        formatter: function(params) {
-          return `${params.data.name}\n${params.data.dueDate}`;
+        formatter: function (params) {
+          return `${params.data.name}\n\n${params.data.dueDate}`;
         },
-        position: 'top',
+        distance: 33,
+        position: 'bottom',
         align: 'center',
         verticalAlign: 'bottom',
-        lineHeight: 20,
+
+        lineHeight: 30,
         textStyle: {
           fontSize: 12,
-          
         }
       },
 
@@ -119,10 +121,10 @@ const initChart = () => {
             type: 'solid'
           },
           label: {
-            formatter: function() { return dayjs().format('YYYY-MM-DD'); },
+            formatter: function () { return dayjs().format('YYYY-MM-DD'); },
             color: '#A5AAA3',
             fontSize: 16,
-            
+
           }
         }]
       },
@@ -181,13 +183,18 @@ const initChart = () => {
         name: '截止日期',
         axisLabel: {
           formatter: '{yyyy}-{MM}-{dd}',
-          rotate: 30,
-          interval: 'auto',
+          rotate: 10,
+          // interval: 'auto',
 
         },
+        axisTick:{
+          show:true,
+          alignWithLabel:true,
+          length:20
+        },
         // 设置X轴范围以确保所有数据可见
-        min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 5 : null,
-        max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 5 : null,
+        min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 1 : null,
+        max: projectTasks.length ? Math.max(...projectTasks.map(t => new Date(t.dueDate).getTime())) + 86400000 * 1 : null,
         // 确保X轴标签不重叠
         interval: 'auto',
 
@@ -196,7 +203,7 @@ const initChart = () => {
         type: 'category',
         name: '任务',
         data: ['任务'],
-        show:false,
+        show: false,
         axisLabel: {
           interval: 0.5,
           rotate: 30
