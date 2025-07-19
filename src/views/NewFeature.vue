@@ -128,6 +128,7 @@ const initChart = () => {
           }
         }]
       },
+
       data: projectTasks.map((task, index) => ({
         name: task.taskName,
         value: [
@@ -183,14 +184,13 @@ const initChart = () => {
         name: '截止日期',
         axisLabel: {
           formatter: '{yyyy}-{MM}-{dd}',
-          rotate: 10,
           // interval: 'auto',
 
         },
         axisTick:{
           show:true,
           alignWithLabel:true,
-          length:20
+          length:5
         },
         // 设置X轴范围以确保所有数据可见
         min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 1 : null,
