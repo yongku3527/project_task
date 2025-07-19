@@ -100,7 +100,7 @@ const initChart = () => {
         value: [
           // 验证日期格式
           new Date(task.dueDate).getTime() || Date.now(),
-          index, // 使用任务索引作为Y轴值
+          0, // 使用任务索引作为Y轴值
           task.remainTimeDays
         ],
         itemStyle: {
@@ -163,9 +163,9 @@ const initChart = () => {
       },
       yAxis: {
         type: 'category',
-        name: '任务',
-        // data: projectTasks.map(task => task.taskName),
-        axisLabel: {
+  name: '任务',
+  data: ['任务'],
+  axisLabel: {
           interval: 0.5,
           rotate: 30
         }
