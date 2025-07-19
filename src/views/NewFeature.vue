@@ -79,7 +79,7 @@ const initChart = () => {
           0
       ])),
       smooth: false,
-      symbol: 'none',
+      symbol: 'circle',
       lineStyle: {
         color: '#8392A5',
         width: 2
@@ -87,10 +87,11 @@ const initChart = () => {
       emphasis: {
         disabled: true
       }
-    }, {
+    },
+     {
       name: projectName,
       type: 'scatter',
-      symbolSize: 16,
+      symbolSize: 25,
 
       markLine: {
         symbol: 'none', // 隐藏箭头
@@ -158,7 +159,7 @@ const initChart = () => {
       grid: {
         left: '5%',
         right: '5%',
-        bottom: '15%',
+        bottom: '50%',
         top: '10%'
       },
       xAxis: {
@@ -179,9 +180,10 @@ const initChart = () => {
       },
       yAxis: {
         type: 'category',
-  name: '任务',
-  data: ['任务'],
-  axisLabel: {
+        name: '任务',
+        data: ['任务'],
+        show:false,
+        axisLabel: {
           interval: 0.5,
           rotate: 30
         }
@@ -255,11 +257,11 @@ h1 {
 
 .chart-container {
   width: 100%;
-  height: 100vh;
+  height: 30vh;
   margin: 0;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
-  padding: 10px;
+  padding: 5px;
   box-sizing: border-box;
 }
 
