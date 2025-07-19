@@ -92,6 +92,20 @@ const initChart = () => {
       name: projectName,
       type: 'scatter',
       symbolSize: 25,
+      label: {
+        show: true,
+        formatter: function(params) {
+          return `${params.data.name}\n${params.data.dueDate}`;
+        },
+        position: 'top',
+        align: 'center',
+        verticalAlign: 'bottom',
+        lineHeight: 20,
+        textStyle: {
+          fontSize: 12,
+          
+        }
+      },
 
       markLine: {
         symbol: 'none', // 隐藏箭头
