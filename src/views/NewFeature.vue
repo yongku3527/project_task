@@ -90,7 +90,7 @@ const initChart = () => {
     }, {
       name: projectName,
       type: 'scatter',
-      symbolSize: 25,
+      symbolSize: 16,
 
       markLine: {
         symbol: 'none', // 隐藏箭头
@@ -111,30 +111,22 @@ const initChart = () => {
           }
         }]
       },
-      data: (() => {
-      const timeCounts: Record<number, number> = {};
-      return projectTasks.map((task) => {
-        const date = new Date(task.dueDate);
-          date.setHours(0, 0, 0, 0);
-          const timeKey = date.getTime() || Date.now();
-        const count = (timeCounts[timeKey] = (timeCounts[timeKey] || 0) + 1);
-        return ({
-          name: task.taskName,
-          value: [
-            timeKey,
-            1.3 + (count - 1) * 0.2,
-            task.remainTimeDays
-          ],
-          itemStyle: {
-            color: getStatusColor(task.taskStatus)
-          },
-          taskStatus: task.taskStatus,
-          executorName: task.executorName,
-          startDate: task.startDate,
-          dueDate: task.dueDate
-        });
-      });
-    })()
+      data: projectTasks.map((task, index) => ({
+        name: task.taskName,
+        value: [
+          // 验证日期格式
+          new Date(task.dueDate).getTime() || Date.now(),
+          0, // 使用任务索引作为Y轴值
+          task.remainTimeDays
+        ],
+        itemStyle: {
+          color: getStatusColor(task.taskStatus)
+        },
+        taskStatus: task.taskStatus,
+        executorName: task.executorName,
+        startDate: task.startDate,
+        dueDate: task.dueDate
+      }))
     }];
 
     // 获取当前项目的图表容器并初始化
@@ -171,7 +163,7 @@ const initChart = () => {
       },
       xAxis: {
         type: 'time',
-        name: '任务截止日期',
+        name: '截止日期',
         axisLabel: {
           formatter: '{yyyy}-{MM}-{dd}',
           rotate: 30,
@@ -186,11 +178,9 @@ const initChart = () => {
 
       },
       yAxis: {
-        type: 'value',
-        name: '任务',
-        min: 0,
-        max: 3,
-        interval: 0.5,
+        type: 'category',
+  name: '任务',
+  data: ['任务'],
   axisLabel: {
           interval: 0.5,
           rotate: 30
