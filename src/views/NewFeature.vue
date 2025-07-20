@@ -108,23 +108,25 @@ const initChart = () => {
           fontSize: 12,
         }
       },
-
-      markLine: {
-        symbol: 'none', // 隐藏箭头
-        silent: true,   // 禁止交互（鼠标悬停无效果）
-        animation: false,
+//当前标记
+      markPoint: {
+        symbol: 'pin', // 使用内置pin图标
+        symbolSize: 25,
+        silent: true,
+        animation: true,
         data: [{
+          name: '当前日期',
           xAxis: currentDate,
-          lineStyle: {
-            color: '#A5AAA3',
-            width: 2,
-            type: 'solid'
+          yAxis: 0,
+          itemStyle: {
+            color: '#ff594c'
           },
           label: {
-            formatter: function () { return dayjs().format('YYYY-MM-DD'); },
-            color: '#A5AAA3',
-            fontSize: 16,
-
+            formatter: function () { return dayjs().format('MM-DD'); },
+            color: '#ff594c',
+            fontSize: 12,
+            position: 'bottom',
+            offset: [0, 10]
           }
         }]
       },
