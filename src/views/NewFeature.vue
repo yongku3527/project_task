@@ -80,7 +80,7 @@ const initChart = () => {
         0
       ])),
       smooth: false,
-      symbol: 'circle',
+      symbol: 'none',
       lineStyle: {
         color: '#8392A5',
         width: 2
@@ -115,20 +115,52 @@ const initChart = () => {
         silent: true,
         animation: true,
         data: [{
-          name: '当前日期',
-          xAxis: currentDate,
-          yAxis: 0,
-          itemStyle: {
-            color: '#ff594c'
+            name: '当前日期',
+            xAxis: currentDate,
+            yAxis: 0,
+            itemStyle: {
+              color: '#A5AAA3'
+            },
+            label: {
+            
+              color: '#A5AAA3',
+              fontSize: 12,
+              position: 'bottom',
+              offset: [0, 10]
+            }
           },
-          label: {
-            formatter: function () { return dayjs().format('MM-DD'); },
-            color: '#ff594c',
-            fontSize: 12,
-            position: 'bottom',
-            offset: [0, 10]
-          }
-        }]
+          {
+            name: '项目开始',
+            xAxis: new Date(projectTasks[0].dueDate).getTime(),
+            yAxis: 0,
+            symbol: 'circle',
+            symbolSize: 18,
+            itemStyle: {
+              color: '#52c41a'
+            },
+            label: {
+              formatter: function () { return dayjs().format('YYYY-MM-DD'); },
+              color: '#52c41a',
+              fontSize: 12,
+              position: 'left'
+            }
+          },
+          {
+            name: '项目结束',
+            xAxis: new Date(projectTasks[projectTasks.length - 1].dueDate).getTime(),
+            yAxis: 0,
+            symbol: 'circle',
+            symbolSize: 18,
+            itemStyle: {
+              color: '#ff4d4f'
+            },
+            label: {
+              formatter: function () { return dayjs().format('YYYY-MM-DD'); },
+              color: '#ff4d4f',
+              fontSize: 12,
+              position: 'right'
+            }
+          }]
       },
 
       data: projectTasks.map((task, index) => ({
