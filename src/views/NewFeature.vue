@@ -4,15 +4,21 @@
     <div class="task-panel">
       <h3>任务管理</h3>
       <div class="task-form">
-        <input v-model="newTaskName" placeholder="输入任务名称" class="task-input"/>
-        <button @click="addTask" class="add-btn" :disabled="!newTaskName.trim()">添加任务</button>
-      </div>
+  <select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length">
+    <option value="">选择任务</option>
+    <option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
+     ({{ task.projectName }})  {{ task.taskName }}
+    </option>
+  </select>
+  <button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</button>
+</div>
       <div v-if="panelLoading" class="panel-loading">加载中...</div>
       <div v-else-if="panelError" class="panel-error">{{ panelError }}</div>
       <div v-else-if="panelTasks.length === 0" class="no-tasks">暂无任务</div>
       <ul class="task-list">
         <li v-for="task in panelTasks" :key="task.taskId" class="task-item">
-          <span>{{ task.ProjectName }}</span>
+          <span>{{ task.projectName }}</span>
+          <span>{{ task.taskName }}</span>
           <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
         </li>
       </ul>
@@ -42,7 +48,7 @@ const projectNames = ref<string[]>([]);
 const chartLoading = ref(true);
 const error = ref('');
 // 面板相关变量
-const newTaskName = ref('');
+const selectedTaskId = ref('');
 const panelLoading = ref(false);
 const panelError = ref('');
 const baseUrl = 'http://192.168.100.43:8083'
@@ -51,7 +57,8 @@ const fetchPanelTasks = async () => {
   try {
     panelLoading.value = true;
     const response = await axios.get(baseUrl+'/TimeLine/getTimeLineTask');
-    if (response.data.success) {
+
+    if (response.data.code === 200) {
       panelTasks.value = response.data.data || [];
     } else {
       panelError.value = '获取任务失败: ' + response.data.msg;
@@ -66,18 +73,30 @@ const fetchPanelTasks = async () => {
 
 // 添加任务
 const addTask = async () => {
-  if (!newTaskName.value.trim()) return;
-
+  if (!selectedTaskId.value) return;
   try {
     panelLoading.value = true;
+    console.log("!!!!!")
+    console.log(selectedTaskId.value);
+    // 调试任务匹配逻辑
+console.log('Selected Task ID:', selectedTaskId.value);
+console.log('Chart Tasks:', chartTasks.value);
+// 转换为相同类型进行比较
+const matchedTask = chartTasks.value.find(t => String(t.taskId) === String(selectedTaskId.value));
+console.log('Matched Task:', matchedTask);
+console.log('projectName:', matchedTask?.projectName);
     const response = await axios.post(baseUrl+'/TimeLine/addTimeLineTask', {
+      
+        taskId: selectedTaskId.value,
+        taskName: matchedTask?.taskName || '',
+        projectName: matchedTask?.projectName || ''
 
-      ProjectName: newTaskName.value.trim()
     });
 
-    if (response.data.success) {
-      newTaskName.value = '';
-      await fetchTasks(); // 重新获取任务列表
+
+    if (response.data.code === 200) {
+      selectedTaskId.value = '';
+      await fetchPanelTasks(); // 重新获取任务列表
     } else {
       panelError.value = '添加失败: ' + response.data.msg;
     }
@@ -90,15 +109,15 @@ const addTask = async () => {
 };
 
 // 删除任务
-const deleteTask = async (taskId) => {
+const deleteTask = async (taskId: string) => {
+  console.log("!!!!"+taskId);
+
   try {
     panelLoading.value = true;
-    const response = await axios.delete(baseUrl+'/TimeLine/removeTimeLineTask', {
-      data: { taskId }
-    });
+    const response = await axios.delete(baseUrl+'/TimeLine/removeTimeLineTask/'+taskId);
 
-    if (response.data.success) {
-      await fetchTasks(); // 重新获取任务列表
+    if (response.data.code === 200) {
+      await fetchPanelTasks(); // 重新获取任务列表
     } else {
       panelError.value = '删除失败: ' + response.data.msg;
     }
@@ -409,7 +428,8 @@ onMounted(async () => {
   position: fixed;
   right: 20px;
   top: 20px;
-  width: 300px;
+  max-width: 300px;
+  width: calc(100% - 40px);
   background: white;
   padding: 16px;
   border-radius: 8px;
@@ -421,13 +441,19 @@ onMounted(async () => {
   display: flex;
   gap: 8px;
   margin: 16px 0;
+  flex-wrap: wrap;
 }
 
-.task-input {
+.task-select {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  background-color: white;
+}
+
+.task-input {
+  display: none;
 }
 
 .add-btn {
