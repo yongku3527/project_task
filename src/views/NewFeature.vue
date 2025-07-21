@@ -84,12 +84,12 @@ const initChart = () => {
       lineStyle: {
         color: '#8392A5',
         width: 2,
-        opacity:0.9
+        opacity: 0.9
       },
       emphasis: {
         disabled: true
       },
-      z:1
+      z: 1
     },
     {
       name: projectName,
@@ -110,59 +110,59 @@ const initChart = () => {
           fontSize: 12,
         }
       },
-//当前标记
+      //当前标记
       markPoint: {
         symbol: 'pin', // 使用内置pin图标
         symbolSize: 25,
         silent: true,
         animation: true,
         data: [{
-            name: '当前日期',
-            xAxis: currentDate,
-            yAxis: 0,
-            itemStyle: {
-              color: '#ff4d4f'
-            },
-            label: {
-            
-              color: '#A5AAA3',
-              fontSize: 12,
-              position: 'bottom',
-              offset: [0, 10]
-            }
+          name: '当前日期',
+          xAxis: currentDate,
+          yAxis: 0,
+          itemStyle: {
+            color: '#ff4d4f'
           },
-          {
-            name: '项目开始',
-            xAxis: new Date(new Date(projectTasks[0].dueDate).getTime() - 1 * 24 * 60 * 60 * 1000).getTime(),
-            yAxis: 0,
-            symbol: 'circle',
-            symbolSize: 18,
-            itemStyle: {
-              color: '#52c41a'
-            },
-            label: {
-              formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
-              color: '#52c41a',
-              fontSize: 12,
-              position: 'left'
-            }
+          label: {
+
+            color: '#A5AAA3',
+            fontSize: 12,
+            position: 'bottom',
+            offset: [0, 10]
+          }
+        },
+        {
+          name: '项目开始',
+          xAxis: new Date(new Date(projectTasks[0].dueDate).getTime() - 1 * 24 * 60 * 60 * 1000).getTime(),
+          yAxis: 0,
+          symbol: 'circle',
+          symbolSize: 18,
+          itemStyle: {
+            color: '#52c41a'
           },
-          {
-            name: '项目结束',
-            xAxis: new Date(new Date(projectTasks[projectTasks.length - 1].dueDate).getTime() + 1 * 24 * 60 * 60 * 1000).getTime(),
-            yAxis: 0,
-            symbol: 'circle',
-            symbolSize: 18,
-            itemStyle: {
-              color: '#ff4d4f'
-            },
-            label: {
-              formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
-              color: '#ff4d4f',
-              fontSize: 12,
-              position: 'right'
-            }
-          }]
+          label: {
+            formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
+            color: '#52c41a',
+            fontSize: 12,
+            position: 'left'
+          }
+        },
+        {
+          name: '项目结束',
+          xAxis: new Date(new Date(projectTasks[projectTasks.length - 1].dueDate).getTime() + 1 * 24 * 60 * 60 * 1000).getTime(),
+          yAxis: 0,
+          symbol: 'circle',
+          symbolSize: 18,
+          itemStyle: {
+            color: '#ff4d4f'
+          },
+          label: {
+            formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
+            color: '#ff4d4f',
+            fontSize: 12,
+            position: 'right'
+          }
+        }]
       },
 
       data: projectTasks.map((task, index) => ({
@@ -223,10 +223,10 @@ const initChart = () => {
           // interval: 'auto',
 
         },
-        axisTick:{
-          show:true,
-          alignWithLabel:true,
-          length:5
+        axisTick: {
+          show: true,
+          alignWithLabel: true,
+          length: 5
         },
         // 设置X轴范围以确保所有数据可见
         min: projectTasks.length ? Math.min(...projectTasks.map(t => new Date(t.dueDate).getTime())) - 86400000 * 1 : null,
