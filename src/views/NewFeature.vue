@@ -1,7 +1,9 @@
 <template>
   <div class="new-feature-container">
+    <!-- 悬浮切换按钮 -->
+    <button @click="toggleTaskPanel" class="toggle-btn">{{ showTaskPanel ? '隐藏任务面板' : '显示任务面板' }}</button>
     <!-- 任务管理面板 -->
-    <div class="task-panel">
+    <div class="task-panel" v-if="showTaskPanel">
       <h3>任务管理</h3>
       <div class="task-form">
   <select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length">
@@ -15,13 +17,17 @@
       <div v-if="panelLoading" class="panel-loading">加载中...</div>
       <div v-else-if="panelError" class="panel-error">{{ panelError }}</div>
       <div v-else-if="panelTasks.length === 0" class="no-tasks">暂无任务</div>
-      <ul class="task-list">
-        <li v-for="task in panelTasks" :key="task.taskId" class="task-item">
-          <span>{{ task.projectName }}</span>
-          <span>{{ task.taskName }}</span>
-          <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
-        </li>
-      </ul>
+      <div class="task-list">
+  <!-- 项目分组标题 -->
+  <div v-for="(tasks, projectName) in projectGroups" :key="projectName" class="project-group">
+    <h3 class="project-title">{{ projectName }}</h3>
+    <div v-for="task in tasks" :key="task.taskId" class="task-item">
+      <span>{{ task.projectName }}</span>
+      <span>{{ task.taskName }}</span>
+      <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
+    </div>
+  </div>
+</div>
     </div>
 
     <div v-if="chartLoading" class="loading">加载中...</div>
@@ -37,7 +43,9 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, reactive, onMounted, nextTick, watch, set } from 'vue';
+const showTaskPanel = ref(false);
+const toggleTaskPanel = () => showTaskPanel.value = !showTaskPanel.value;
 import axios from 'axios';
 import * as echarts from 'echarts';
 import { tr } from 'element-plus/es/locales.mjs';
@@ -45,6 +53,7 @@ import { tr } from 'element-plus/es/locales.mjs';
 const chartTasks = ref<any[]>([]);
 const panelTasks = ref<any[]>([]);
 const projectNames = ref<string[]>([]);
+const projectGroups = reactive<Record<string, any[]>>({});
 const chartLoading = ref(true);
 const error = ref('');
 // 面板相关变量
@@ -151,15 +160,17 @@ const initChart = () => {
   if (chartTasks.value.length === 0) return;
 
   // 按项目分组
-  const projects: Record<string, any[]> = {};
+  // 清空现有项目分组
+    Object.keys(projectGroups).forEach(key => delete projectGroups[key]);
   chartTasks.value.forEach(task => {
-    if (!projects[task.projectName]) {
-      projects[task.projectName] = [];
-    }
-    projects[task.projectName].push(task);
-  });
+      const projectName = task.projectName;
+      if (!projectGroups[projectName]) {
+        projectGroups[projectName] = [];
+      }
+      projectGroups[projectName].push(task);
+    });
 
-  projectNames.value = Object.keys(projects);
+  projectNames.value = Object.keys(projectGroups);
 
   // 为每个项目创建一个nextTick，确保DOM渲染完成
   projectNames.value.forEach(async (projectName) => {
@@ -167,7 +178,7 @@ const initChart = () => {
 
     // 准备当前项目的图表数据
     // 过滤无效日期并排序
-    const projectTasks = projects[projectName]
+    const projectTasks = projectGroups[projectName]
       .filter(task => !isNaN(new Date(task.dueDate).getTime()))
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     console.log(`项目${projectName}任务数据:`, projectTasks);
@@ -334,7 +345,7 @@ const initChart = () => {
           const task = params.data;
           return `
             <div style="font-weight: bold;">${task.name}</div>
-            <div>项目: ${params.seriesName}</div>
+            <strong>${params.seriesName}</strong><br/>
             <div>负责人: ${task.executorName}</div>
             <div>状态: <span style="color: ${getStatusColor(task.taskStatus)}">${task.taskStatus}</span></div>
             <div>开始日期: ${task.startDate}</div>
@@ -424,17 +435,63 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.project-group {
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+}
+
+.project-title {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #42b983;
+  padding-bottom: 5px;
+}
+.toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+</style>
+
+<style scoped>
+.toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
 .task-panel {
   position: fixed;
   right: 20px;
   top: 20px;
   max-width: 300px;
-  width: calc(100% - 40px);
+  width: calc(100% - 1px);
   background: white;
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.1);
   z-index: 100;
+  overflow-y: auto;
+  max-height: calc(100vh - 40px);
 }
 
 .task-form {
