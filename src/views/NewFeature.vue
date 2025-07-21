@@ -84,12 +84,39 @@ const initChart = () => {
       lineStyle: {
         color: '#8392A5',
         width: 2,
-        opacity: 0.9
+        //透明度设置为零隐藏
+        opacity: 0
       },
       emphasis: {
         disabled: true
       },
       z: 1
+      ,
+      markLine: {
+                silent: true,
+        animation: true,
+        data: [
+          {
+            xAxis: new Date(new Date(projectTasks[0].dueDate).getTime() - 1 * 24 * 60 * 60 * 1000).getTime(),
+            yAxis: 0
+          },
+          {
+            xAxis: new Date(new Date(projectTasks[projectTasks.length - 1].dueDate).getTime() + 1 * 24 * 60 * 60 * 1000).getTime(),
+            yAxis: 0
+          }
+        ],
+        smooth: false,
+        symbol: 'none',
+        lineStyle: {
+          color: '#8392A5',
+          width: 2,
+          type: 'solid'
+        },
+        emphasis: {
+          disabled: true
+        },
+        z: 1
+      }
     },
     {
       name: projectName,
@@ -107,8 +134,10 @@ const initChart = () => {
 
         lineHeight: 30,
         textStyle: {
-          fontSize: 12,
-        }
+          fontSize: 13,
+          color: '#000000'
+        },
+        z: 2
       },
       //当前标记
       markPoint: {
