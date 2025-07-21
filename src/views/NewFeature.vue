@@ -1,7 +1,24 @@
 <template>
   <div class="new-feature-container">
+    <!-- 任务管理面板 -->
+    <div class="task-panel">
+      <h3>任务管理</h3>
+      <div class="task-form">
+        <input v-model="newTaskName" placeholder="输入任务名称" class="task-input"/>
+        <button @click="addTask" class="add-btn" :disabled="!newTaskName.trim()">添加任务</button>
+      </div>
+      <div v-if="panelLoading" class="panel-loading">加载中...</div>
+      <div v-else-if="panelError" class="panel-error">{{ panelError }}</div>
+      <div v-else-if="panelTasks.length === 0" class="no-tasks">暂无任务</div>
+      <ul class="task-list">
+        <li v-for="task in panelTasks" :key="task.taskId" class="task-item">
+          <span>{{ task.ProjectName }}</span>
+          <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
+        </li>
+      </ul>
+    </div>
 
-    <div v-if="loading" class="loading">加载中...</div>
+    <div v-if="chartLoading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">错误: {{ error }}</div>
     <div class="content">
       <div v-for="projectName in projectNames" :key="projectName" class="chart-container">
@@ -19,17 +36,86 @@ import axios from 'axios';
 import * as echarts from 'echarts';
 import { tr } from 'element-plus/es/locales.mjs';
 
-const tasks = ref<any[]>([]);
+const chartTasks = ref<any[]>([]);
+const panelTasks = ref<any[]>([]);
 const projectNames = ref<string[]>([]);
-const loading = ref(true);
+const chartLoading = ref(true);
 const error = ref('');
+// 面板相关变量
+const newTaskName = ref('');
+const panelLoading = ref(false);
+const panelError = ref('');
+const baseUrl = 'http://192.168.100.43:8083'
+// 获取面板任务数据
+const fetchPanelTasks = async () => {
+  try {
+    panelLoading.value = true;
+    const response = await axios.get(baseUrl+'/TimeLine/getTimeLineTask');
+    if (response.data.success) {
+      panelTasks.value = response.data.data || [];
+    } else {
+      panelError.value = '获取任务失败: ' + response.data.msg;
+    }
+  } catch (err) {
+    panelError.value = '网络错误: 无法获取任务列表';
+    console.error('获取任务失败:', err);
+  } finally {
+    panelLoading.value = false;
+  }
+};
 
-// 获取任务数据
-const fetchTasks = async () => {
+// 添加任务
+const addTask = async () => {
+  if (!newTaskName.value.trim()) return;
+
+  try {
+    panelLoading.value = true;
+    const response = await axios.post(baseUrl+'/TimeLine/addTimeLineTask', {
+
+      ProjectName: newTaskName.value.trim()
+    });
+
+    if (response.data.success) {
+      newTaskName.value = '';
+      await fetchTasks(); // 重新获取任务列表
+    } else {
+      panelError.value = '添加失败: ' + response.data.msg;
+    }
+  } catch (err) {
+    panelError.value = '网络错误: 无法添加任务';
+    console.error('添加任务失败:', err);
+  } finally {
+    panelLoading.value = false;
+  }
+};
+
+// 删除任务
+const deleteTask = async (taskId) => {
+  try {
+    panelLoading.value = true;
+    const response = await axios.delete(baseUrl+'/TimeLine/removeTimeLineTask', {
+      data: { taskId }
+    });
+
+    if (response.data.success) {
+      await fetchTasks(); // 重新获取任务列表
+    } else {
+      panelError.value = '删除失败: ' + response.data.msg;
+    }
+  } catch (err) {
+    panelError.value = '网络错误: 无法删除任务';
+    console.error('删除任务失败:', err);
+  } finally {
+    panelLoading.value = false;
+  }
+};
+
+// 获取图表任务数据
+const fetchChartTasks = async () => {
   try {
     const response = await axios.get('http://192.168.100.43:8083/dingTask/getTaskInfo');
     if (response.data.code === 200) {
-      tasks.value = Array.isArray(response.data.data) ? response.data.data : [];
+      chartTasks.value = Array.isArray(response.data.data) ? response.data.data : [];
     } else {
       error.value = '获取数据失败: ' + response.data.msg;
     }
@@ -37,17 +123,17 @@ const fetchTasks = async () => {
     error.value = '网络错误: 无法连接到服务器';
     console.error('API请求错误:', err);
   } finally {
-    loading.value = false;
+    chartLoading.value = false;
   }
 };
 
 // 初始化图表
 const initChart = () => {
-  if (tasks.value.length === 0) return;
+  if (chartTasks.value.length === 0) return;
 
   // 按项目分组
   const projects: Record<string, any[]> = {};
-  tasks.value.forEach(task => {
+  chartTasks.value.forEach(task => {
     if (!projects[task.projectName]) {
       projects[task.projectName] = [];
     }
@@ -311,12 +397,87 @@ const getStatusColor = (status: string): string => {
 
 // 页面加载时获取数据并初始化图表
 onMounted(async () => {
-  await fetchTasks();
+  await Promise.all([fetchChartTasks(), fetchPanelTasks()]);
   nextTick(() => {
     initChart();
   });
 });
 </script>
+
+<style scoped>
+.task-panel {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  width: 300px;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+
+.task-form {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.task-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-btn {
+  padding: 8px 16px;
+  background: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.delete-btn {
+  color: #ff4d4f;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.panel-loading, .loading {
+  color: #666;
+  padding: 16px;
+  text-align: center;
+}
+
+.panel-error, .error, .no-tasks {
+  color: #ff4d4f;
+  padding: 16px;
+  text-align: center;
+}
+</style>
 
 <style scoped>
 .new-feature-container {
