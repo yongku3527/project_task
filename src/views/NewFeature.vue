@@ -83,11 +83,13 @@ const initChart = () => {
       symbol: 'none',
       lineStyle: {
         color: '#8392A5',
-        width: 2
+        width: 2,
+        opacity:0.9
       },
       emphasis: {
         disabled: true
-      }
+      },
+      z:1
     },
     {
       name: projectName,
@@ -119,7 +121,7 @@ const initChart = () => {
             xAxis: currentDate,
             yAxis: 0,
             itemStyle: {
-              color: '#A5AAA3'
+              color: '#ff4d4f'
             },
             label: {
             
@@ -131,7 +133,7 @@ const initChart = () => {
           },
           {
             name: '项目开始',
-            xAxis: new Date(projectTasks[0].dueDate).getTime(),
+            xAxis: new Date(new Date(projectTasks[0].dueDate).getTime() - 1 * 24 * 60 * 60 * 1000).getTime(),
             yAxis: 0,
             symbol: 'circle',
             symbolSize: 18,
@@ -139,7 +141,7 @@ const initChart = () => {
               color: '#52c41a'
             },
             label: {
-              formatter: function () { return dayjs().format('YYYY-MM-DD'); },
+              formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
               color: '#52c41a',
               fontSize: 12,
               position: 'left'
@@ -147,7 +149,7 @@ const initChart = () => {
           },
           {
             name: '项目结束',
-            xAxis: new Date(projectTasks[projectTasks.length - 1].dueDate).getTime(),
+            xAxis: new Date(new Date(projectTasks[projectTasks.length - 1].dueDate).getTime() + 1 * 24 * 60 * 60 * 1000).getTime(),
             yAxis: 0,
             symbol: 'circle',
             symbolSize: 18,
@@ -155,7 +157,7 @@ const initChart = () => {
               color: '#ff4d4f'
             },
             label: {
-              formatter: function () { return dayjs().format('YYYY-MM-DD'); },
+              formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
               color: '#ff4d4f',
               fontSize: 12,
               position: 'right'
