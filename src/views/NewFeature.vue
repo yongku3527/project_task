@@ -202,10 +202,16 @@ const initChart = () => {
   projectNames.value.forEach(async (projectName) => {
     await nextTick(); // 等待当前项目的DOM渲染完成
 
-    // 准备当前项目的图表数据
-    // 过滤无效日期并排序
+    // 收集taskProjectGroups中的所有任务ID
+    const taskIds = new Set();
+    Object.values(taskProjectGroups).forEach(tasks => {
+      tasks.forEach(task => taskIds.add(task.taskId));
+    });
+
+    // 准备当前项目的图表数据 - 仅包含taskProjectGroups中的任务
+    // 过滤无效日期、排序并匹配任务ID
     const projectTasks = projectGroups[projectName]
-      .filter(task => !isNaN(new Date(task.dueDate).getTime()))
+      .filter(task => !isNaN(new Date(task.dueDate).getTime()) && taskIds.has(task.taskId))
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     console.log(`项目${projectName}任务数据:`, projectTasks);
     if (projectTasks.length === 0) {
