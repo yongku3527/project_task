@@ -293,7 +293,7 @@ const initChart = () => {
     {
       name: projectName,
       type: 'scatter',
-      symbolSize: 25,
+      symbolSize: 15,
       label: {
         show: true,
         formatter: function (params) {
@@ -323,7 +323,7 @@ const initChart = () => {
       //当前标记
       markPoint: {
         symbol: 'pin', // 使用内置pin图标
-        symbolSize: 25,
+        symbolSize: 40,
         silent: true,
         animation: true,
         data: [{
@@ -331,10 +331,9 @@ const initChart = () => {
           xAxis: currentDate,
           yAxis: 0,
           itemStyle: {
-            color: '#ff4d4f'
+            color: '#FF69B4'
           },
           label: {
-
             color: '#A5AAA3',
             fontSize: 12,
             position: 'bottom',
