@@ -13,6 +13,8 @@
               <div class="task-option">
                 <span class="project-name">({{ task.projectName }})</span>
                 <span class="task-name">{{ task.taskName }}</span>
+                <!-- {{ console.log(task) }} -->
+                <span class="task-name">{{ task.taskStatus }}</span>
                 <span class="task-date">{{ task.dueDate }}</span>
                 <el-tag v-if="isTaskInProjectGroups(task.taskId)" size="small" type="success">已添加</el-tag>
               </div>
@@ -342,13 +344,14 @@ const initChart = () => {
           xAxis: new Date(new Date(projectTasks[0].dueDate).getTime() - 1 * 24 * 60 * 60 * 1000).getTime(),
           yAxis: 0,
           symbol: 'circle',
-          symbolSize: 18,
+          symbolSize: 20,
           itemStyle: {
-            color: '#52c41a'
+            //灰色
+            color: '#A5AAA3'
           },
           label: {
             formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
-            color: '#52c41a',
+            color: '#A5AAA3',
             fontSize: 12,
             position: 'left'
           }
@@ -358,13 +361,13 @@ const initChart = () => {
           xAxis: new Date(new Date(projectTasks[projectTasks.length - 1].dueDate).getTime() + 1 * 24 * 60 * 60 * 1000).getTime(),
           yAxis: 0,
           symbol: 'circle',
-          symbolSize: 18,
+          symbolSize: 20,
           itemStyle: {
-            color: '#ff4d4f'
+            color: '#A5AAA3'
           },
           label: {
             formatter: function (params) { return dayjs(params.data.xAxis).format('YYYY-MM-DD'); },
-            color: '#ff4d4f',
+            color: '#A5AAA3',
             fontSize: 12,
             position: 'right'
           }
@@ -473,16 +476,20 @@ const getStatusColor = (status: string): string => {
     case '已逾期':
       return '#ff4d4f';
     case '未接收':
-      //灰色
-      return '#A5AAA3';
+      //黄色
+      return '#FFC107';
     case '已接收':
       //黄色
       return '#FFC107';
     case '进行中':
       //蓝色
       return '#40A9FF';
+    case '已完成':
+      //绿色
+      return '#52c41a';
+      //灰色
     default:
-      return '#1890ff';
+      return '#A5AAA3';
   }
 };
 
