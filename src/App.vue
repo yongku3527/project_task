@@ -10,17 +10,17 @@
       active-text-color="#409EFF"
       router
     >
-      <el-menu-item index="/">
+      <!-- <el-menu-item index="/">
         <House />
         <span>首页</span>
-      </el-menu-item>
-      <el-menu-item index="/task-info">
+      </el-menu-item> -->
+      <el-menu-item index="/">
         <MenuIcon />
         <span>任务信息</span>
       </el-menu-item>
       <el-menu-item index="/new-feature">
         <Grid />
-        <span>新功能页面</span>
+        <span>任务时间轴</span>
       </el-menu-item>
     </el-menu>
     

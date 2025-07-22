@@ -5,13 +5,13 @@ import TaskInfo from '../views/TaskInfo.vue';
 import NewFeature from '../views/NewFeature.vue';
 
 const routes: Array<RouteRecordRaw> = [
+  // {
+  //   path: '/',
+  //   name: 'Home',
+  //   component: Home
+  // },
   {
     path: '/',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/task-info',
     name: 'TaskInfo',
     component: TaskInfo
   },
