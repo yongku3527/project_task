@@ -6,28 +6,28 @@
     <div class="task-panel" v-if="showTaskPanel">
       <h3>任务管理</h3>
       <div class="task-form">
-  <select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length">
-    <option value="">选择任务</option>
-    <option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
-     ({{ task.projectName }})  {{ task.taskName }}
-    </option>
-  </select>
-  <button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</button>
-</div>
+        <select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length">
+          <option value="">选择任务</option>
+          <option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
+            ({{ task.projectName }}) {{ task.taskName }}
+          </option>
+        </select>
+        <button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</button>
+      </div>
       <div v-if="panelLoading" class="panel-loading">加载中...</div>
       <div v-else-if="panelError" class="panel-error">{{ panelError }}</div>
       <div v-else-if="panelTasks.length === 0" class="no-tasks">暂无任务</div>
       <div class="task-list">
-  <!-- 项目分组标题 -->
-  <div v-for="(tasks, projectName) in taskProjectGroups" :key="projectName" class="project-group">
-    <h3 class="project-title">{{ projectName }}</h3>
-    <div v-for="task in tasks" :key="task.taskId" class="task-item">
-      
-      <span>{{ task.taskName }}</span>
-      <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
-    </div>
-  </div>
-</div>
+        <!-- 项目分组标题 -->
+        <div v-for="(tasks, projectName) in taskProjectGroups" :key="projectName" class="project-group">
+          <h3 class="project-title">{{ projectName }}</h3>
+          <div v-for="task in tasks" :key="task.taskId" class="task-item">
+
+            <span>{{ task.taskName }}</span>
+            <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-if="chartLoading" class="loading">加载中...</div>
@@ -94,17 +94,17 @@ const addTask = async () => {
     console.log("!!!!!")
     console.log(selectedTaskId.value);
     // 调试任务匹配逻辑
-console.log('Selected Task ID:', selectedTaskId.value);
-console.log('Chart Tasks:', chartTasks.value);
-// 转换为相同类型进行比较
-const matchedTask = chartTasks.value.find(t => String(t.taskId) === String(selectedTaskId.value));
-console.log('Matched Task:', matchedTask);
-console.log('projectName:', matchedTask?.projectName);
-    const response = await axios.post(baseUrl+'/TimeLine/addTimeLineTask', {
-      
-        taskId: selectedTaskId.value,
-        taskName: matchedTask?.taskName || '',
-        projectName: matchedTask?.projectName || ''
+    console.log('Selected Task ID:', selectedTaskId.value);
+    console.log('Chart Tasks:', chartTasks.value);
+    // 转换为相同类型进行比较
+    const matchedTask = chartTasks.value.find(t => String(t.taskId) === String(selectedTaskId.value));
+    console.log('Matched Task:', matchedTask);
+    console.log('projectName:', matchedTask?.projectName);
+    const response = await axios.post(baseUrl + '/TimeLine/addTimeLineTask', {
+
+      taskId: selectedTaskId.value,
+      taskName: matchedTask?.taskName || '',
+      projectName: matchedTask?.projectName || ''
 
     });
 
@@ -125,11 +125,11 @@ console.log('projectName:', matchedTask?.projectName);
 
 // 删除任务
 const deleteTask = async (taskId: string) => {
-  console.log("!!!!"+taskId);
+  console.log("!!!!" + taskId);
 
   try {
     panelLoading.value = true;
-    const response = await axios.delete(baseUrl+'/TimeLine/removeTimeLineTask/'+taskId);
+    const response = await axios.delete(baseUrl + '/TimeLine/removeTimeLineTask/' + taskId);
 
     if (response.data.code === 200) {
       await fetchPanelTasks(); // 重新获取任务列表
@@ -148,7 +148,7 @@ const deleteTask = async (taskId: string) => {
 const updateTaskProjectGroups = () => {
   // 清空现有分组
   Object.keys(taskProjectGroups).forEach(key => delete taskProjectGroups[key]);
-  
+
   // 按项目名称分组任务
   panelTasks.value.forEach(task => {
     const projectName = task.projectName;
@@ -157,7 +157,7 @@ const updateTaskProjectGroups = () => {
     }
     taskProjectGroups[projectName].push(task);
   });
-  
+
   console.log('任务面板项目分组已更新:', taskProjectGroups);
 };
 
@@ -187,14 +187,14 @@ const initChart = () => {
 
   // 按项目分组
   // 清空现有项目分组
-    Object.keys(projectGroups).forEach(key => delete projectGroups[key]);
+  Object.keys(projectGroups).forEach(key => delete projectGroups[key]);
   chartTasks.value.forEach(task => {
-      const projectName = task.projectName;
-      if (!projectGroups[projectName]) {
-        projectGroups[projectName] = [];
-      }
-      projectGroups[projectName].push(task);
-    });
+    const projectName = task.projectName;
+    if (!projectGroups[projectName]) {
+      projectGroups[projectName] = [];
+    }
+    projectGroups[projectName].push(task);
+  });
 
   projectNames.value = Object.keys(projectGroups);
 
@@ -241,7 +241,7 @@ const initChart = () => {
       z: 1
       ,
       markLine: {
-                silent: true,
+        silent: true,
         animation: true,
         data: [
           {
@@ -273,14 +273,23 @@ const initChart = () => {
       label: {
         show: true,
         formatter: function (params) {
-          return `${params.data.name}\n\n${params.data.dueDate}`;
+          const maxLineLength = 9; // 设置每行最大长度
+          const name = params.data.name;
+          const dueDate = params.data.dueDate;
+
+          let formattedName = '';
+          for (let i = 0; i < name.length; i += maxLineLength) {
+            formattedName += name.substring(i, i + maxLineLength) + '\n';
+          }
+
+          return `${formattedName}\n\n${dueDate}`;
         },
-        distance: 33,
+        distance: 23,
         position: 'bottom',
         align: 'center',
         verticalAlign: 'bottom',
 
-        lineHeight: 30,
+        lineHeight: 17,
         textStyle: {
           fontSize: 13,
           color: '#000000'
@@ -480,6 +489,7 @@ onMounted(async () => {
   border-bottom: 2px solid #42b983;
   padding-bottom: 5px;
 }
+
 .toggle-btn {
   position: fixed;
   top: 20px;
@@ -491,7 +501,7 @@ onMounted(async () => {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
 }
 </style>
@@ -508,7 +518,7 @@ onMounted(async () => {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .task-panel {
@@ -520,7 +530,7 @@ onMounted(async () => {
   background: white;
   padding: 16px;
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   z-index: 100;
   overflow-y: auto;
   max-height: calc(100vh - 40px);
@@ -581,13 +591,16 @@ onMounted(async () => {
   padding: 4px 8px;
 }
 
-.panel-loading, .loading {
+.panel-loading,
+.loading {
   color: #666;
   padding: 16px;
   text-align: center;
 }
 
-.panel-error, .error, .no-tasks {
+.panel-error,
+.error,
+.no-tasks {
   color: #ff4d4f;
   padding: 16px;
   text-align: center;
