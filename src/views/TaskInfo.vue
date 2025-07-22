@@ -262,6 +262,13 @@ const groupedTasks = () => {
 
   allGroups.sort((a, b) => b.tasks.length - a.tasks.length);
   
+  allGroups.forEach(group => {
+    group.tasks.sort((a, b) => {
+      // 仅按剩余时间升序排序
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
+  });
+
   // 不全屏时显示所有任务卡片，全屏时分页
   if (!isFullScreen.value) {
     return allGroups;
@@ -276,15 +283,7 @@ const groupedTasks = () => {
     });
 
     group.tasks.sort((a, b) => {
-      const aProjectCreated = new Date(projectCreationMap[a.projectName] || 0);
-      const bProjectCreated = new Date(projectCreationMap[b.projectName] || 0);
-
-      // 按项目创建时间降序排序（晚创建的在前）
-      if (aProjectCreated.getTime() !== bProjectCreated.getTime()) {
-        return bProjectCreated - aProjectCreated;
-      }
-
-      // 同一项目内按剩余时间升序排序
+      // 仅按剩余时间升序排序
       return new Date(a.dueDate) - new Date(b.dueDate);
     });
   });
