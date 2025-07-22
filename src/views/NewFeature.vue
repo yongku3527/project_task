@@ -9,7 +9,7 @@
         <select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length">
           <option value="">选择任务</option>
           <option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
-            ({{ task.projectName }}) {{ task.taskName }}
+            ({{ task.projectName }}) <p>&nbsp;</p>{{ task.taskName }} <p>&nbsp;</p>{{task.dueDate}} <p>&nbsp;</p>  <span v-if="isTaskInProjectGroups(task.taskId)" class="in-group-indicator">已添加</span> 
           </option>
         </select>
         <button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</button>
@@ -45,6 +45,11 @@
 import dayjs from 'dayjs';
 import { ref, reactive, onMounted, nextTick, watch, set } from 'vue';
 const showTaskPanel = ref(false);
+const isTaskInProjectGroups = (taskId) => {
+  return Object.values(taskProjectGroups).some(projectTasks => 
+    projectTasks.some(t => t.taskId === taskId)
+  );
+};
 const toggleTaskPanel = () => showTaskPanel.value = !showTaskPanel.value;
 import axios from 'axios';
 import * as echarts from 'echarts';
@@ -169,7 +174,14 @@ const fetchChartTasks = async () => {
   try {
     const response = await axios.get('http://192.168.100.43:8083/dingTask/getTaskInfo');
     if (response.data.code === 200) {
-      chartTasks.value = Array.isArray(response.data.data) ? response.data.data : [];
+      chartTasks.value = Array.isArray(response.data.data) ? response.data.data.sort((a, b) => {
+        // 先按项目名升序排序
+        const projectCompare = a.projectName.localeCompare(b.projectName);
+        if (projectCompare !== 0) return projectCompare;
+        // 再按截止日期升序排序
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      }) : [];
+      
     } else {
       error.value = '获取数据失败: ' + response.data.msg;
     }
@@ -476,6 +488,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.in-group-indicator { color: #4CAF50; margin: 0 5px; font-weight: bold; }
 .project-group {
   margin-bottom: 20px;
   padding: 15px;
