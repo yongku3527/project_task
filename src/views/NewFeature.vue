@@ -76,7 +76,7 @@ const error = ref('');
 const selectedTaskId = ref('');
 const panelLoading = ref(false);
 const panelError = ref('');
-const baseUrl = 'http://192.168.100.43:8083'
+const baseUrl = 'http://192.168.70.56:8083'
 // 获取面板任务数据 - 仅使用指定接口
 const fetchPanelTasks = async () => {
   panelLoading.value = true;
@@ -184,7 +184,7 @@ watch(panelTasks, updateTaskProjectGroups, { immediate: true });
 // 获取图表任务数据
 const fetchChartTasks = async () => {
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getTaskInfo');
+    const response = await axios.get(baseUrl + '/dingTask/getTaskInfo');
     if (response.data.code === 200) {
       chartTasks.value = Array.isArray(response.data.data) ? response.data.data.sort((a, b) => {
         // 先按项目名升序排序

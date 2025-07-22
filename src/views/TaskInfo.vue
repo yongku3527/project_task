@@ -26,6 +26,7 @@ const selectedProject = ref('所有项目');
 const activeTab = ref('filters');
 const activeFilters = ref(['basic']);
 const selectedStatus = ref([]);
+const baseUrl = 'http://192.168.70.56:8083'
 
 // 动态状态选项计算属性
 const dynamicStatusOptions = computed(() => {
@@ -129,7 +130,7 @@ const fetchStatusInfo = async () => {
   }
 
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getStatusInfo');
+    const response = await axios.get(baseUrl+'/dingTask/getStatusInfo');
     if (response.data.code === 200) {
       statusData.value = response.data.data;
     } else {
@@ -149,7 +150,7 @@ const fetchProjects = async () => {
   }
 
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getProjectInfo');
+    const response = await axios.get(baseUrl+'/dingTask/getProjectInfo');
     if (response.data.code === 200) {
       projectsData.value = response.data.data;
       
@@ -178,7 +179,7 @@ const fetchTasks = async () => {
 
   isLoading.value = true;
   try {
-    const response = await axios.get('http://192.168.100.43:8083/dingTask/getTaskInfo');
+    const response = await axios.get(baseUrl+'/dingTask/getTaskInfo');
     if (response.data.code === 200) {
       tasks.value = response.data.data;
       updateFilters();

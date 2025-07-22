@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-menu 
-      v-if="!isFullScreen || route.path !== '/task-info'"
+      v-if="!isFullScreen || route.path !== '/'"
       :default-active="route.path" 
       class="main-nav" 
       mode="horizontal"
