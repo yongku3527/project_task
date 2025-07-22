@@ -423,8 +423,8 @@ const initChart = () => {
       grid: {
         left: '5%',
         right: '5%',
-        bottom: '50%',
-        top: '10%'
+        bottom: '40%',
+        top: '0%'
       },
       xAxis: {
         type: 'time',
@@ -689,7 +689,7 @@ h1 {
 
 .chart-container {
   width: 100%;
-  height: 30vh;
+  height: 28vh;
   margin: 0;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
