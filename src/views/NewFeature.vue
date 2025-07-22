@@ -6,13 +6,20 @@
     <div class="task-panel" v-if="showTaskPanel">
       <h3>任务管理</h3>
       <div class="task-form">
-        <select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length">
-          <option value="">选择任务</option>
-          <option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
-            ({{ task.projectName }}) <p>&nbsp;</p>{{ task.taskName }} <p>&nbsp;</p>{{task.dueDate}} <p>&nbsp;</p>  <span v-if="isTaskInProjectGroups(task.taskId)" class="in-group-indicator">已添加</span> 
-          </option>
-        </select>
-        <button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</button>
+        <el-select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length" placeholder="选择任务"
+          style="width: 100%">
+          <el-option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
+            <template #default>
+              <div class="task-option">
+                <span class="project-name">({{ task.projectName }})</span>
+                <span class="task-name">{{ task.taskName }}</span>
+                <span class="task-date">{{ task.dueDate }}</span>
+                <el-tag v-if="isTaskInProjectGroups(task.taskId)" size="small" type="success">已添加</el-tag>
+              </div>
+            </template>
+          </el-option>
+        </el-select>
+        <el-button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</el-button>
       </div>
       <div v-if="panelLoading" class="panel-loading">加载中...</div>
       <div v-else-if="panelError" class="panel-error">{{ panelError }}</div>
@@ -44,9 +51,10 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { ref, reactive, onMounted, nextTick, watch, set } from 'vue';
+import { ElSelect, ElOption, ElTag } from 'element-plus';
 const showTaskPanel = ref(false);
 const isTaskInProjectGroups = (taskId) => {
-  return Object.values(taskProjectGroups).some(projectTasks => 
+  return Object.values(taskProjectGroups).some(projectTasks =>
     projectTasks.some(t => t.taskId === taskId)
   );
 };
@@ -181,7 +189,7 @@ const fetchChartTasks = async () => {
         // 再按截止日期升序排序
         return new Date(a.dueDate) - new Date(b.dueDate);
       }) : [];
-      
+
     } else {
       error.value = '获取数据失败: ' + response.data.msg;
     }
@@ -488,7 +496,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.in-group-indicator { color: #4CAF50; margin: 0 5px; font-weight: bold; }
+.in-group-indicator {
+  color: #4CAF50;
+  margin: 0 5px;
+  font-weight: bold;
+}
+
 .project-group {
   margin-bottom: 20px;
   padding: 15px;
@@ -562,10 +575,32 @@ onMounted(async () => {
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: white;
+  margin-bottom: 15px;
 }
 
 .task-input {
   display: none;
+}
+
+.task-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.project-name {
+  color: #606266;
+}
+
+.task-name {
+  flex: 1;
+  color: #303133;
+}
+
+.task-date {
+  color: #909399;
+  font-size: 12px;
 }
 
 .add-btn {
