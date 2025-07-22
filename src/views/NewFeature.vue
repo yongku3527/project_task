@@ -127,6 +127,7 @@ const addTask = async () => {
     if (response.data.code === 200) {
       selectedTaskId.value = '';
       await fetchPanelTasks(); // 重新获取任务列表
+        nextTick(() => initChart()); // 刷新时间轴
     } else {
       panelError.value = '添加失败: ' + response.data.msg;
     }
@@ -148,6 +149,7 @@ const deleteTask = async (taskId: string) => {
 
     if (response.data.code === 200) {
       await fetchPanelTasks(); // 重新获取任务列表
+      nextTick(() => initChart()); // 刷新时间轴
     } else {
       panelError.value = '删除失败: ' + response.data.msg;
     }
@@ -295,7 +297,7 @@ const initChart = () => {
       label: {
         show: true,
         formatter: function (params) {
-          const maxLineLength = 9; // 设置每行最大长度
+          const maxLineLength = 6; // 设置每行最大长度
           const name = params.data.name;
           const dueDate = params.data.dueDate;
 
