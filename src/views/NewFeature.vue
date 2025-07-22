@@ -19,10 +19,10 @@
       <div v-else-if="panelTasks.length === 0" class="no-tasks">暂无任务</div>
       <div class="task-list">
   <!-- 项目分组标题 -->
-  <div v-for="(tasks, projectName) in projectGroups" :key="projectName" class="project-group">
+  <div v-for="(tasks, projectName) in taskProjectGroups" :key="projectName" class="project-group">
     <h3 class="project-title">{{ projectName }}</h3>
     <div v-for="task in tasks" :key="task.taskId" class="task-item">
-      <span>{{ task.projectName }}</span>
+      
       <span>{{ task.taskName }}</span>
       <button @click="deleteTask(task.taskId)" class="delete-btn">删除</button>
     </div>
@@ -54,6 +54,7 @@ const chartTasks = ref<any[]>([]);
 const panelTasks = ref<any[]>([]);
 const projectNames = ref<string[]>([]);
 const projectGroups = reactive<Record<string, any[]>>({});
+const taskProjectGroups = reactive<Record<string, any[]>>({});
 const chartLoading = ref(true);
 const error = ref('');
 // 面板相关变量
@@ -61,20 +62,25 @@ const selectedTaskId = ref('');
 const panelLoading = ref(false);
 const panelError = ref('');
 const baseUrl = 'http://192.168.100.43:8083'
-// 获取面板任务数据
+// 获取面板任务数据 - 仅使用指定接口
 const fetchPanelTasks = async () => {
+  panelLoading.value = true;
+  panelError.value = ''; // 重置错误状态
+
   try {
-    panelLoading.value = true;
-    const response = await axios.get(baseUrl+'/TimeLine/getTimeLineTask');
+    // 严格使用指定接口获取任务数据
+    const response = await axios.get(`${baseUrl}/TimeLine/getTimeLineTask`);
 
     if (response.data.code === 200) {
       panelTasks.value = response.data.data || [];
+      console.log('任务数据已从指定接口加载:', panelTasks.value);
     } else {
-      panelError.value = '获取任务失败: ' + response.data.msg;
+      panelError.value = `获取任务失败: ${response.data.msg || '未知错误'}`;
+      console.error('API返回错误:', response.data);
     }
   } catch (err) {
-    panelError.value = '网络错误: 无法获取任务列表';
-    console.error('获取任务失败:', err);
+    panelError.value = '网络错误: 无法连接到任务接口';
+    console.error('请求失败详情:', err);
   } finally {
     panelLoading.value = false;
   }
@@ -137,6 +143,26 @@ const deleteTask = async (taskId: string) => {
     panelLoading.value = false;
   }
 };
+
+// 任务面板项目分组逻辑
+const updateTaskProjectGroups = () => {
+  // 清空现有分组
+  Object.keys(taskProjectGroups).forEach(key => delete taskProjectGroups[key]);
+  
+  // 按项目名称分组任务
+  panelTasks.value.forEach(task => {
+    const projectName = task.projectName;
+    if (!taskProjectGroups[projectName]) {
+      taskProjectGroups[projectName] = [];
+    }
+    taskProjectGroups[projectName].push(task);
+  });
+  
+  console.log('任务面板项目分组已更新:', taskProjectGroups);
+};
+
+// 监听面板任务变化以更新分组
+watch(panelTasks, updateTaskProjectGroups, { immediate: true });
 
 // 获取图表任务数据
 const fetchChartTasks = async () => {
