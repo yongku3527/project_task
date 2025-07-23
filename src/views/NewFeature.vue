@@ -778,10 +778,10 @@ h1 {
 .fullscreen-btn {
   position: fixed;
   top: 20px;
-  right: 120px;
+  right: 180px;
   z-index: 1000;
   padding: 10px 15px;
-  background-color: #67C23A;
+  background-color: #1890ff;
   color: white;
   border: none;
   border-radius: 5px;
