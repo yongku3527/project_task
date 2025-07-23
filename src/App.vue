@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-menu 
-      v-if="!isFullScreen || route.path !== '/'"
+      v-if="showNavBar"
       :default-active="route.path" 
       class="main-nav" 
       mode="horizontal"
@@ -35,18 +35,26 @@ import { House, Menu as MenuIcon, Grid } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const isFullScreen = ref(false);
+const showNavBar = ref(true);
 
 // 监听全屏状态变化
 const handleFullScreenChange = () => {
   isFullScreen.value = !!document.fullscreenElement;
 };
 
+// 监听自定义事件来控制导航栏显示
+const handleToggleNavbar = (event: CustomEvent) => {
+  showNavBar.value = event.detail.show;
+};
+
 onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullScreenChange);
+  window.addEventListener('toggle-navbar', handleToggleNavbar as EventListener);
 });
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  window.removeEventListener('toggle-navbar', handleToggleNavbar as EventListener);
 });
 </script>
 

@@ -61,6 +61,11 @@ const handleFullScreenChange = () => {
   if (!isFullScreen.value) {
     currentPage.value = 1; // 退出全屏时重置页码
   }
+  
+  // 触发自定义事件通知App.vue隐藏导航栏
+  window.dispatchEvent(new CustomEvent('toggle-navbar', {
+    detail: { show: !isFullScreen.value }
+  }));
 };
 
 // 自动分页定时器
@@ -334,6 +339,12 @@ onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
   if (refreshInterval) {
     clearInterval(refreshInterval);
+  }
+  // 确保退出全屏时恢复导航栏
+  if (isFullScreen.value) {
+    window.dispatchEvent(new CustomEvent('toggle-navbar', {
+      detail: { show: true }
+    }));
   }
 });
 </script>

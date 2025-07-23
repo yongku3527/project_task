@@ -1,7 +1,11 @@
 <template>
-  <div class="new-feature-container">
+  <div class="new-feature-container" :class="{'fullscreen-mode': isFullScreen}">
     <!-- 悬浮切换按钮 -->
     <button @click="toggleTaskPanel" class="toggle-btn">{{ showTaskPanel ? '隐藏任务面板' : '显示任务面板' }}</button>
+    <!-- 悬浮全屏按钮 -->
+    <button @click="toggleFullScreen" class="fullscreen-btn">
+      {{ isFullScreen ? '退出全屏' : '全屏' }}
+    </button>
     <!-- 任务管理面板 -->
     <div class="task-panel" v-if="showTaskPanel">
       <h3>任务管理</h3>
@@ -52,7 +56,7 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { ref, reactive, onMounted, nextTick, watch, set } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch, set } from 'vue';
 import { ElSelect, ElOption, ElTag } from 'element-plus';
 const showTaskPanel = ref(false);
 const isTaskInProjectGroups = (taskId) => {
@@ -72,6 +76,7 @@ const projectGroups = reactive<Record<string, any[]>>({});
 const taskProjectGroups = reactive<Record<string, any[]>>({});
 const chartLoading = ref(true);
 const error = ref('');
+const isFullScreen = ref(false);
 // 面板相关变量
 const selectedTaskId = ref('');
 const panelLoading = ref(false);
@@ -141,7 +146,7 @@ const addTask = async () => {
 
 // 删除任务
 const deleteTask = async (taskId: string) => {
-  console.log("!!!!" + taskId);
+
 
   try {
     panelLoading.value = true;
@@ -494,13 +499,48 @@ const getStatusColor = (status: string): string => {
   }
 };
 
+// 全屏控制
+const toggleFullScreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.error(`全屏请求失败: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+};
+
+// 监听全屏状态变化
+const handleFullScreenChange = () => {
+  isFullScreen.value = !!document.fullscreenElement;
+  
+  // 触发自定义事件通知App.vue隐藏导航栏
+  window.dispatchEvent(new CustomEvent('toggle-navbar', {
+    detail: { show: !isFullScreen.value }
+  }));
+};
+
 // 页面加载时获取数据并初始化图表
 onMounted(async () => {
   await Promise.all([fetchChartTasks(), fetchPanelTasks()]);
   nextTick(() => {
     initChart();
   });
+  document.addEventListener('fullscreenchange', handleFullScreenChange);
 });
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  // 确保退出全屏时恢复导航栏
+  if (isFullScreen.value) {
+    window.dispatchEvent(new CustomEvent('toggle-navbar', {
+      detail: { show: true }
+    }));
+  }
+});
+
 </script>
 
 <style scoped>
@@ -537,6 +577,28 @@ onMounted(async () => {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+}
+.fullscreen-btn {
+  position: fixed;
+  top: 20px;
+  right: 120px;
+  z-index: 1001;
+  padding: 8px 12px;
+  background-color: #67C23A;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.fullscreen-btn:hover {
+  background-color: #85ce61;
+}
+
+.new-feature-container.fullscreen-mode {
+  padding: 10px;
 }
 </style>
 
@@ -665,8 +727,14 @@ onMounted(async () => {
 
 <style scoped>
 .new-feature-container {
-  padding: 0;
-  margin: 0 auto;
+  position: relative;
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.new-feature-container.fullscreen-mode {
+  padding: 10px;
 }
 
 h1 {
@@ -705,5 +773,24 @@ h1 {
 .chart {
   width: 100%;
   height: 100%;
+}
+
+.fullscreen-btn {
+  position: fixed;
+  top: 20px;
+  right: 120px;
+  z-index: 1000;
+  padding: 10px 15px;
+  background-color: #67C23A;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.fullscreen-btn:hover {
+  background-color: #85ce61;
 }
 </style>
