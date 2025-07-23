@@ -77,6 +77,8 @@ const taskProjectGroups = reactive<Record<string, any[]>>({});
 const chartLoading = ref(true);
 const error = ref('');
 const isFullScreen = ref(false);
+// 自动滚动相关变量
+const scrollInterval = ref<number | null>(null);
 // 面板相关变量
 const selectedTaskId = ref('');
 const panelLoading = ref(false);
@@ -476,6 +478,33 @@ const initChart = () => {
   });
 };
 
+// 自动滚动函数
+const startAutoScroll = () => {
+  if (scrollInterval.value) return;
+  
+  scrollInterval.value = window.setInterval(() => {
+    const content = document.querySelector('.content');
+    if (content) {
+      const viewportHeight = window.innerHeight;
+      const jumpDistance = Math.round(viewportHeight * 0.245); // 24.5vh
+      
+      // 检查是否到达底部
+      if (content.scrollTop + content.clientHeight >= content.scrollHeight - 10) {
+        content.scrollTop = 0; // 回到顶部
+      } else {
+        content.scrollTop += jumpDistance; // 向下跳动24.5vh
+      }
+    }
+  }, 60000); // 每分钟跳动一次
+};
+
+const stopAutoScroll = () => {
+  if (scrollInterval.value) {
+    clearInterval(scrollInterval.value);
+    scrollInterval.value = null;
+  }
+};
+
 // 根据任务状态获取颜色
 const getStatusColor = (status: string): string => {
   switch (status) {
@@ -520,6 +549,13 @@ const handleFullScreenChange = () => {
   window.dispatchEvent(new CustomEvent('toggle-navbar', {
     detail: { show: !isFullScreen.value }
   }));
+  
+  // 根据全屏状态控制自动滚动
+  if (isFullScreen.value) {
+    startAutoScroll();
+  } else {
+    stopAutoScroll();
+  }
 };
 
 // 页面加载时获取数据并初始化图表
@@ -533,6 +569,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  stopAutoScroll(); // 清理滚动定时器
   // 确保退出全屏时恢复导航栏
   if (isFullScreen.value) {
     window.dispatchEvent(new CustomEvent('toggle-navbar', {
@@ -599,6 +636,18 @@ onUnmounted(() => {
 
 .new-feature-container.fullscreen-mode {
   padding: 10px;
+}
+
+.new-feature-container.fullscreen-mode .content {
+  height: 100vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.new-feature-container.fullscreen-mode .content::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
 </style>
 
@@ -756,7 +805,7 @@ h1 {
 
 .chart-container {
   width: 100%;
-  height: 28vh;
+  height: 24.5vh;
   margin: 0;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
