@@ -495,7 +495,7 @@ const startAutoScroll = () => {
         content.scrollTop += jumpDistance; // 向下跳动24.5vh
       }
     }
-  }, 60000); // 每分钟跳动一次
+  }, 180000); // 每分钟跳动一次
 };
 
 const stopAutoScroll = () => {
