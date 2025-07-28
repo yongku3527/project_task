@@ -26,7 +26,10 @@ const selectedProject = ref('所有项目');
 const activeTab = ref('filters');
 const activeFilters = ref(['basic']);
 const selectedStatus = ref([]);
-const baseUrl = 'http://192.168.70.56:8083'
+const baseUrl = 'http://192.168.100.125:8083'
+
+// 筛选状态保存键名
+const FILTER_STORAGE_KEY = 'task_filter_state'
 
 // 动态状态选项计算属性
 const dynamicStatusOptions = computed(() => {
@@ -317,21 +320,71 @@ const completedTasks = () => {
   return tasks.value.filter(task => task.taskStatus === '已完成').length;
 };
 
+// 保存筛选状态到localStorage
+const saveFilterState = () => {
+  const filterState = {
+    selectedDept: selectedDept.value,
+    selectedProject: selectedProject.value,
+    selectedStatus: selectedStatus.value,
+    activeTab: activeTab.value,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filterState));
+};
+
+// 清除筛选状态
+const clearFilters = () => {
+  selectedDept.value = '所有部门';
+  selectedProject.value = '所有项目';
+  selectedStatus.value = [];
+  activeTab.value = 'filters';
+  localStorage.removeItem(FILTER_STORAGE_KEY);
+  ElMessage.success('筛选条件已清除');
+};
+
+// 从localStorage加载筛选状态
+const loadFilterState = () => {
+  try {
+    const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+    if (saved) {
+      const filterState = JSON.parse(saved);
+      selectedDept.value = filterState.selectedDept || '所有部门';
+      selectedProject.value = filterState.selectedProject || '所有项目';
+      selectedStatus.value = filterState.selectedStatus || [];
+      activeTab.value = filterState.activeTab || 'filters';
+    }
+  } catch (error) {
+    console.warn('加载保存的筛选状态失败:', error);
+  }
+};
+
+// 监听筛选状态变化并保存
+watch([selectedDept, selectedProject, selectedStatus, activeTab], () => {
+  saveFilterState();
+}, { deep: true });
+
 // 组件生命周期
 onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullScreenChange);
+  
+  // 加载保存的筛选状态
+  loadFilterState();
+  
   // 立即获取项目、状态和任务数据
   fetchProjects();
   fetchStatusInfo();
   fetchTasks();
+  
   // 设置30秒刷新一次
   refreshInterval = setInterval(() => {
-      fetchTasks();
-    }, 30000);
+    fetchTasks();
+  }, 30000);
 
-  // 监听项目选择变化，清空状态选择
-  watch(selectedProject, () => {
-    selectedStatus.value = [];
+  // 监听项目选择变化，清空状态选择（但保存新状态）
+  watch(selectedProject, (newProject, oldProject) => {
+    if (newProject !== oldProject) {
+      selectedStatus.value = [];
+    }
   });
 });
 
@@ -492,6 +545,11 @@ onUnmounted(() => {
               </template>
             </ElTableColumn>
           </ElTable>
+          </div>
+          <div class="filter-actions">
+            <ElButton @click="clearFilters" type="danger" size="small" plain>
+              清除筛选
+            </ElButton>
           </div>
         </div>
 
@@ -679,6 +737,8 @@ onUnmounted(() => {
 .status-placeholder { color: #909399; font-size: 0.9rem; padding: 8px 0; }
 
 .filter-item { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+.filter-actions { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; }
 
 .filter-label { font-size: 0.9rem; color: #606266; font-weight: 500; }
 
