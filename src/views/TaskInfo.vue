@@ -452,6 +452,11 @@ onUnmounted(() => {
                 <div class="status-placeholder">请先选择具体项目</div>
               </div>
             </div>
+          <div class="filter-actions">
+            <ElButton @click="clearFilters" type="danger" size="small" plain>
+              清除筛选
+            </ElButton>
+          </div>
         </ElTabPane>
 
         <!-- 统计信息选项卡 -->
@@ -545,11 +550,6 @@ onUnmounted(() => {
               </template>
             </ElTableColumn>
           </ElTable>
-          </div>
-          <div class="filter-actions">
-            <ElButton @click="clearFilters" type="danger" size="small" plain>
-              清除筛选
-            </ElButton>
           </div>
         </div>
 
