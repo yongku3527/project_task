@@ -8,4 +8,10 @@ public interface TaskService {
 
     Result getTaskInfo();
 
+    Result getProjectInfo() throws Exception;
+
+    Result getStatusInfo();
+
+
+    Result getProjectTime();
 }

@@ -377,11 +377,13 @@ class DingdingDemoApplicationTests {
     @Autowired
     private TaskController taskController;
     @Test
-    void test22() {
-        Result taskInfo = taskController.getTaskInfo();
-        Object data = taskInfo.getData();
-        List<TaskVo> taskVos = (List<TaskVo>) data;
-        System.out.println("taskVos = " + taskVos);
+    void test22() throws Exception {
+//        Result taskInfo = taskController.getTaskInfo();
+//        Object data = taskInfo.getData();
+//        List<TaskVo> taskVos = (List<TaskVo>) data;
+//        System.out.println("taskVos = " + taskVos);
+
+        Result projectTime = taskService.getProjectTime();
 
     }
 

@@ -16,9 +16,12 @@ import com.quanhai.dingdingdemo.client.MyDingClient;
 import com.quanhai.dingdingdemo.config.DingAppConfig;
 
 import com.quanhai.dingdingdemo.model.Project;
+import com.quanhai.dingdingdemo.model.ProjectTimeInfo;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
+import com.quanhai.dingdingdemo.model.StatusInfo;
 import com.quanhai.dingdingdemo.model.TaskVo;
+import com.quanhai.dingdingdemo.model.excption.MyExcption;
 import com.quanhai.dingdingdemo.service.TaskService;
 
 import lombok.SneakyThrows;
@@ -35,6 +38,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskServiceImpl implements TaskService {
@@ -49,9 +53,6 @@ public class TaskServiceImpl implements TaskService {
     private RedisTemplate<String, Object> redisTemplate;
 
 
-
-
-
     public void setTaskVoToRedis() throws Exception {
         com.aliyun.dingtalkproject_1_0.Client projectClient = myDingClient.getProjectClient();
 
@@ -59,7 +60,7 @@ public class TaskServiceImpl implements TaskService {
 
         //获取项目信息
         List<Project> projectList = getProjectsFromRedis();
-        if (projectList != null && !projectList.isEmpty()) {
+        if (!projectList.isEmpty()) {
             QueryTaskOfProjectHeaders queryTaskOfProjectHeaders = new QueryTaskOfProjectHeaders();
 
             queryTaskOfProjectHeaders.xAcsDingtalkAccessToken = getAccessToken();
@@ -71,11 +72,20 @@ public class TaskServiceImpl implements TaskService {
 
                 //获取项目id
                 String projectId = project.getProjectId();
-                QueryTaskOfProjectResponse queryTaskOfProjectResponse = projectClient.queryTaskOfProjectWithOptions(dingAppConfig.getUserid(), projectId, queryTaskOfProjectRequest, queryTaskOfProjectHeaders, new RuntimeOptions());
+
+                QueryTaskOfProjectResponse queryTaskOfProjectResponse = null;
+                try {
+                    queryTaskOfProjectResponse = projectClient.queryTaskOfProjectWithOptions(dingAppConfig.getUserid(), projectId, queryTaskOfProjectRequest, queryTaskOfProjectHeaders, new RuntimeOptions());
+                } catch (Exception e) {
+                    System.out.println("!!!===>获取项目中任务信息报错，报错项目： "+project.getName());
+                    continue;
+                }
+
                 List<QueryTaskOfProjectResponseBody.QueryTaskOfProjectResponseBodyResult> taskList = queryTaskOfProjectResponse.getBody().getResult();
                 System.out.println(project.getName() + " 项目任务数" + taskList.size());
                 for (QueryTaskOfProjectResponseBody.QueryTaskOfProjectResponseBodyResult taskResp : taskList) {
                     TaskVo taskVo = new TaskVo();
+                    taskVo.setTaskId(taskResp.getTaskId());
                     taskVo.setExecutorId(taskResp.getExecutorId());
                     taskVo.setTaskName(taskResp.getContent());
                     taskVo.setProjectName(project.getName());
@@ -111,11 +121,81 @@ public class TaskServiceImpl implements TaskService {
     public Result getTaskInfo() {
         try {
             List<TaskVo> taskVos = (List<TaskVo>) redisTemplate.opsForValue().get("taskVos");
+
+            if (taskVos == null || taskVos.isEmpty()) {
+                setTaskVoToRedis();
+            }
+            taskVos = (List<TaskVo>) redisTemplate.opsForValue().get("taskVos");
+
             return ResultUtil.success(taskVos);
-        }catch (Exception e){
+        } catch (Exception e) {
             return ResultUtil.fail(e.getMessage());
         }
     }
+
+    @Override
+    public Result getProjectTime() {
+        List<TaskVo> tasks;
+        try {
+
+            tasks = (List<TaskVo>) redisTemplate.opsForValue().get("taskVos");
+
+        } catch (Exception e) {
+            return ResultUtil.fail(e.getMessage());
+        }
+
+        // 按项目分组并计算最早/最晚截止时间
+        Map<String, ProjectTimeInfo> projectTimeMap = tasks.stream()
+                .filter(task -> task.getDueDate() != null) // 过滤掉无截止时间的任务
+                .collect(Collectors.groupingBy(
+                        TaskVo::getProjectName,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                projectTasks -> {
+                                    LocalDate earliest = projectTasks.stream()
+                                            .map(TaskVo::getDueDate)
+                                            .min(LocalDate::compareTo)
+                                            .orElse(null);
+
+                                    LocalDate latest = projectTasks.stream()
+                                            .map(TaskVo::getDueDate)
+                                            .max(LocalDate::compareTo)
+                                            .orElse(null);
+
+                                    return new ProjectTimeInfo(earliest, latest);
+                                }
+                        )
+                ));
+
+        return ResultUtil.success(projectTimeMap);
+    }
+
+    @Override
+    public Result getProjectInfo() throws Exception {
+        List<Project> projectsFromRedis = getProjectsFromRedis();
+        return ResultUtil.success(projectsFromRedis);
+    }
+
+    @Override
+    public Result getStatusInfo() {
+
+        List<StatusInfo> statusInfos = new ArrayList<>();
+
+        Set<String> keys = redisTemplate.keys("taskStatusName_*");
+        for (String key : keys) {
+            StatusInfo statusInfo = new StatusInfo();
+            String statusName = (String) redisTemplate.opsForValue().get(key);
+            String[] keyArray = key.split("_");
+
+            statusInfo.setStatusName(statusName);
+            statusInfo.setProjectId(keyArray[1]);
+            statusInfo.setStatusId(keyArray[2]);
+            statusInfos.add(statusInfo);
+
+        }
+        return ResultUtil.success(statusInfos);
+    }
+
 
     String getAccessToken() throws Exception {
 
@@ -160,9 +240,6 @@ public class TaskServiceImpl implements TaskService {
         redisTemplate.opsForValue().set("projects", filteredProjects, 1, TimeUnit.DAYS);
 
     }
-
-
-
 
 
     private List<Project> getProjectsFromRedis() throws Exception {
@@ -266,16 +343,14 @@ public class TaskServiceImpl implements TaskService {
                         }
                     }
                 }
-                redisTemplate.opsForValue().set("executorId_" + executorId,userName, 1, TimeUnit.DAYS);
-                redisTemplate.opsForValue().set("deptIdList_" + executorId,deptIdList, 1, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("executorId_" + executorId, userName, 1, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("deptIdList_" + executorId, deptIdList, 1, TimeUnit.DAYS);
             } catch (Exception e) {
-                System.out.println("解析出错: " + e.getMessage());
+                throw new MyExcption("获取用户信息报错：" + e.getMessage());
             }
         }
 
         // 输出结果
-        System.out.println("用户名称: " + userName);
-        System.out.println("所属部门ID列表: " + deptIdList);
 
         taskVo.setExecutorName(userName);
         taskVo.setDeptIdList(deptIdList);
@@ -292,7 +367,7 @@ public class TaskServiceImpl implements TaskService {
             if (Boolean.TRUE.equals(redisTemplate.hasKey("deptName_" + deptId))) {
                 deptName = (String) redisTemplate.opsForValue().get("deptName_" + deptId);
                 names.add(deptName);
-            }else {
+            } else {
                 try {
                     String url = "https://oapi.dingtalk.com/topapi/v2/department/get" +
                             "?access_token=" + accessToken;
@@ -328,11 +403,11 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
-    String getStatusName(String projectId, String taskflowStatusId) throws Exception {
+    String getStatusNameOld(String projectId, String taskflowStatusId) throws Exception {
         String name = "";
         if (Boolean.TRUE.equals(redisTemplate.hasKey("taskStatusName_" + taskflowStatusId))) {
             name = (String) redisTemplate.opsForValue().get("taskStatusName_" + taskflowStatusId);
-        }else {
+        } else {
             com.aliyun.dingtalkproject_1_0.Client client = myDingClient.getProjectClient();
             SearchTaskflowStatusHeaders searchTaskflowStatusHeaders = new SearchTaskflowStatusHeaders();
             searchTaskflowStatusHeaders.xAcsDingtalkAccessToken = getAccessToken();
@@ -345,14 +420,14 @@ public class TaskServiceImpl implements TaskService {
             } catch (TeaException err) {
                 if (!Common.empty(err.code) && !Common.empty(err.message)) {
                     // err 中含有 code 和 message 属性，可帮助开发定位问题
-                    System.out.println("获取状态名失败, code:"+err.code+" message:"+err.message);
+                    throw new MyExcption("获取状态名报错：" + err.message);
 
                 }
             } catch (Exception _err) {
                 TeaException err = new TeaException(_err.getMessage(), _err);
                 if (!Common.empty(err.code) && !Common.empty(err.message)) {
                     // err 中含有 code 和 message 属性，可帮助开发定位问题
-                    System.out.println("获取状态名失败, code:"+err.code+" message:"+err.message);
+                    throw new MyExcption("获取状态名报错：" + err.message);
                 }
 
             }
@@ -367,6 +442,51 @@ public class TaskServiceImpl implements TaskService {
 
         }
 
+        return name;
+    }
+
+
+    String getStatusName(String projectId, String taskflowStatusId) throws Exception {
+        String name = "";
+        if (Boolean.TRUE.equals(redisTemplate.hasKey("taskStatusName_" + projectId + "_" + taskflowStatusId))) {
+            name = (String) redisTemplate.opsForValue().get("taskStatusName_" + projectId + "_" + taskflowStatusId);
+        } else {
+            com.aliyun.dingtalkproject_1_0.Client client = myDingClient.getProjectClient();
+            SearchTaskflowStatusHeaders searchTaskflowStatusHeaders = new SearchTaskflowStatusHeaders();
+            searchTaskflowStatusHeaders.xAcsDingtalkAccessToken = getAccessToken();
+            SearchTaskflowStatusRequest searchTaskflowStatusRequest = new SearchTaskflowStatusRequest();
+
+            SearchTaskflowStatusResponse searchTaskflowStatusResponse = null;
+            try {
+                searchTaskflowStatusResponse = client.searchTaskflowStatusWithOptions(dingAppConfig.getUserid(), projectId, searchTaskflowStatusRequest, searchTaskflowStatusHeaders, new RuntimeOptions());
+
+            } catch (TeaException err) {
+                if (!Common.empty(err.code) && !Common.empty(err.message)) {
+                    // err 中含有 code 和 message 属性，可帮助开发定位问题
+                    throw new MyExcption("获取状态名报错：" + err.message);
+
+                }
+            } catch (Exception _err) {
+                TeaException err = new TeaException(_err.getMessage(), _err);
+                if (!Common.empty(err.code) && !Common.empty(err.message)) {
+                    // err 中含有 code 和 message 属性，可帮助开发定位问题
+                    throw new MyExcption("获取状态名报错：" + err.message);
+                }
+
+            }
+            if (searchTaskflowStatusResponse == null) {
+                return "查询失败";
+            }
+
+            List<SearchTaskflowStatusResponseBody.SearchTaskflowStatusResponseBodyResult> result = searchTaskflowStatusResponse.getBody().getResult();
+
+            for (SearchTaskflowStatusResponseBody.SearchTaskflowStatusResponseBodyResult searchTaskflowStatusResponseBodyResult : result) {
+                String thisStatuName = searchTaskflowStatusResponseBodyResult.getName();
+                redisTemplate.opsForValue().set("taskStatusName_" + projectId + "_" + searchTaskflowStatusResponseBodyResult.getTaskflowStatusId(), thisStatuName, 1, TimeUnit.DAYS);
+            }
+            name = (String) redisTemplate.opsForValue().get("taskStatusName_" + projectId + "_" + taskflowStatusId);
+
+        }
         return name;
     }
 

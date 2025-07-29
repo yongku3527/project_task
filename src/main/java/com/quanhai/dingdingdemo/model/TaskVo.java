@@ -19,6 +19,8 @@ public class TaskVo {
 
     //任务名
     private String taskName;
+    //任务id
+    private String taskId;
     //执行者id
     private String executorId;
     //执行者名称
@@ -26,6 +28,8 @@ public class TaskVo {
     //部门Map
     private List<Integer> deptIdList;
     private List<String> deptNameList;
+
+
 
 
     private String taskStatus;

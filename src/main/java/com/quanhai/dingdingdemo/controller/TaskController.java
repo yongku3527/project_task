@@ -19,4 +19,34 @@ public class TaskController {
 
         return taskService.getTaskInfo();
     }
+
+    @GetMapping("/getProjectInfo")
+    public Result getProjectInfo(){
+
+        try {
+            return taskService.getProjectInfo();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @GetMapping("/getStatusInfo")
+    public Result getStatusInfo(){
+
+        try {
+            return taskService.getStatusInfo();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @GetMapping("/getProjectTime")
+    public Result getProjectTime(){
+
+        return taskService.getProjectTime();
+    }
+
+
+
+
 }
