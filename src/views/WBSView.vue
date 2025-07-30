@@ -4,26 +4,6 @@
 
     <div class="wbs-content">
       <el-card class="wbs-tree-card">
-        <template #header>
-          <div class="card-header">
-            <span>任务分解结构</span>
-            <div class="header-actions">
-              <el-input
-                v-model="searchKeyword"
-                placeholder="搜索任务..."
-                style="width: 200px; margin-right: 10px"
-                clearable
-                @clear="handleSearch"
-                @input="handleSearch"
-                @keyup.enter="handleSearch"
-              >
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
-            </div>
-          </div>
-        </template>
 
         <div class="mindmap-container" ref="mindmapRef">
           <div class="mindmap-grid" v-if="wbsData.length > 0">
@@ -35,12 +15,7 @@
               >
                 <div class="project-header" @click="selectNode(project)">
                   <div class="node-content">
-                    <div class="node-title">{{ project.name }}</div>
-                    <div class="node-info">
-                      <el-tag :type="getStatusType(project.status)" size="small">
-                        {{ getStatusText(project.status) }}
-                      </el-tag>
-                    </div>
+                    <div class="node-title project-title">{{ project.name }}</div>
                   </div>
                 </div>
                 
@@ -52,12 +27,7 @@
                   >
                     <div class="task-group-header" @click="selectNode(taskGroup)">
                       <div class="node-content">
-                        <div class="node-title">{{ taskGroup.name }}</div>
-                        <div class="node-info">
-                          <el-tag :type="getStatusType(taskGroup.status)" size="small">
-                            {{ getStatusText(taskGroup.status) }}
-                          </el-tag>
-                        </div>
+                        <div class="node-title task-group-title">{{ taskGroup.name }}</div>
                       </div>
                     </div>
                     
@@ -71,12 +41,7 @@
                       >
                         <div class="task-content">
                           <div class="task-title">{{ task.name }}</div>
-                          <div class="task-info">
-                            <el-tag :type="getStatusType(task.status)" size="small">
-                              {{ getStatusText(task.status) }}
-                            </el-tag>
-                            <span class="task-assignee">{{ task.assignee || '未分配' }}</span>
-                          </div>
+                          <div class="task-assignee">{{ task.assignee || '未分配' }}</div>
                         </div>
                       </div>
                     </div>
@@ -92,45 +57,44 @@
         </div>
       </el-card>
 
-      <el-card class="wbs-detail-card" v-if="selectedTask">
-        <template #header>
-          <div class="card-header">
-            <span>任务详情</span>
-            <el-button link @click="selectedTask = null">
+      <div v-if="selectedTask" class="task-detail-overlay" @click="selectedTask = null">
+        <div class="task-detail-popup" @click.stop>
+          <div class="popup-header">
+            <h3>{{ selectedTask.name }}</h3>
+            <el-button link @click="selectedTask = null" class="close-btn">
               <el-icon><Close /></el-icon>
             </el-button>
           </div>
-        </template>
-        
-        <div class="task-detail">
-          <h3>{{ selectedTask.name }}</h3>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="状态">
-              <el-tag :type="getStatusType(selectedTask.status)">
-                {{ getStatusText(selectedTask.status) }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="负责人">
-              {{ selectedTask.assignee || '未分配' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="开始时间">
-              {{ selectedTask.startDate || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="截止时间">
-              {{ selectedTask.deadline || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="项目">
-              {{ selectedTask.project || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="任务组">
-              {{ selectedTask.taskListName || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="描述" :span="2">
-              {{ selectedTask.description || '暂无描述' }}
-            </el-descriptions-item>
-          </el-descriptions>
+          
+          <div class="task-detail-content">
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="状态">
+                <el-tag :type="getStatusType(selectedTask.status)">
+                  {{ getStatusText(selectedTask.status) }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="负责人">
+                {{ selectedTask.assignee || '未分配' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="开始时间">
+                {{ selectedTask.startDate || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="截止时间">
+                {{ selectedTask.deadline || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="项目">
+                {{ selectedTask.project || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="任务组">
+                {{ selectedTask.taskListName || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="描述">
+                {{ selectedTask.description || '暂无描述' }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
         </div>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
@@ -139,7 +103,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
-import { Back, Search, Close } from '@element-plus/icons-vue';
+import { Back, Close } from '@element-plus/icons-vue';
 
 const baseUrl = 'http://192.168.90.64:8083';
 
@@ -157,7 +121,6 @@ interface Task {
 
 const wbsData = ref<Task[]>([]);
 const mindmapRef = ref();
-const searchKeyword = ref('');
 const selectedTask = ref<Task | null>(null);
 
 // 获取任务数据并构建WBS结构
@@ -308,11 +271,11 @@ const getStatusClass = (status: string) => {
 
 const getTaskStatusClass = (status: string) => {
   const classMap: Record<string, string> = {
-    '待开始': 'task-pending',
+    '未接收': 'task-pending',
+    '已接收': 'task-pending',
     '进行中': 'task-progress',
     '已完成': 'task-completed',
-    '已暂停': 'task-paused',
-    '已取消': 'task-cancelled'
+    '已逾期': 'task-overdue'
   };
   return classMap[status] || 'task-pending';
 };
@@ -321,17 +284,7 @@ const selectNode = (data: Task) => {
   selectedTask.value = data;
 };
 
-const handleSearch = () => {
-  // 思维导图搜索功能将在后续实现
-  // 目前保持简单过滤
-  if (!searchKeyword.value) {
-    return;
-  }
-  
-  const keyword = searchKeyword.value.toLowerCase();
-  // 这里可以实现高亮匹配节点等功能
-  console.log('搜索关键词:', keyword);
-};
+
 
 const refreshData = () => {
   fetchWBSData();
@@ -356,9 +309,7 @@ onMounted(() => {
 
 .wbs-content {
   flex: 1;
-  display: flex;
-  gap: 20px;
-  padding: 20px;
+  padding: 8px;
   overflow: hidden;
 }
 
@@ -369,22 +320,64 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.wbs-detail-card {
-  width: 400px;
-  max-height: 600px;
-  overflow-y: auto;
+.task-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.card-header {
+.task-detail-popup {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+.popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e4e7ed;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
+.popup-header h3 {
+  margin: 0;
+  color: #303133;
 }
+
+.close-btn {
+  font-size: 20px;
+  color: #909399;
+}
+
+.task-detail-content {
+  padding: 20px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
 
 .wbs-tree-container {
   flex: 1;
@@ -407,6 +400,16 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 4px;
+}
+
+.project-title {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.task-group-title {
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .node-info {
@@ -446,7 +449,7 @@ onMounted(() => {
   height: 100%;
   position: relative;
   overflow: auto;
-  padding: 40px;
+  padding: 20px;
 }
 
 .mindmap-grid {
@@ -455,45 +458,49 @@ onMounted(() => {
   align-items: flex-start;
   min-width: max-content;
   min-height: max-content;
-  padding: 20px;
+  padding: 10px;
 }
 
 .project-tasks-grid {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 20px;
 }
 
 .project-task-columns {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .project-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 15px;
+  color: rgb(0, 0, 0);
+  padding: 12px 200px;
+  border-radius: 10px;
   font-size: 20px;
   font-weight: bold;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   cursor: pointer;
-  transition: transform 0.3s ease;
-  margin-bottom: 30px;
+  transition: transform 0.2s ease;
+  margin-bottom: 15px;
+  margin-left: 31vw;
   text-align: center;
-  min-width: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 180px;
 }
 
 .project-header:hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .task-groups-grid {
   display: flex;
   flex-direction: row;
-  gap: 40px;
+  gap: 20px;
   flex-wrap: wrap;
   align-items: flex-start;
 }
@@ -502,67 +509,68 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 220px;
-  max-width: 280px;
+  min-width: 180px;
+  max-width: 220px;
 }
 
 .task-group-header {
   background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
   color: #333;
-  padding: 15px 25px;
-  border-radius: 12px;
-  font-size: 16px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
   text-align: center;
-  min-width: 200px;
+  min-width: 160px;
 }
 
 .task-group-header:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
 }
 
 .tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   align-items: center;
   width: 100%;
 }
 
 .task-card {
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 200px;
-  max-width: 250px;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  max-width: 200px;
   text-align: center;
   border: 1px solid transparent;
 }
 
 .task-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .task-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 1px;
 }
 
 .task-title {
   font-weight: 600;
   line-height: 1.3;
   margin-bottom: 4px;
+  font-size: 15px;
 }
 
 .task-info {
@@ -574,38 +582,33 @@ onMounted(() => {
 
 .task-assignee {
   font-size: 12px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 /* 任务状态颜色 */
 .task-pending {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  color: #1565c0;
-  border-color: #90caf9;
+  background: #ffc107;
+  color: white;
+  border-color: #e0a800;
 }
 
 .task-progress {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%);
-  color: #e65100;
-  border-color: #ffb300;
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
 }
 
 .task-completed {
-  background: linear-gradient(135deg, #e8f5e8 0%, #a5d6a7 100%);
-  color: #2e7d32;
-  border-color: #66bb6a;
+  background: #28a745;
+  color: white;
+  border-color: #1e7e34;
+  text-decoration: none;
 }
 
-.task-paused {
-  background: linear-gradient(135deg, #ffebee 0%, #ef9a9a 100%);
-  color: #c62828;
-  border-color: #e57373;
-}
-
-.task-cancelled {
-  background: linear-gradient(135deg, #fafafa 0%, #e0e0e0 100%);
-  color: #424242;
-  border-color: #bdbdbd;
+.task-overdue {
+  background: #dc3545;
+  color: white;
+  border-color: #bd2130;
 }
 
 .node-content {

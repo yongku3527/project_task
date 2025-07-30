@@ -33,7 +33,7 @@ const FILTER_STORAGE_KEY = 'task_filter_state'
 
 // 动态状态选项计算属性
 const dynamicStatusOptions = computed(() => {
-  if (selectedProject.value === '所有项目1') return [];
+  if (selectedProject.value === '所有项目') return [];
   const selectedProj = projectsData.value.find(p => p.name === selectedProject.value);
   return selectedProj ? statusData.value
     .filter(s => s.projectId === selectedProj.projectId)
