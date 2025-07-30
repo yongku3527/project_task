@@ -1,5 +1,13 @@
 <template>
-  <div class="wbs-container">
+  <div class="wbs-container" :class="{ 'fullscreen-mode': isFullscreen }">
+    <div class="fullscreen-btn" @click="toggleFullscreen">
+      <el-button size="small">
+        <el-icon>
+          <FullScreen v-if="!isFullscreen" />
+          <Close v-else />
+        </el-icon>
+      </el-button>
+    </div>
 
 
     <div class="wbs-content">
@@ -100,10 +108,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
-import { Back, Close } from '@element-plus/icons-vue';
+import { Back, Close, FullScreen } from '@element-plus/icons-vue';
 
 const baseUrl = 'http://192.168.90.64:8083';
 
@@ -122,6 +130,7 @@ interface Task {
 const wbsData = ref<Task[]>([]);
 const mindmapRef = ref();
 const selectedTask = ref<Task | null>(null);
+const isFullscreen = ref(false);
 
 // 获取任务数据并构建WBS结构
 const fetchWBSData = async () => {
@@ -284,6 +293,26 @@ const selectNode = (data: Task) => {
   selectedTask.value = data;
 };
 
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value;
+  
+  if (isFullscreen.value) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.error('全屏失败:', err);
+      ElMessage.error('全屏功能不可用');
+    });
+  } else {
+    document.exitFullscreen().catch(err => {
+      console.error('退出全屏失败:', err);
+    });
+  }
+};
+
+// 监听全屏状态变化
+const handleFullscreenChange = () => {
+  isFullscreen.value = !!document.fullscreenElement;
+};
+
 
 
 const refreshData = () => {
@@ -292,6 +321,11 @@ const refreshData = () => {
 
 onMounted(() => {
   fetchWBSData();
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullscreenChange);
 });
 </script>
 
@@ -301,6 +335,59 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background-color: #f5f7fa;
+  position: relative;
+}
+
+.fullscreen-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1001;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.fullscreen-btn .el-button {
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.fullscreen-btn:hover {
+  opacity: 1;
+}
+
+.fullscreen-mode .fullscreen-btn {
+  top: 10px;
+  right: 10px;
+}
+
+.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background-color: #f5f7fa;
+  overflow: auto;
+}
+
+.fullscreen-mode .wbs-content {
+  padding: 10px;
+  height: 100vh;
+  overflow: auto;
+}
+
+.fullscreen-mode .wbs-tree-card {
+  border: none;
+  box-shadow: none;
+  height: 100%;
+  overflow: auto;
+}
+
+.fullscreen-mode .mindmap-container {
+  height: calc(100vh - 20px);
+  overflow: auto;
 }
 
 
@@ -450,6 +537,15 @@ onMounted(() => {
   position: relative;
   overflow: auto;
   padding: 20px;
+}
+
+.fullscreen-mode .project-task-columns {
+  margin-bottom: 20px;
+}
+
+.fullscreen-mode .task-groups-grid {
+  overflow-x: auto;
+  padding-bottom: 10px;
 }
 
 .mindmap-grid {
