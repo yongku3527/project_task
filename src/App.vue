@@ -18,6 +18,10 @@
         <MenuIcon />
         <span>任务信息</span>
       </el-menu-item>
+      <el-menu-item index="/wbs">
+        <Grid />
+        <span>WBS视图</span>
+      </el-menu-item>
       <el-menu-item index="/new-feature">
         <Grid />
         <span>任务时间轴</span>

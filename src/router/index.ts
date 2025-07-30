@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import Home from '../views/Home.vue';
 import TaskInfo from '../views/TaskInfo.vue';
 import NewFeature from '../views/NewFeature.vue';
+import WBSView from '../views/WBSView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   // {
@@ -19,6 +20,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/new-feature',
     name: 'NewFeature',
     component: NewFeature
+  },
+  {
+    path: '/wbs',
+    name: 'WBSView',
+    component: WBSView
   }
 ];
 
