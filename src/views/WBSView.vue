@@ -19,6 +19,24 @@
       </div>
     </div>
 
+    <div class="legend-panel">
+      <div class="legend-item">
+        <div class="legend-color status-pending"></div>
+        <span>待开始</span>
+        &nbsp&nbsp&nbsp
+        <div class="legend-color status-completed"></div>
+        <span>已完成</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color status-in-progress"></div>
+        <span>进行中</span>
+         &nbsp&nbsp&nbsp
+        <div class="legend-color status-delayed"></div>
+        <span>已延期</span>
+      </div>
+      
+    </div>
+
 
     <div class="wbs-content">
       <el-card class="wbs-tree-card">
@@ -415,6 +433,63 @@ onUnmounted(() => {
 .fullscreen-mode .control-btns {
   top: 10px;
   right: 10px;
+}
+
+.legend-panel {
+  position: fixed;
+  top: 10px;
+  right: 150px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 65px;
+  opacity: 0.8;
+}
+
+.legend-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-color.status-pending {
+  background-color: #ffc107;
+}
+
+.legend-color.status-in-progress {
+  background-color: #007bff;
+}
+
+.legend-color.status-completed {
+  background-color: #28a745;
+}
+
+.legend-color.status-delayed {
+  background-color: #dc3545;
 }
 
 .fullscreen-mode {
