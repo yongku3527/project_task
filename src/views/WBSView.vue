@@ -578,10 +578,11 @@ onUnmounted(() => {
 .mindmap-grid {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  min-width: max-content;
+  align-items: center;
+  width: 100%;
   min-height: max-content;
   padding: 10px;
+  box-sizing: border-box;
 }
 
 .project-tasks-grid {
@@ -617,7 +618,7 @@ onUnmounted(() => {
 .project-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: rgb(0, 0, 0);
-  padding: 12px 200px;
+  padding: 12px 40px;
   border-radius: 10px;
   font-size: 20px;
   font-weight: bold;
@@ -625,12 +626,14 @@ onUnmounted(() => {
   cursor: pointer;
   transition: transform 0.2s ease;
   margin-bottom: 15px;
-  margin-left: 31vw;
   text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
   min-width: 180px;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .project-header:hover {
@@ -643,6 +646,9 @@ onUnmounted(() => {
   gap: 20px;
   flex-wrap: wrap;
   align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .task-group-column {
