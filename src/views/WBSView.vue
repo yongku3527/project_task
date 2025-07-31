@@ -17,9 +17,10 @@
           <div class="mindmap-grid" v-if="wbsData.length > 0">
             <div class="project-tasks-grid">
               <div 
-                v-for="project in wbsData" 
+                v-for="(project, index) in wbsData" 
                 :key="project.id"
                 class="project-task-columns"
+                v-show="index === currentPage"
               >
                 <div class="project-header" @click="selectNode(project)">
                   <div class="node-content">
@@ -131,6 +132,8 @@ const wbsData = ref<Task[]>([]);
 const mindmapRef = ref();
 const selectedTask = ref<Task | null>(null);
 const isFullscreen = ref(false);
+const currentPage = ref(0);
+const intervalId = ref<number | null>(null);
 
 // 获取任务数据并构建WBS结构
 const fetchWBSData = async () => {
@@ -190,9 +193,12 @@ const fetchWBSData = async () => {
     });
     
     wbsData.value = Array.from(projectMap.values());
+    // 数据加载完成后重置分页
+    currentPage.value = 0;
+    startAutoSlide();
   } catch (error) {
-    console.error('获取WBS数据失败:', error);
-    ElMessage.error('获取WBS数据失败');
+      console.error('获取WBS数据失败:', error);
+      ElMessage.error('获取WBS数据失败');
     
     // 模拟数据
         wbsData.value = [
@@ -319,13 +325,34 @@ const refreshData = () => {
   fetchWBSData();
 };
 
+const startAutoSlide = () => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value);
+  }
+  
+  intervalId.value = window.setInterval(() => {
+    if (wbsData.value.length > 0) {
+      currentPage.value = (currentPage.value + 1) % wbsData.value.length;
+    }
+  }, 10000);
+};
+
+const stopAutoSlide = () => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value);
+    intervalId.value = null;
+  }
+};
+
 onMounted(() => {
   fetchWBSData();
   document.addEventListener('fullscreenchange', handleFullscreenChange);
+  startAutoSlide();
 });
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  stopAutoSlide();
 });
 </script>
 
@@ -386,7 +413,7 @@ onUnmounted(() => {
 }
 
 .fullscreen-mode .mindmap-container {
-  height: calc(100vh - 20px);
+  height: calc(100vh - 0px);
   overflow: auto;
 }
 
@@ -561,6 +588,23 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 100%;
+}
+
+.project-task-columns {
+  transition: opacity 0.5s ease-in-out;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .project-task-columns {
