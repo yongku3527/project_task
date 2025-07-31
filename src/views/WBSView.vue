@@ -1,12 +1,22 @@
 <template>
   <div class="wbs-container" :class="{ 'fullscreen-mode': isFullscreen }">
-    <div class="fullscreen-btn" @click="toggleFullscreen">
-      <el-button size="small">
-        <el-icon>
-          <FullScreen v-if="!isFullscreen" />
-          <Close v-else />
-        </el-icon>
-      </el-button>
+    <div class="control-btns">
+      <div class="play-pause-btn" @click="toggleAutoSlide">
+        <el-button size="small" :type="isPaused ? 'success' : 'warning'">
+          <el-icon>
+            <VideoPlay v-if="isPaused" />
+            <VideoPause v-else />
+          </el-icon>
+        </el-button>
+      </div>
+      <div class="fullscreen-btn" @click="toggleFullscreen">
+        <el-button size="small">
+          <el-icon>
+            <FullScreen v-if="!isFullscreen" />
+            <Close v-else />
+          </el-icon>
+        </el-button>
+      </div>
     </div>
 
 
@@ -112,7 +122,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
-import { Back, Close, FullScreen } from '@element-plus/icons-vue';
+import { Back, Close, FullScreen, VideoPlay, VideoPause } from '@element-plus/icons-vue';
 
 const baseUrl = 'http://192.168.90.64:8083';
 
@@ -134,6 +144,7 @@ const selectedTask = ref<Task | null>(null);
 const isFullscreen = ref(false);
 const currentPage = ref(0);
 const intervalId = ref<number | null>(null);
+const isPaused = ref(false);
 
 // 获取任务数据并构建WBS结构
 const fetchWBSData = async () => {
@@ -331,7 +342,7 @@ const startAutoSlide = () => {
   }
   
   intervalId.value = window.setInterval(() => {
-    if (wbsData.value.length > 0) {
+    if (wbsData.value.length > 0 && !isPaused.value) {
       currentPage.value = (currentPage.value + 1) % wbsData.value.length;
     }
   }, 10000);
@@ -341,6 +352,15 @@ const stopAutoSlide = () => {
   if (intervalId.value) {
     clearInterval(intervalId.value);
     intervalId.value = null;
+  }
+};
+
+const toggleAutoSlide = () => {
+  isPaused.value = !isPaused.value;
+  if (isPaused.value) {
+    stopAutoSlide();
+  } else {
+    startAutoSlide();
   }
 };
 
@@ -365,25 +385,34 @@ onUnmounted(() => {
   position: relative;
 }
 
-.fullscreen-btn {
+.control-btns {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 1001;
+  display: flex;
+  gap: 15px;
   opacity: 0.7;
   transition: opacity 0.3s ease;
 }
 
-.fullscreen-btn .el-button {
-  border-radius: 4px;
-  padding: 8px 12px;
-}
-
-.fullscreen-btn:hover {
+.control-btns:hover {
   opacity: 1;
 }
 
-.fullscreen-mode .fullscreen-btn {
+.play-pause-btn .el-button,
+.fullscreen-btn .el-button {
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  min-width: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullscreen-mode .control-btns {
   top: 10px;
   right: 10px;
 }
@@ -413,7 +442,7 @@ onUnmounted(() => {
 }
 
 .fullscreen-mode .mindmap-container {
-  height: calc(100vh - 0px);
+  /* height: calc(100vh - 11vh); */
   overflow: auto;
 }
 
@@ -563,7 +592,7 @@ onUnmounted(() => {
   height: 100%;
   position: relative;
   overflow: auto;
-  padding: 20px;
+  padding: 5px;
 }
 
 .fullscreen-mode .project-task-columns {
@@ -581,7 +610,7 @@ onUnmounted(() => {
   align-items: center;
   width: 100%;
   min-height: max-content;
-  padding: 10px;
+
   box-sizing: border-box;
 }
 
@@ -695,7 +724,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 160px;
-  max-width: 200px;
+  max-width: 160px;
   text-align: center;
   border: 1px solid transparent;
 }
