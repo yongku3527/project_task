@@ -68,7 +68,8 @@
                 新增会议记录
               </el-button>
             </div>
-            <div v-if="minute.rawData?.meetingInfoList?.length" class="meetings">
+            <div v-if="minute.rawData?.meetingInfoList?.length && minute.rawData.meetingInfoList.some(m => m.meetingItemList && m.meetingItemList.length > 0)" class="meetings">
+             
               <div 
                 v-for="(meeting, meetingIndex) in minute.rawData.meetingInfoList" 
                 :key="meeting.id" 
@@ -86,7 +87,7 @@
                   </el-button>
                 </div>
                 <ul class="meeting-items">
-                  <li v-for="item in meeting.meetingItemList" :key="item.id" class="meeting-item-with-actions" :class="{ 'marked': item.isMarked }">
+                  <li v-for="(item, itemIndex) in meeting.meetingItemList" :key="item.id" class="meeting-item-with-actions" :class="{ 'marked': item.isMarked }">
                     <span class="item-content" :class="{ 'marked-content': item.isMarked }">{{ item.content }}</span>
                     <div class="item-actions">
                       <el-button 
@@ -104,6 +105,14 @@
                         @click="toggleMarkItem(meeting, item)"
                       >
                         {{ item.isMarked ? '取消标记' : '标记' }}
+                      </el-button>
+                      <el-button 
+                        size="small" 
+                        type="danger" 
+                        text 
+                        @click="deleteMeetingItem(meeting, item, itemIndex)"
+                      >
+                        删除
                       </el-button>
                     </div>
                   </li>
@@ -264,7 +273,7 @@ const addItemFormData = ref({
 
 // 会议日期表单数据
 const addMeetingFormData = ref({
-  date: new Date().toLocaleDateString('zh-CN')
+  date: new Date().toISOString().split('T')[0]
 })
 
 // 会议日期表单验证规则
@@ -442,7 +451,7 @@ const resetAddItemForm = () => {
 // 方法：重置会议日期表单
 const resetAddMeetingForm = () => {
   addMeetingFormData.value = {
-    date: new Date().toLocaleDateString('zh-CN')
+    date: new Date().toISOString().split('T')[0]
   }
   currentMinuteId.value = null
 }
@@ -557,6 +566,50 @@ const toggleMarkItem = async (meeting, item) => {
   } catch (error) {
     console.error('操作失败:', error)
     ElMessage.error('网络错误，请检查接口连接')
+  }
+}
+
+// 方法：删除会议条目
+const deleteMeetingItem = async (meeting, item, itemIndex) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除这条会议条目吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    if (item.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/item/delete/${item.id}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      
+      if (result.code === 200) {
+        await loadMeetingData()
+        ElMessage.success('删除成功')
+      } else {
+        ElMessage.error('删除失败: ' + (result.msg || '未知错误'))
+      }
+    } else {
+      // 如果是新增但未保存的项目，直接从本地数据中移除
+      const meetingInfo = meeting.rawData?.meetingInfoList?.find(m => m.date === meeting.createdAt)
+      if (meetingInfo && meetingInfo.meetingItemList) {
+        meetingInfo.meetingItemList.splice(itemIndex, 1)
+        await loadMeetingData()
+        ElMessage.success('删除成功')
+      } else {
+        ElMessage.error('无法获取会议条目信息')
+      }
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('网络错误，请检查接口连接')
+    }
   }
 }
 
