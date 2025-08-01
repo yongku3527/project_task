@@ -1,0 +1,757 @@
+<template>
+  <div class="meeting-minutes-container">
+    <div class="page-header">
+      <h1>会议纪要管理</h1>
+      <div class="search-bar">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索机型名称、配套厂家、业务员或会议记录"
+        prefix-icon="Search"
+        style="width: 350px"
+        clearable
+      />
+    </div>
+      <el-button type="primary" @click="showAddDialog = true">
+        <el-icon><Plus /></el-icon>
+        新增纪要
+      </el-button>
+    </div>
+
+
+
+    
+
+    <!-- 会议纪要列表 -->
+    <div class="minutes-list">
+      <div
+        v-for="(minute, index) in filteredMinutes"
+        :key="minute.id"
+        class="minute-item"
+      >
+        <div class="item-header">
+          <span class="item-number">{{ index + 1 }}</span>
+          <div class="item-actions">
+            <el-tag :type="minute.isFinish ? 'success' : 'info'" style="margin-right: 8px;">
+              {{ minute.isFinish ? '已完成' : '未完成' }}
+            </el-tag>
+            <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
+            <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button>
+          </div>
+        </div>
+        
+        <div class="item-content">
+          <div class="content-row horizontal-info">
+            <div class="info-item">
+              <span class="content-label">设备类型：</span>
+              <span class="content-value">{{ minute.modelName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="content-label">生产厂家：</span>
+              <span class="content-value">{{ minute.supplier }}</span>
+            </div>
+            <div class="info-item">
+              <span class="content-label">业务人员：</span>
+              <span class="content-value">{{ minute.salesPerson }}</span>
+            </div>
+          </div>
+          
+          <!-- 会议记录 -->
+          <div class="meeting-section">
+            <div class="section-header">
+              <div class="section-title">会议记录</div>
+              <el-button 
+                size="small" 
+                type="primary" 
+                @click="addMeetingInfo(minute)"
+              >
+                <el-icon><Plus /></el-icon>
+                新增会议记录
+              </el-button>
+            </div>
+            <div v-if="minute.rawData?.meetingInfoList?.length" class="meetings">
+              <div 
+                v-for="(meeting, meetingIndex) in minute.rawData.meetingInfoList" 
+                :key="meeting.id" 
+                class="meeting-entry"
+              >
+                <div class="meeting-header">
+                  <div class="meeting-date">{{ meeting.date }}</div>
+                  <el-button 
+                    size="small" 
+                    type="danger" 
+                    text 
+                    @click="deleteMeetingInfo(minute, meetingIndex)"
+                  >
+                    删除会议记录
+                  </el-button>
+                </div>
+                <ul class="meeting-items">
+                  <li v-for="item in meeting.meetingItemList" :key="item.id" class="meeting-item-with-actions" :class="{ 'marked': item.isMarked }">
+                    <span class="item-content" :class="{ 'marked-content': item.isMarked }">{{ item.content }}</span>
+                    <div class="item-actions">
+                      <el-button 
+                        size="small" 
+                        type="primary" 
+                        text 
+                        @click="editMeetingItem(meeting, item)"
+                      >
+                        修改
+                      </el-button>
+                      <el-button 
+                        size="small" 
+                        :type="item.isMarked ? 'warning' : 'info'"
+                        text 
+                        @click="toggleMarkItem(meeting, item)"
+                      >
+                        {{ item.isMarked ? '取消标记' : '标记' }}
+                      </el-button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div v-else class="no-meetings">暂无会议记录</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 添加/编辑对话框 -->
+    <el-dialog
+      v-model="showAddDialog"
+      :title="isEdit ? '编辑会议纪要' : '新增会议纪要'"
+      width="600px"
+    >
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="100px"
+      >
+        <el-form-item label="机型名称" prop="modelName">
+          <el-input v-model="formData.modelName" placeholder="请输入机型名称" />
+        </el-form-item>
+        <el-form-item label="配套厂家" prop="supplier">
+          <el-input v-model="formData.supplier" placeholder="请输入配套厂家" />
+        </el-form-item>
+        <el-form-item label="业务员" prop="salesPerson">
+          <el-input v-model="formData.salesPerson" placeholder="请输入业务员姓名" />
+        </el-form-item>
+        <el-form-item label="完成状态">
+          <el-checkbox v-model="formData.isFinish">已完成</el-checkbox>
+        </el-form-item>
+        <el-form-item label="会议记录" prop="meetingInfoList">
+          <div class="meeting-form-container">
+            <div v-for="(meeting, index) in formData.meetingInfoList" :key="index" class="meeting-form-item">
+              <el-date-picker
+                v-model="meeting.date"
+                type="date"
+                placeholder="会议日期"
+                format="YYYY-MM-DD"
+                style="width: 100%; margin-bottom: 8px;"
+              />
+              <div v-for="(item, itemIndex) in meeting.meetingItemList" :key="itemIndex" class="meeting-item-row">
+                <el-input
+                  v-model="item.content"
+                  placeholder="会议内容"
+                  style="margin-bottom: 4px; flex: 1;"
+                />
+                <el-button 
+                  size="small" 
+                  type="danger" 
+                  @click="meeting.meetingItemList.splice(itemIndex, 1)"
+                  style="margin-left: 8px;"
+                >
+                  删除
+                </el-button>
+              </div>
+              <el-button size="small" @click="meeting.meetingItemList.push({ id: Date.now(), content: '', isMarked: false })">
+                添加内容
+              </el-button>
+              <el-button size="small" type="danger" @click="formData.meetingInfoList.splice(index, 1)">
+                删除会议
+              </el-button>
+            </div>
+            <el-button type="primary" @click="formData.meetingInfoList.push({ id: Date.now(), date: '', meetingItemList: [{ id: Date.now(), content: '', isMarked: false }] })">
+              新增会议
+            </el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveMinutes">保存</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Search } from '@element-plus/icons-vue'
+
+interface MeetingMinute {
+  id: string
+  modelName: string
+  supplier: string
+  salesPerson: string
+  meetingNotes: string
+  createdAt: string
+  isFinish: boolean
+  rawData?: any
+}
+
+// 响应式数据
+const minutes = ref<MeetingMinute[]>([])
+const searchKeyword = ref('')
+const showAddDialog = ref(false)
+const isEdit = ref(false)
+const editingId = ref<string | null>(null)
+
+// 表单数据
+const formData = ref({
+  modelName: '',
+  supplier: '',
+  salesPerson: '',
+  meetingInfoList: [],
+  isFinish: false
+})
+
+// 表单验证规则
+const formRules = {
+  modelName: [
+    { required: true, message: '请输入机型名称', trigger: 'blur' }
+  ],
+  supplier: [
+    { required: true, message: '请输入配套厂家', trigger: 'blur' }
+  ],
+  salesPerson: [
+    { required: true, message: '请输入业务员姓名', trigger: 'blur' }
+  ],
+  meetingInfoList: [
+    { required: true, message: '请添加会议记录', trigger: 'blur' }
+  ]
+}
+
+// 计算属性：过滤后的数据
+const filteredMinutes = computed(() => {
+  if (!searchKeyword.value) return minutes.value
+  
+  const keyword = searchKeyword.value.toLowerCase()
+  return minutes.value.filter(item =>
+    item.modelName.toLowerCase().includes(keyword) ||
+    item.supplier.toLowerCase().includes(keyword) ||
+    item.salesPerson.toLowerCase().includes(keyword) ||
+    item.meetingNotes.toLowerCase().includes(keyword)
+  )
+})
+
+
+
+// 方法：保存会议纪要
+const saveMinutes = () => {
+  formRef.value.validate((valid) => {
+    if (valid) {
+      const meetingNotes = formatMeetingNotes(formData.value.meetingInfoList)
+      
+      if (isEdit.value && editingId.value) {
+        const index = minutes.value.findIndex(item => item.id === editingId.value)
+        if (index !== -1) {
+          minutes.value[index] = {
+              ...minutes.value[index],
+              modelName: formData.value.modelName,
+              supplier: formData.value.supplier,
+              salesPerson: formData.value.salesPerson,
+              meetingNotes: meetingNotes,
+              isFinish: formData.value.isFinish,
+              rawData: {
+                ...minutes.value[index].rawData,
+                machineType: formData.value.modelName,
+                factory: formData.value.supplier,
+                salesPerson: formData.value.salesPerson,
+                meetingInfoList: formData.value.meetingInfoList,
+                isFinish: formData.value.isFinish
+              }
+            }
+          ElMessage.success('更新成功')
+        }
+      } else {
+        const newMinute: MeetingMinute = {
+            id: Date.now().toString(),
+            modelName: formData.value.modelName,
+            supplier: formData.value.supplier,
+            salesPerson: formData.value.salesPerson,
+            meetingNotes: meetingNotes,
+            createdAt: new Date().toLocaleDateString(),
+            isFinish: formData.value.isFinish,
+            rawData: {
+              id: Date.now(),
+              machineType: formData.value.modelName,
+              factory: formData.value.supplier,
+              salesPerson: formData.value.salesPerson,
+              meetingInfoList: formData.value.meetingInfoList,
+              isFinish: formData.value.isFinish
+            }
+          }
+        minutes.value.unshift(newMinute)
+        ElMessage.success('添加成功')
+      }
+      
+      showAddDialog.value = false
+      resetForm()
+    }
+  })
+}
+
+// 方法：编辑会议纪要
+const editMinutes = (row: MeetingMinute) => {
+  isEdit.value = true
+  editingId.value = row.id
+  formData.value = {
+          modelName: row.modelName,
+          supplier: row.supplier,
+          salesPerson: row.salesPerson,
+          meetingInfoList: row.rawData?.meetingInfoList || [],
+          isFinish: row.isFinish
+        }
+  showAddDialog.value = true
+}
+
+// 方法：删除会议纪要
+const deleteMinutes = async (row: MeetingMinute) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除这条会议纪要吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const index = minutes.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      minutes.value.splice(index, 1)
+      ElMessage.success('删除成功')
+    }
+  } catch {
+    // 用户取消删除
+  }
+}
+
+// 方法：重置表单
+const resetForm = () => {
+  formData.value = {
+    modelName: '',
+    supplier: '',
+    salesPerson: '',
+    meetingInfoList: [],
+    isFinish: false
+  }
+  editingId.value = null
+}
+
+// 从接口获取数据
+const loadMeetingData = async () => {
+  try {
+    const response = await fetch('http://192.168.90.64:8083/meeting/getAll')
+    const result = await response.json()
+    
+    if (result.code === 200 && result.data) {
+      // 转换接口数据为页面需要的格式
+          minutes.value = result.data.map(item => ({
+            id: item.id.toString(),
+            modelName: item.machineType,
+            supplier: item.factory,
+            salesPerson: item.salesPerson,
+            meetingNotes: formatMeetingNotes(item.meetingInfoList),
+            createdAt: item.meetingInfoList?.[0]?.date || new Date().toLocaleDateString(),
+            isFinish: item.isFinish || false,
+            rawData: item // 保留原始数据用于展示详情
+          }))
+    } else {
+      ElMessage.error('获取数据失败: ' + (result.msg || '未知错误'))
+    }
+  } catch (error) {
+    console.error('获取数据失败:', error)
+    ElMessage.error('网络错误，请检查接口连接')
+  }
+}
+
+// 方法：编辑会议内容项
+const editMeetingItem = (meeting, item) => {
+  ElMessageBox.prompt(
+    '请输入新的会议内容',
+    '编辑会议内容',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputValue: item.content,
+      inputPattern: /^.{1,500}$/,
+      inputErrorMessage: '内容不能为空且不超过500字符'
+    }
+  ).then(({ value }) => {
+    item.content = value
+    ElMessage.success('修改成功')
+  }).catch(() => {
+    // 用户取消编辑
+  })
+}
+
+// 方法：切换标记状态
+const toggleMarkItem = (meeting, item) => {
+  item.isMarked = !item.isMarked
+  const message = item.isMarked ? '已标记' : '已取消标记'
+  ElMessage.success(message)
+}
+
+// 方法：删除单个会议记录
+const deleteMeetingInfo = async (minute, meetingIndex) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除这条会议记录吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    if (minute.rawData?.meetingInfoList) {
+      minute.rawData.meetingInfoList.splice(meetingIndex, 1)
+      
+      // 更新会议记录格式化内容
+      minute.meetingNotes = formatMeetingNotes(minute.rawData.meetingInfoList)
+      ElMessage.success('删除成功')
+    }
+  } catch {
+    // 用户取消删除
+  }
+}
+
+// 方法：新增会议记录
+const addMeetingInfo = (minute) => {
+  if (!minute.rawData?.meetingInfoList) {
+    minute.rawData.meetingInfoList = []
+  }
+  
+  const newMeeting = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('zh-CN'),
+    meetingItemList: [{ id: Date.now(), content: '', isMarked: false }]
+  }
+  
+  minute.rawData.meetingInfoList.push(newMeeting)
+  minute.meetingNotes = formatMeetingNotes(minute.rawData.meetingInfoList)
+  ElMessage.success('新增会议成功')
+}
+
+// 格式化会议记录
+const formatMeetingNotes = (meetingInfoList) => {
+  if (!meetingInfoList || meetingInfoList.length === 0) return '暂无会议记录'
+  
+  return meetingInfoList.map(info => {
+    const items = info.meetingItemList?.map(item => item.content).join('；') || ''
+    return `${info.date}: ${items}`
+  }).join('\n')
+}
+
+// 生命周期
+onMounted(() => {
+  loadMeetingData()
+})
+</script>
+
+<style scoped>
+.meeting-minutes-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+/* 页面标题 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 20px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.add-btn {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+
+
+
+/* 搜索区域 */
+.search-section {
+  margin-bottom: 24px;
+  padding: 0 20px;
+}
+
+.search-input {
+  width: 300px;
+}
+
+/* 会议纪要列表 */
+.minutes-list {
+  padding: 0 20px;
+}
+
+.minute-item {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.item-number {
+  font-size: 18px;
+  font-weight: bold;
+  color: #409eff;
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-content {
+  color: #606266;
+}
+
+.content-row {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+
+.content-row.horizontal-info {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.content-label {
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.content-value {
+  color: #606266;
+}
+
+/* 会议记录 */
+.meeting-section {
+  margin-top: 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.meetings {
+  margin-top: 8px;
+}
+
+.meeting-entry {
+  background-color: #f5f7fa;
+  border-left: 3px solid #409eff;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.meeting-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.meeting-date {
+  font-weight: 600;
+  color: #409eff;
+  font-size: 14px;
+  text-align: center;
+}
+
+.meeting-header .el-button {
+  position: absolute;
+  right: 0;
+}
+
+.meeting-items {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.meeting-item-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  border-left: 3px solid #409eff;
+}
+
+.meeting-item-with-actions.marked {
+  border-left-color: #e6a23c;
+  background-color: #fdf6ec;
+}
+
+.item-content {
+  color: #606266;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.marked-content {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.meeting-items li {
+  margin-bottom: 4px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.no-meetings {
+  color: #909399;
+  font-style: italic;
+  padding: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #909399;
+  font-size: 16px;
+}
+
+/* 表单样式 */
+.meeting-form-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.meeting-form-item {
+  background-color: #f5f7fa;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.meeting-item-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .meeting-minutes-container {
+    padding: 10px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .search-section {
+    padding: 0 10px;
+  }
+  
+  .minutes-list {
+    padding: 0 10px;
+  }
+  
+  .content-row.horizontal-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .info-item {
+    flex-direction: row;
+  }
+  
+  .meeting-item-with-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .item-content {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+  
+  .item-actions {
+    justify-content: flex-end;
+  }
+  
+  .dialog-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .dialog-footer .el-button {
+    width: 100%;
+  }
+}
+</style>

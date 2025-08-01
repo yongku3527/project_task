@@ -26,6 +26,10 @@
         <Grid />
         <span>任务时间轴</span>
       </el-menu-item>
+      <el-menu-item index="/meeting-minutes">
+        <Grid />
+        <span>会议纪要</span>
+      </el-menu-item>
     </el-menu>
     
     <router-view />

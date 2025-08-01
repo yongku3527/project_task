@@ -4,6 +4,7 @@ import Home from '../views/Home.vue';
 import TaskInfo from '../views/TaskInfo.vue';
 import NewFeature from '../views/NewFeature.vue';
 import WBSView from '../views/WBSView.vue';
+import MeetingMinutes from '../views/MeetingMinutes.vue';
 
 const routes: Array<RouteRecordRaw> = [
   // {
@@ -25,6 +26,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/wbs',
     name: 'WBSView',
     component: WBSView
+  },
+  {
+    path: '/meeting-minutes',
+    name: 'MeetingMinutes',
+    component: MeetingMinutes
   }
 ];
 

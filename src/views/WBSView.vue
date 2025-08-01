@@ -621,7 +621,7 @@ onUnmounted(() => {
 }
 
 .project-title {
-  font-size: 16px;
+  font-size: 25px;
   font-weight: bold;
 }
 
