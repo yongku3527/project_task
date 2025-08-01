@@ -11,10 +11,15 @@
         clearable
       />
     </div>
-      <el-button type="primary" @click="showAddDialog = true">
-        <el-icon><Plus /></el-icon>
-        新增纪要
-      </el-button>
+      <div class="header-actions">
+        <el-checkbox v-model="showCompleted" style="margin-right: 16px;">
+          显示已完成任务
+        </el-checkbox>
+        <el-button type="primary" @click="showAddDialog = true">
+          <el-icon><Plus /></el-icon>
+          新增纪要
+        </el-button>
+      </div>
     </div>
 
 
@@ -42,11 +47,11 @@
         <div class="item-content">
           <div class="content-row horizontal-info">
             <div class="info-item">
-              <span class="content-label">设备类型：</span>
+              <span class="content-label">机型名称：</span>
               <span class="content-value">{{ minute.modelName }}</span>
             </div>
             <div class="info-item">
-              <span class="content-label">生产厂家：</span>
+              <span class="content-label">配套厂家：</span>
               <span class="content-value">{{ minute.supplier }}</span>
             </div>
             <div class="info-item">
@@ -285,11 +290,12 @@ interface MeetingMinute {
 }
 
 // 响应式数据
-const minutes = ref<MeetingMinute[]>([])
 const searchKeyword = ref('')
+const minutes = ref<MeetingMinute[]>([])
 const showAddDialog = ref(false)
 const showAddItemDialog = ref(false)
 const showAddMeetingDialog = ref(false)
+const showCompleted = ref(true)
 const isEdit = ref(false)
 const editingId = ref<string | null>(null)
 const editingMeetingId = ref<string | null>(null)
@@ -352,15 +358,25 @@ const formRules = {
 
 // 计算属性：过滤后的数据
 const filteredMinutes = computed(() => {
-  if (!searchKeyword.value) return minutes.value
+  let filtered = minutes.value
   
-  const keyword = searchKeyword.value.toLowerCase()
-  return minutes.value.filter(item =>
-    item.modelName.toLowerCase().includes(keyword) ||
-    item.supplier.toLowerCase().includes(keyword) ||
-    item.salesPerson.toLowerCase().includes(keyword) ||
-    item.meetingNotes.toLowerCase().includes(keyword)
-  )
+  // 根据完成状态过滤
+  if (!showCompleted.value) {
+    filtered = filtered.filter(item => !item.isFinish)
+  }
+  
+  // 根据搜索关键词过滤
+  if (searchKeyword.value) {
+    const keyword = searchKeyword.value.toLowerCase()
+    filtered = filtered.filter(item =>
+      item.modelName.toLowerCase().includes(keyword) ||
+      item.supplier.toLowerCase().includes(keyword) ||
+      item.salesPerson.toLowerCase().includes(keyword) ||
+      item.meetingNotes.toLowerCase().includes(keyword)
+    )
+  }
+  
+  return filtered
 })
 
 
