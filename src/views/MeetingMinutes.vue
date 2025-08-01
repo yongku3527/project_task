@@ -929,6 +929,8 @@ onMounted(() => {
   background-color: #f5f7fa;
   border-radius: 4px;
   border-left: 3px solid #409eff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .meeting-item-with-actions.marked {
@@ -938,19 +940,26 @@ onMounted(() => {
 
 .item-content {
   color: #606266;
-  flex: 1;
+  flex: 1 1 auto;
   margin-right: 12px;
+  word-break: break-word;
+  min-width: 0;
+  text-align: left;
 }
 
 .marked-content {
   color: #f56c6c;
   font-weight: bold;
+  transform: none;
+  text-align: left;
 }
 
 .item-actions {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  justify-content: flex-end;
+  min-width: 180px;
 }
 
 .meeting-items li {
