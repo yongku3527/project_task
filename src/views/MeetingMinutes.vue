@@ -29,7 +29,7 @@
         class="minute-item"
       >
         <div class="item-header">
-          <span class="item-number">{{ index + 1 }}</span>
+          <span class="item-number">序号 {{ index + 1 }}</span>
           <div class="item-actions">
             <el-tag :type="minute.isFinish ? 'success' : 'info'" style="margin-right: 8px;">
               {{ minute.isFinish ? '已完成' : '未完成' }}
@@ -251,55 +251,77 @@ const filteredMinutes = computed(() => {
 
 // 方法：保存会议纪要
 const saveMinutes = () => {
-  formRef.value.validate((valid) => {
+  formRef.value.validate(async (valid) => {
     if (valid) {
-      const meetingNotes = formatMeetingNotes(formData.value.meetingInfoList)
-      
-      if (isEdit.value && editingId.value) {
-        const index = minutes.value.findIndex(item => item.id === editingId.value)
-        if (index !== -1) {
-          minutes.value[index] = {
-              ...minutes.value[index],
-              modelName: formData.value.modelName,
-              supplier: formData.value.supplier,
-              salesPerson: formData.value.salesPerson,
-              meetingNotes: meetingNotes,
-              isFinish: formData.value.isFinish,
-              rawData: {
-                ...minutes.value[index].rawData,
-                machineType: formData.value.modelName,
-                factory: formData.value.supplier,
-                salesPerson: formData.value.salesPerson,
-                meetingInfoList: formData.value.meetingInfoList,
-                isFinish: formData.value.isFinish
-              }
-            }
-          ElMessage.success('更新成功')
+      try {
+        // 过滤掉没有内容的会议项
+        const validMeetingInfoList = formData.value.meetingInfoList.filter(m => {
+          const hasDate = m.date && m.date.trim();
+          const hasValidItems = m.meetingItemList && m.meetingItemList.some(item => item.content && item.content.trim());
+          return hasDate && hasValidItems;
+        }).map(m => ({
+          date: m.date,
+          meetingItemList: m.meetingItemList.filter(item => item.content && item.content.trim())
+        }));
+
+        const meetingData = {
+          machineType: formData.value.modelName,
+          factory: formData.value.supplier,
+          salesPerson: formData.value.salesPerson,
+          isFinish: formData.value.isFinish,
+          meetingInfoList: validMeetingInfoList
         }
-      } else {
-        const newMinute: MeetingMinute = {
-            id: Date.now().toString(),
-            modelName: formData.value.modelName,
-            supplier: formData.value.supplier,
-            salesPerson: formData.value.salesPerson,
-            meetingNotes: meetingNotes,
-            createdAt: new Date().toLocaleDateString(),
-            isFinish: formData.value.isFinish,
-            rawData: {
-              id: Date.now(),
-              machineType: formData.value.modelName,
-              factory: formData.value.supplier,
-              salesPerson: formData.value.salesPerson,
-              meetingInfoList: formData.value.meetingInfoList,
-              isFinish: formData.value.isFinish
-            }
+
+        let response
+        let result
+
+        if (isEdit.value && editingId.value) {
+          // 更新会议纪要
+          response = await fetch(`${API_BASE_URL}/meeting/update`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...meetingData,
+              id: parseInt(editingId.value)
+            })
+          })
+          result = await response.json()
+          
+          if (result.code === 200) {
+            await loadMeetingData()
+            ElMessage.success('更新成功')
+          } else {
+            ElMessage.error('更新失败: ' + (result.msg || '未知错误'))
+            return
           }
-        minutes.value.unshift(newMinute)
-        ElMessage.success('添加成功')
+        } else {
+          // 新增会议纪要
+          response = await fetch(`${API_BASE_URL}/meeting/add`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(meetingData)
+          })
+          result = await response.json()
+          
+          if (result.code === 200) {
+            await loadMeetingData()
+            ElMessage.success('添加成功')
+          } else {
+            ElMessage.error('添加失败: ' + (result.msg || '未知错误'))
+            return
+          }
+        }
+        
+        showAddDialog.value = false
+        resetForm()
+      } catch (error) {
+        console.error('保存失败:', error)
+        ElMessage.error('网络错误，请检查接口连接')
       }
-      
-      showAddDialog.value = false
-      resetForm()
     }
   })
 }
@@ -331,13 +353,20 @@ const deleteMinutes = async (row: MeetingMinute) => {
       }
     )
     
-    const index = minutes.value.findIndex(item => item.id === row.id)
-    if (index !== -1) {
-      minutes.value.splice(index, 1)
+    const response = await fetch(`${API_BASE_URL}/meeting/delete/${row.id}`, {
+      method: 'DELETE'
+    })
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      await loadMeetingData()
       ElMessage.success('删除成功')
+    } else {
+      ElMessage.error('删除失败: ' + (result.msg || '未知错误'))
     }
-  } catch {
-    // 用户取消删除
+  } catch (error) {
+    console.error('删除失败:', error)
+    ElMessage.error('网络错误，请检查接口连接')
   }
 }
 
@@ -353,10 +382,13 @@ const resetForm = () => {
   editingId.value = null
 }
 
+// API基础URL
+const API_BASE_URL = 'http://192.168.90.64:8083'
+
 // 从接口获取数据
 const loadMeetingData = async () => {
   try {
-    const response = await fetch('http://192.168.90.64:8083/meeting/getAll')
+    const response = await fetch(`${API_BASE_URL}/meeting/getAll`)
     const result = await response.json()
     
     if (result.code === 200 && result.data) {
@@ -381,30 +413,86 @@ const loadMeetingData = async () => {
 }
 
 // 方法：编辑会议内容项
-const editMeetingItem = (meeting, item) => {
-  ElMessageBox.prompt(
-    '请输入新的会议内容',
-    '编辑会议内容',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputValue: item.content,
-      inputPattern: /^.{1,500}$/,
-      inputErrorMessage: '内容不能为空且不超过500字符'
+const editMeetingItem = async (meeting, item) => {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '请输入新的会议内容',
+      '编辑会议内容',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputValue: item.content,
+        inputPattern: /^.{1,500}$/,
+        inputErrorMessage: '内容不能为空且不超过500字符'
+      }
+    )
+    
+    if (item.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/item/update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: item.id,
+          content: value,
+          isMarked: item.isMarked
+        })
+      })
+      const result = await response.json()
+      
+      if (result.code === 200) {
+        await loadMeetingData()
+        ElMessage.success('修改成功')
+      } else {
+        ElMessage.error('修改失败: ' + (result.msg || '未知错误'))
+      }
+    } else {
+      // 如果是新增的项目，直接更新本地数据
+      item.content = value
+      ElMessage.success('修改成功')
     }
-  ).then(({ value }) => {
-    item.content = value
-    ElMessage.success('修改成功')
-  }).catch(() => {
+  } catch {
     // 用户取消编辑
-  })
+  }
 }
 
 // 方法：切换标记状态
-const toggleMarkItem = (meeting, item) => {
-  item.isMarked = !item.isMarked
-  const message = item.isMarked ? '已标记' : '已取消标记'
-  ElMessage.success(message)
+const toggleMarkItem = async (meeting, item) => {
+  try {
+    const newMarkedStatus = !item.isMarked
+    
+    if (item.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/item/update`, {
+         method: 'PUT',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({
+           id: item.id,
+           content: item.content,
+           isMarked: newMarkedStatus
+         })
+       })
+      const result = await response.json()
+      
+      if (result.code === 200) {
+        await loadMeetingData()
+        const message = newMarkedStatus ? '已标记' : '已取消标记'
+        ElMessage.success(message)
+      } else {
+        ElMessage.error('操作失败: ' + (result.msg || '未知错误'))
+      }
+    } else {
+      // 如果是新增的项目，直接更新本地数据
+      item.isMarked = newMarkedStatus
+      const message = newMarkedStatus ? '已标记' : '已取消标记'
+      ElMessage.success(message)
+    }
+  } catch (error) {
+    console.error('操作失败:', error)
+    ElMessage.error('网络错误，请检查接口连接')
+  }
 }
 
 // 方法：删除单个会议记录
@@ -420,33 +508,55 @@ const deleteMeetingInfo = async (minute, meetingIndex) => {
       }
     )
     
-    if (minute.rawData?.meetingInfoList) {
-      minute.rawData.meetingInfoList.splice(meetingIndex, 1)
+    const meetingInfo = minute.rawData?.meetingInfoList?.[meetingIndex]
+    if (meetingInfo && meetingInfo.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/info/delete/${meetingInfo.id}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
       
-      // 更新会议记录格式化内容
-      minute.meetingNotes = formatMeetingNotes(minute.rawData.meetingInfoList)
-      ElMessage.success('删除成功')
+      if (result.code === 200) {
+        await loadMeetingData()
+        ElMessage.success('删除成功')
+      } else {
+        ElMessage.error('删除失败: ' + (result.msg || '未知错误'))
+      }
+    } else {
+      ElMessage.error('无法获取会议记录ID')
     }
-  } catch {
-    // 用户取消删除
+  } catch (error) {
+    console.error('删除失败:', error)
+    ElMessage.error('网络错误，请检查接口连接')
   }
 }
 
 // 方法：新增会议记录
-const addMeetingInfo = (minute) => {
-  if (!minute.rawData?.meetingInfoList) {
-    minute.rawData.meetingInfoList = []
+const addMeetingInfo = async (minute) => {
+  try {
+    const newMeeting = {
+      date: new Date().toLocaleDateString('zh-CN'),
+      meetingItemList: [{ content: '', isMarked: false }]
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/meeting/info/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newMeeting)
+    })
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      await loadMeetingData()
+      ElMessage.success('新增会议成功')
+    } else {
+      ElMessage.error('新增会议失败: ' + (result.msg || '未知错误'))
+    }
+  } catch (error) {
+    console.error('新增会议失败:', error)
+    ElMessage.error('网络错误，请检查接口连接')
   }
-  
-  const newMeeting = {
-    id: Date.now(),
-    date: new Date().toLocaleDateString('zh-CN'),
-    meetingItemList: [{ id: Date.now(), content: '', isMarked: false }]
-  }
-  
-  minute.rawData.meetingInfoList.push(newMeeting)
-  minute.meetingNotes = formatMeetingNotes(minute.rawData.meetingInfoList)
-  ElMessage.success('新增会议成功')
 }
 
 // 格式化会议记录
