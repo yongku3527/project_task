@@ -93,20 +93,21 @@
                     <div class="item-actions">
                       <el-button 
                         size="small" 
-                        type="primary" 
-                        text 
-                        @click="editMeetingItem(meeting, item)"
-                      >
-                        修改
-                      </el-button>
-                      <el-button 
-                        size="small" 
                         :type="item.isMarked ? 'warning' : 'info'"
                         text 
                         @click="toggleMarkItem(meeting, item)"
                       >
                         {{ item.isMarked ? '取消标记' : '标记' }}
                       </el-button>
+                      <el-button 
+                        size="small" 
+                        type="primary" 
+                        text 
+                        @click="editMeetingItem(meeting, item)"
+                      >
+                        修改
+                      </el-button>
+                      
                       <el-button 
                         size="small" 
                         type="danger" 
@@ -149,13 +150,52 @@
         label-width="100px"
       >
         <el-form-item label="机型名称" prop="modelName">
-          <el-input v-model="formData.modelName" placeholder="请输入机型名称" />
+          <el-select
+            v-model="formData.modelName"
+            filterable
+            allow-create
+            placeholder="请选择或输入机型名称"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in modelNameOptions"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="配套厂家" prop="supplier">
-          <el-input v-model="formData.supplier" placeholder="请输入配套厂家" />
+          <el-select
+            v-model="formData.supplier"
+            filterable
+            allow-create
+            placeholder="请选择或输入配套厂家"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in supplierOptions"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="业务员" prop="salesPerson">
-          <el-input v-model="formData.salesPerson" placeholder="请输入业务员姓名" />
+          <el-select
+            v-model="formData.salesPerson"
+            filterable
+            allow-create
+            placeholder="请选择或输入业务员姓名"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in salesPersonOptions"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="完成状态">
           <el-checkbox v-model="formData.isFinish">已完成</el-checkbox>
@@ -163,7 +203,7 @@
 
       </el-form>
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
+        <el-button @click="showAddDialog = false; resetForm()">取消</el-button>
         <el-button type="primary" @click="saveMinutes">保存</el-button>
       </template>
     </el-dialog>
@@ -258,6 +298,11 @@ const addItemFormRef = ref()
 const addMeetingFormRef = ref()
 const currentMeeting = ref(null)
 const currentMinuteId = ref<string | null>(null)
+
+// 历史数据选项
+const modelNameOptions = ref<string[]>([])
+const supplierOptions = ref<string[]>([])
+const salesPersonOptions = ref<string[]>([])
 
 // 表单数据
 const formData = ref({
@@ -478,6 +523,27 @@ const loadMeetingData = async () => {
             isFinish: item.isFinish || false,
             rawData: item // 保留原始数据用于展示详情
           }))
+
+      // 提取历史数据选项
+      const modelNames = new Set<string>()
+      const suppliers = new Set<string>()
+      const salesPersons = new Set<string>()
+
+      result.data.forEach(item => {
+        if (item.machineType || item.modelName) {
+          modelNames.add(item.machineType || item.modelName)
+        }
+        if (item.factory || item.supplier) {
+          suppliers.add(item.factory || item.supplier)
+        }
+        if (item.salesPerson) {
+          salesPersons.add(item.salesPerson)
+        }
+      })
+
+      modelNameOptions.value = Array.from(modelNames).sort()
+      supplierOptions.value = Array.from(suppliers).sort()
+      salesPersonOptions.value = Array.from(salesPersons).sort()
     } else {
       ElMessage.error('获取数据失败: ' + (result.msg || '未知错误'))
     }
