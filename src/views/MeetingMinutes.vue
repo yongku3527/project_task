@@ -86,8 +86,9 @@
                     删除会议记录
                   </el-button>
                 </div>
-                <ul class="meeting-items">
-                  <li v-for="(item, itemIndex) in meeting.meetingItemList" :key="item.id" class="meeting-item-with-actions" :class="{ 'marked': item.isMarked }">
+                <ul class="meeting-items" >
+
+                  <li v-for="(item, itemIndex) in meeting.meetingItemList.filter(item => item.content !== null && item.content !== undefined)" :key="item.id" class="meeting-item-with-actions" :class="{ 'marked': item.isMarked }">
                     <span class="item-content" :class="{ 'marked-content': item.isMarked }">{{ item.content }}</span>
                     <div class="item-actions">
                       <el-button 
