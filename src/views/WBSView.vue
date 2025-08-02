@@ -9,6 +9,14 @@
           </el-icon>
         </el-button>
       </div>
+      <div class="next-project-btn" @click="nextProject">
+        <el-button size="small" type="primary">
+          <el-icon>
+            <Back style="transform: rotate(180deg)" />
+          </el-icon>
+          下一个
+        </el-button>
+      </div>
       <div class="fullscreen-btn" @click="toggleFullscreen">
         <el-button size="small">
           <el-icon>
@@ -343,6 +351,18 @@ const toggleFullscreen = () => {
   }
 };
 
+const nextProject = () => {
+  if (wbsData.value.length === 0) return;
+  
+  currentPage.value = (currentPage.value + 1) % wbsData.value.length;
+  
+  // 如果正在自动播放，暂停自动播放
+  if (!isPaused.value) {
+    stopAutoSlide();
+    isPaused.value = true;
+  }
+};
+
 // 监听全屏状态变化
 const handleFullscreenChange = () => {
   isFullscreen.value = !!document.fullscreenElement;
@@ -419,6 +439,7 @@ onUnmounted(() => {
 }
 
 .play-pause-btn .el-button,
+.next-project-btn .el-button,
 .fullscreen-btn .el-button {
   border-radius: 8px;
   padding: 12px 16px;
@@ -438,7 +459,7 @@ onUnmounted(() => {
 .legend-panel {
   position: fixed;
   top: 10px;
-  right: 150px;
+  right: 260px;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #ddd;
