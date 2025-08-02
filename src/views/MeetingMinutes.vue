@@ -81,18 +81,10 @@
                   class="meeting-item-with-actions" 
                   :class="{ 'marked': meeting.isMarked }"
                 >
-                  <div class="meeting-header">
-                    <div class="meeting-date">{{ meeting.date }}</div>
-                    <el-button 
-                      size="small" 
-                      type="danger" 
-                      text 
-                      @click="deleteMeetingInfo(minute, meetingIndex)"
-                    >
-                      删除会议记录
-                    </el-button>
+                  <div class="meeting-content-row">
+                    <span class="meeting-date-inline">{{ meeting.date }}</span>
+                    <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
                   </div>
-                  <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
                   <div class="item-actions">
                     <el-button 
                       size="small" 
@@ -579,40 +571,7 @@ const toggleMarkItem = async (meeting) => {
 
 
 
-// 方法：删除单个会议记录
-const deleteMeetingInfo = async (minute, meetingIndex) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除这条会议记录吗？`,
-      '删除确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    const meetingInfo = minute.rawData?.meetingInfoList?.[meetingIndex]
-    if (meetingInfo && meetingInfo.id) {
-      const response = await fetch(`${API_BASE_URL}/meeting/info/delete/${meetingInfo.id}`, {
-        method: 'DELETE'
-      })
-      const result = await response.json()
-      
-      if (result.code === 200) {
-        await loadMeetingData()
-        ElMessage.success('删除成功')
-      } else {
-        ElMessage.error('删除失败: ' + (result.msg || '未知错误'))
-      }
-    } else {
-      ElMessage.error('无法获取会议记录ID')
-    }
-  } catch (error) {
-    console.error('删除失败:', error)
-    ElMessage.error('网络错误，请检查接口连接')
-  }
-}
+
 
 // 方法：新增会议记录 - 显示日期选择对话框
 const addMeetingInfo = (minute) => {
@@ -807,19 +766,19 @@ onMounted(() => {
 
 
 
-.meeting-header {
+.meeting-content-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 8px;
-  position: relative;
+  gap: 8px;
 }
 
-.meeting-date {
+.meeting-date-inline {
   font-weight: 600;
   color: #409eff;
   font-size: 14px;
-  text-align: left;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .meeting-header .el-button {
@@ -862,7 +821,6 @@ onMounted(() => {
 .item-content {
   color: #606266;
   flex: 1 1 auto;
-  margin-right: 12px;
   word-break: break-word;
   min-width: 0;
   text-align: left;
