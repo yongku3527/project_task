@@ -33,16 +33,6 @@
         :key="minute.id"
         class="minute-item"
       >
-        <div class="item-header">
-          <span class="item-number">序号 {{ index + 1 }}</span>
-          <div class="item-actions">
-            <el-tag :type="minute.isFinish ? 'success' : 'info'" style="margin-right: 8px;">
-              {{ minute.isFinish ? '已完成' : '未完成' }}
-            </el-tag>
-            <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
-            <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button>
-          </div>
-        </div>
         
         <div class="item-content">
           <div class="content-row horizontal-info">
@@ -58,13 +48,20 @@
               <span class="content-label">业务人员：</span>
               <span class="content-value">{{ minute.salesPerson }}</span>
             </div>
+            <div class="item-actions">
+            <el-tag :type="minute.isFinish ? 'success' : 'info'" style="margin-top: 4px;">
+              {{ minute.isFinish ? '已完成' : '未完成' }}
+            </el-tag>
+            <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
+            <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button>
+          </div>
           </div>
           
           <!-- 会议记录 -->
           <div class="meeting-section">
-            <div class="section-header">
+            <!-- <div class="section-header">
               <div class="section-title">会议记录</div>
-            </div>
+            </div> -->
             <div v-if="minute.rawData?.meetingInfoList?.length && minute.rawData.meetingInfoList.some(m => m.content !== null && m.content !== undefined)" class="meetings">
               <ul class="meeting-items">
                 <li 
@@ -718,6 +715,7 @@ onMounted(() => {
 }
 
 .item-actions {
+
   display: flex;
   gap: 8px;
 }
