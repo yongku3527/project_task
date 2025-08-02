@@ -13,11 +13,11 @@
     </div>
       <div class="header-actions">
         <el-checkbox v-model="showCompleted" style="margin-right: 16px;">
-          显示已完成任务
+          显示已完成项目
         </el-checkbox>
         <el-button type="primary" @click="showAddDialog = true">
           <el-icon><Plus /></el-icon>
-          新增纪要
+          新增项目
         </el-button>
       </div>
     </div>
@@ -64,14 +64,6 @@
           <div class="meeting-section">
             <div class="section-header">
               <div class="section-title">会议记录</div>
-              <el-button 
-                size="small" 
-                type="primary" 
-                @click="addMeetingInfo(minute)"
-              >
-                <el-icon><Plus /></el-icon>
-                新增会议记录
-              </el-button>
             </div>
             <div v-if="minute.rawData?.meetingInfoList?.length && minute.rawData.meetingInfoList.some(m => m.content !== null && m.content !== undefined)" class="meetings">
               <ul class="meeting-items">
@@ -82,7 +74,7 @@
                   :class="{ 'marked': meeting.isMarked }"
                 >
                   <div class="meeting-content-row">
-                    <span class="meeting-date-inline">{{ meeting.date }}:</span>
+                    <span class="meeting-date-inline">{{ meeting.date }}</span>
                     <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
                     <div class="item-actions">
                       <el-button 
@@ -105,8 +97,30 @@
                   </div>
                 </li>
               </ul>
+              <div class="add-meeting-button">
+                <el-button 
+                  size="small" 
+                  type="primary" 
+                  @click="addMeetingInfo(minute)"
+                >
+                  <el-icon><Plus /></el-icon>
+                  新增会议记录
+                </el-button>
+              </div>
             </div>
-            <div v-else class="no-meetings">暂无会议记录</div>
+            <div v-else class="no-meetings">
+              <div class="no-meetings-text">暂无会议记录</div>
+              <div class="add-meeting-button">
+                <el-button 
+                  size="small" 
+                  type="primary" 
+                  @click="addMeetingInfo(minute)"
+                >
+                  <el-icon><Plus /></el-icon>
+                  新增会议记录
+                </el-button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -748,9 +762,6 @@ onMounted(() => {
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 12px;
 }
 
@@ -849,6 +860,19 @@ onMounted(() => {
   color: #909399;
   font-style: italic;
   padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.no-meetings-text {
+  margin-bottom: 8px;
+}
+
+.add-meeting-button {
+  margin-top: 12px;
+  text-align: left;
 }
 
 .empty-state {
