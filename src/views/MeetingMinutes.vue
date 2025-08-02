@@ -66,8 +66,9 @@
               <span class="content-value">{{ minute.salesPerson }}</span>
             </div>
             <div class="item-actions">
-            <el-tag :type="minute.isFinish ? 'success' : 'info'" style="margin-top: 4px;">
-              {{ minute.isFinish ? '已完成' : '未完成' }}
+
+            <el-tag :type="minute.status === 0 ? 'success' : minute.status === 1 ? 'primary' : 'warning'" style="margin-top: 4px;">
+            {{ minute.status === 0 ? '已完成' : minute.status === 1 ? '开发中' : '暂停中' }}
             </el-tag>
             <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
             <!-- <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button> -->
@@ -203,7 +204,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="完成状态">
-          <el-checkbox v-model="formData.isFinish">已完成</el-checkbox>
+          <el-select v-model="formData.status" placeholder="请选择状态" style="width: 100%;">
+            <el-option :value="0" label="已完成" />
+            <el-option :value="1" label="开发中" />
+            <el-option :value="2" label="暂停中" />
+          </el-select>
         </el-form-item>
 
       </el-form>
@@ -258,7 +263,7 @@ interface MeetingMinute {
   salesPerson: string
   meetingNotes: string
   createdAt: string
-  isFinish: boolean
+  status: number
   rawData?: any
 }
 
@@ -284,7 +289,7 @@ const formData = ref({
   modelName: '',
   supplier: '',
   salesPerson: '',
-  isFinish: false
+  status: 1
 })
 
 
@@ -322,7 +327,7 @@ const filteredMinutes = computed(() => {
   
   // 根据完成状态过滤
   if (!showCompleted.value) {
-    filtered = filtered.filter(item => !item.isFinish)
+    filtered = filtered.filter(item => item.status !== 0)
   }
   
   // 根据搜索关键词过滤
@@ -350,7 +355,7 @@ const saveMinutes = () => {
           machineType: formData.value.modelName,
           factory: formData.value.supplier,
           salesPerson: formData.value.salesPerson,
-          isFinish: formData.value.isFinish,
+          status: formData.value.status,
           meetingNotes: ''
         }
 
@@ -416,7 +421,7 @@ const editMinutes = (row: MeetingMinute) => {
           modelName: row.modelName,
           supplier: row.supplier,
           salesPerson: row.salesPerson,
-          isFinish: row.isFinish
+          status: row.status
         }
   showAddDialog.value = true
 }
@@ -457,7 +462,7 @@ const resetForm = () => {
     modelName: '',
     supplier: '',
     salesPerson: '',
-    isFinish: false
+    status: 1
   }
   editingId.value = null
 }
@@ -490,7 +495,7 @@ const loadMeetingData = async () => {
             salesPerson: item.salesPerson || '',
             meetingNotes: item.meetingNotes || formatMeetingNotes(item.meetingInfoList),
             createdAt: item.createdAt || item.meetingInfoList?.[0]?.date || new Date().toLocaleDateString(),
-            isFinish: item.isFinish || false,
+            status: item.status,
             rawData: item // 保留原始数据用于展示详情
           }))
 
