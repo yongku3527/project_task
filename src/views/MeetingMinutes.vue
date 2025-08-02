@@ -82,26 +82,26 @@
                   :class="{ 'marked': meeting.isMarked }"
                 >
                   <div class="meeting-content-row">
-                    <span class="meeting-date-inline">{{ meeting.date }}</span>
+                    <span class="meeting-date-inline">{{ meeting.date }}:</span>
                     <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
-                  </div>
-                  <div class="item-actions">
-                    <el-button 
-                      size="small" 
-                      :type="meeting.isMarked ? 'warning' : 'info'"
-                      text 
-                      @click="toggleMarkItem(meeting)"
-                    >
-                      {{ meeting.isMarked ? '取消标记' : '标记' }}
-                    </el-button>
-                    <el-button 
-                      size="small" 
-                      type="primary" 
-                      text 
-                      @click="editMeetingItem(meeting)"
-                    >
-                      修改
-                    </el-button>
+                    <div class="item-actions">
+                      <el-button 
+                        size="small" 
+                        :type="meeting.isMarked ? 'warning' : 'info'"
+                        text 
+                        @click="toggleMarkItem(meeting)"
+                      >
+                        {{ meeting.isMarked ? '取消标记' : '标记' }}
+                      </el-button>
+                      <el-button 
+                        size="small" 
+                        type="primary" 
+                        text 
+                        @click="editMeetingItem(meeting)"
+                      >
+                        修改
+                      </el-button>
+                    </div>
                   </div>
                 </li>
               </ul>
@@ -768,9 +768,10 @@ onMounted(() => {
 
 .meeting-content-row {
   display: flex;
-  align-items: flex-start;
-  margin-bottom: 8px;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .meeting-date-inline {
@@ -800,8 +801,7 @@ onMounted(() => {
 
 .meeting-item-with-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   padding: 12px;
   margin-bottom: 8px;
   background-color: #f5f7fa;
@@ -809,8 +809,6 @@ onMounted(() => {
   border-left: 3px solid #409eff;
   width: 100%;
   box-sizing: border-box;
-  flex-direction: column;
-  align-items: stretch;
 }
 
 .meeting-item-with-actions.marked {
@@ -824,6 +822,7 @@ onMounted(() => {
   word-break: break-word;
   min-width: 0;
   text-align: left;
+  margin-right: 8px;
 }
 
 .marked-content {
@@ -837,8 +836,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
-  justify-content: flex-end;
-  min-width: 180px;
+  margin-top: 0;
 }
 
 .meeting-items li {
