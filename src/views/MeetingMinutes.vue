@@ -70,7 +70,7 @@
               {{ minute.isFinish ? '已完成' : '未完成' }}
             </el-tag>
             <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
-            <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button>
+            <!-- <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button> -->
             <span hidden>admin meetingId{{ minute.id }}</span>
           </div>
           </div>
@@ -120,7 +120,7 @@
                   @click="addMeetingInfo(minute)"
                 >
                   <el-icon><Plus /></el-icon>
-                  新增会议记录
+                  <!-- 新增会议记录 -->
                 </el-button>
               </div>
             </div>
