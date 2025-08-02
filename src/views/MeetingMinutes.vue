@@ -1,25 +1,42 @@
 <template>
   <div class="meeting-minutes-container">
-    <div class="page-header">
-      <h1>会议纪要管理</h1>
-      <div class="search-bar">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="搜索机型名称、配套厂家、业务员或会议记录"
-        prefix-icon="Search"
-        style="width: 350px"
-        clearable
-      />
-    </div>
-      <div class="header-actions">
-        <el-checkbox v-model="showCompleted" style="margin-right: 16px;">
-          显示已完成项目
-        </el-checkbox>
-        <el-button type="primary" @click="showAddDialog = true">
-          <el-icon><Plus /></el-icon>
-          新增项目
+    <div class="floating-management">
+      <el-dropdown trigger="click" placement="bottom-start">
+        <el-button type="primary" circle size="large">
+          <el-icon><Operation /></el-icon>
         </el-button>
-      </div>
+        <template #dropdown>
+          <el-dropdown-menu class="management-dropdown">
+            <el-dropdown-item>
+              <div class="dropdown-item-content">
+                <el-input
+                  v-model="searchKeyword"
+                  placeholder="搜索机型名称、配套厂家、业务员或会议记录"
+                  prefix-icon="Search"
+                  style="width: 280px"
+                  clearable
+                  @click.stop
+                />
+              </div>
+            </el-dropdown-item>
+            <el-dropdown-item divided>
+              <div class="dropdown-item-content">
+                <el-checkbox v-model="showCompleted">
+                  显示已完成项目
+                </el-checkbox>
+              </div>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <div class="dropdown-item-content">
+                <el-button type="primary" @click="showAddDialog = true" style="width: 100%">
+                  <el-icon><Plus /></el-icon>
+                  新增项目
+                </el-button>
+              </div>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
 
 
@@ -54,6 +71,7 @@
             </el-tag>
             <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
             <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button>
+            <span hidden>admin meetingId{{ minute.id }}</span>
           </div>
           </div>
           
@@ -73,6 +91,7 @@
                   <div class="meeting-content-row">
                     <span class="meeting-date-inline">{{ meeting.date }}</span>
                     <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
+                    <span hidden>admin InfoId:{{ meeting.id }}</span>
                     <div class="item-actions">
                       <el-button 
                         size="small" 
@@ -230,7 +249,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Plus, Search, Operation, ArrowDown } from '@element-plus/icons-vue'
 
 interface MeetingMinute {
   id: string
@@ -651,15 +670,16 @@ onMounted(() => {
   min-height: 100vh;
   background-color: #f5f7fa;
   padding: 20px;
+  padding-top: 20px;
 }
 
 /* 页面标题 */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 0 20px;
+.floating-management {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .page-title {
@@ -878,6 +898,16 @@ onMounted(() => {
   padding: 40px;
   color: #909399;
   font-size: 16px;
+}
+
+/* 管理下拉菜单样式 */
+.management-dropdown {
+  padding: 8px 0;
+}
+
+.dropdown-item-content {
+  padding: 8px 16px;
+  min-width: 200px;
 }
 
 /* 表单样式 */
