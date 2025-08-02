@@ -611,7 +611,11 @@ const toggleMarkItem = async (meeting) => {
 // 方法：新增会议记录 - 显示日期选择对话框
 const addMeetingInfo = (minute) => {
   currentMinuteId.value = minute.id
-  addMeetingFormData.value.date = new Date().toLocaleDateString('zh-CN')
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  addMeetingFormData.value.date = `${year}-${month}-${day}`
   showAddMeetingDialog.value = true
 }
 
