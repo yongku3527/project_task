@@ -73,7 +73,7 @@
                 新增会议记录
               </el-button>
             </div>
-            <div v-if="minute.rawData?.meetingInfoList?.length && minute.rawData.meetingInfoList.some(m => m.meetingItemList && m.meetingItemList.length > 0)" class="meetings">
+            <div v-if="minute.rawData?.meetingInfoList?.length && minute.rawData.meetingInfoList.some(m => m.content !== null && m.content !== undefined)" class="meetings">
              
               <div 
                 v-for="(meeting, meetingIndex) in minute.rawData.meetingInfoList" 
@@ -81,7 +81,7 @@
                 class="meeting-entry"
               >
                 <div class="meeting-header">
-                  <div class="meeting-date">{{ meeting.date }}</div>
+                  <!-- <div class="meeting-date">{{ meeting.date }}</div> -->
                   <el-button 
                     size="small" 
                     type="danger" 
@@ -91,49 +91,29 @@
                     删除会议记录
                   </el-button>
                 </div>
-                <ul class="meeting-items" >
-
-                  <li v-for="(item, itemIndex) in meeting.meetingItemList.filter(item => item.content !== null && item.content !== undefined)" :key="item.id" class="meeting-item-with-actions" :class="{ 'marked': item.isMarked }">
-                    <span class="item-content" :class="{ 'marked-content': item.isMarked }">{{ item.content }}</span>
+                <ul class="meeting-items">
+                  <li class="meeting-item-with-actions" :class="{ 'marked': meeting.isMarked }">
+                    <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
                     <div class="item-actions">
                       <el-button 
                         size="small" 
-                        :type="item.isMarked ? 'warning' : 'info'"
+                        :type="meeting.isMarked ? 'warning' : 'info'"
                         text 
-                        @click="toggleMarkItem(meeting, item)"
+                        @click="toggleMarkItem(meeting)"
                       >
-                        {{ item.isMarked ? '取消标记' : '标记' }}
+                        {{ meeting.isMarked ? '取消标记' : '标记' }}
                       </el-button>
                       <el-button 
                         size="small" 
                         type="primary" 
                         text 
-                        @click="editMeetingItem(meeting, item)"
+                        @click="editMeetingItem(meeting)"
                       >
                         修改
-                      </el-button>
-                      
-                      <el-button 
-                        size="small" 
-                        type="danger" 
-                        text 
-                        @click="deleteMeetingItem(meeting, item, itemIndex)"
-                      >
-                        删除
                       </el-button>
                     </div>
                   </li>
                 </ul>
-                <div class="add-item-section">
-                  <el-button 
-                    size="small" 
-                    type="success" 
-                    @click="addMeetingItem(meeting)"
-                  >
-                    <el-icon><Plus /></el-icon>
-                    新增会议条目
-                  </el-button>
-                </div>
               </div>
             </div>
             <div v-else class="no-meetings">暂无会议记录</div>
@@ -213,34 +193,7 @@
       </template>
     </el-dialog>
 
-    <!-- 添加会议条目对话框 -->
-    <el-dialog
-      v-model="showAddItemDialog"
-      title="新增会议条目"
-      width="500px"
-    >
-      <el-form
-        ref="addItemFormRef"
-        :model="addItemFormData"
-        :rules="addItemFormRules"
-        label-width="80px"
-      >
-        <el-form-item label="会议内容" prop="content">
-          <el-input
-            v-model="addItemFormData.content"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入会议内容"
-            maxlength="500"
-            show-word-limit
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showAddItemDialog = false; resetAddItemForm()">取消</el-button>
-        <el-button type="primary" @click="saveMeetingItem">保存</el-button>
-      </template>
-    </el-dialog>
+    
 
     <!-- 添加会议记录对话框 -->
     <el-dialog
@@ -293,16 +246,12 @@ interface MeetingMinute {
 const searchKeyword = ref('')
 const minutes = ref<MeetingMinute[]>([])
 const showAddDialog = ref(false)
-const showAddItemDialog = ref(false)
 const showAddMeetingDialog = ref(false)
 const showCompleted = ref(true)
 const isEdit = ref(false)
 const editingId = ref<string | null>(null)
-const editingMeetingId = ref<string | null>(null)
 const formRef = ref()
-const addItemFormRef = ref()
 const addMeetingFormRef = ref()
-const currentMeeting = ref(null)
 const currentMinuteId = ref<string | null>(null)
 
 // 历史数据选项
@@ -318,10 +267,7 @@ const formData = ref({
   isFinish: false
 })
 
-// 会议条目表单数据
-const addItemFormData = ref({
-  content: ''
-})
+
 
 // 会议日期表单数据
 const addMeetingFormData = ref({
@@ -335,13 +281,7 @@ const addMeetingFormRules = {
   ]
 }
 
-// 会议条目表单验证规则
-const addItemFormRules = {
-  content: [
-    { required: true, message: '请输入会议内容', trigger: 'blur' },
-    { min: 2, max: 500, message: '长度在 2 到 500 个字符', trigger: 'blur' }
-  ]
-}
+
 
 // 表单验证规则
 const formRules = {
@@ -502,13 +442,7 @@ const resetForm = () => {
   editingId.value = null
 }
 
-// 方法：重置会议条目表单
-const resetAddItemForm = () => {
-  addItemFormData.value = {
-    content: ''
-  }
-  currentMeeting.value = null
-}
+
 
 // 方法：重置会议日期表单
 const resetAddMeetingForm = () => {
@@ -569,8 +503,8 @@ const loadMeetingData = async () => {
   }
 }
 
-// 方法：编辑会议内容项
-const editMeetingItem = async (meeting, item) => {
+// 方法：编辑会议内容
+const editMeetingItem = async (meeting) => {
   try {
     const { value } = await ElMessageBox.prompt(
       '请输入新的会议内容',
@@ -578,22 +512,23 @@ const editMeetingItem = async (meeting, item) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        inputValue: item.content,
+        inputValue: meeting.content,
         inputPattern: /^.{1,500}$/,
         inputErrorMessage: '内容不能为空且不超过500字符'
       }
     )
     
-    if (item.id) {
-      const response = await fetch(`${API_BASE_URL}/meeting/item/update`, {
+    if (meeting.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/info/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: item.id,
+          id: meeting.id,
           content: value,
-          isMarked: item.isMarked
+          isMarked: meeting.isMarked,
+          date: meeting.date
         })
       })
       const result = await response.json()
@@ -604,10 +539,6 @@ const editMeetingItem = async (meeting, item) => {
       } else {
         ElMessage.error('修改失败: ' + (result.msg || '未知错误'))
       }
-    } else {
-      // 如果是新增的项目，直接更新本地数据
-      item.content = value
-      ElMessage.success('修改成功')
     }
   } catch {
     // 用户取消编辑
@@ -615,20 +546,21 @@ const editMeetingItem = async (meeting, item) => {
 }
 
 // 方法：切换标记状态
-const toggleMarkItem = async (meeting, item) => {
+const toggleMarkItem = async (meeting) => {
   try {
-    const newMarkedStatus = !item.isMarked
+    const newMarkedStatus = !meeting.isMarked
     
-    if (item.id) {
-      const response = await fetch(`${API_BASE_URL}/meeting/item/update`, {
+    if (meeting.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/info/update`, {
          method: 'PUT',
          headers: {
            'Content-Type': 'application/json',
          },
          body: JSON.stringify({
-           id: item.id,
-           content: item.content,
-           isMarked: newMarkedStatus
+           id: meeting.id,
+           content: meeting.content,
+           isMarked: newMarkedStatus,
+           date: meeting.date
          })
        })
       const result = await response.json()
@@ -640,11 +572,6 @@ const toggleMarkItem = async (meeting, item) => {
       } else {
         ElMessage.error('操作失败: ' + (result.msg || '未知错误'))
       }
-    } else {
-      // 如果是新增的项目，直接更新本地数据
-      item.isMarked = newMarkedStatus
-      const message = newMarkedStatus ? '已标记' : '已取消标记'
-      ElMessage.success(message)
     }
   } catch (error) {
     console.error('操作失败:', error)
@@ -652,49 +579,7 @@ const toggleMarkItem = async (meeting, item) => {
   }
 }
 
-// 方法：删除会议条目
-const deleteMeetingItem = async (meeting, item, itemIndex) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除这条会议条目吗？`,
-      '删除确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    if (item.id) {
-      const response = await fetch(`${API_BASE_URL}/meeting/item/delete/${item.id}`, {
-        method: 'DELETE'
-      })
-      const result = await response.json()
-      
-      if (result.code === 200) {
-        await loadMeetingData()
-        ElMessage.success('删除成功')
-      } else {
-        ElMessage.error('删除失败: ' + (result.msg || '未知错误'))
-      }
-    } else {
-      // 如果是新增但未保存的项目，直接从本地数据中移除
-      const meetingInfo = meeting.rawData?.meetingInfoList?.find(m => m.date === meeting.createdAt)
-      if (meetingInfo && meetingInfo.meetingItemList) {
-        meetingInfo.meetingItemList.splice(itemIndex, 1)
-        await loadMeetingData()
-        ElMessage.success('删除成功')
-      } else {
-        ElMessage.error('无法获取会议条目信息')
-      }
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除失败:', error)
-      ElMessage.error('网络错误，请检查接口连接')
-    }
-  }
-}
+
 
 // 方法：删除单个会议记录
 const deleteMeetingInfo = async (minute, meetingIndex) => {
@@ -774,57 +659,17 @@ const saveMeetingInfo = () => {
   })
 }
 
-// 方法：新增会议条目 - 显示对话框
-const addMeetingItem = (meeting) => {
-  currentMeeting.value = meeting
-  addItemFormData.value.content = ''
-  showAddItemDialog.value = true
-}
 
-// 方法：保存会议条目
-const saveMeetingItem = () => {
-  addItemFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        const newItem = {
-          meetingInfoId: currentMeeting.value.id,
-          content: addItemFormData.value.content,
-          isMarked: false
-        }
-        
-        const response = await fetch(`${API_BASE_URL}/meeting/item/add`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newItem)
-        })
-        const result = await response.json()
-        
-        if (result.code === 200) {
-          await loadMeetingData()
-          showAddItemDialog.value = false
-          resetAddItemForm()
-          ElMessage.success('新增会议条目成功')
-        } else {
-          ElMessage.error('新增会议条目失败: ' + (result.msg || '未知错误'))
-        }
-      } catch (error) {
-        console.error('新增会议条目失败:', error)
-        ElMessage.error('网络错误，请检查接口连接')
-      }
-    }
-  })
-}
+
+
 
 // 格式化会议记录
 const formatMeetingNotes = (meetingInfoList) => {
-  if (!meetingInfoList || meetingInfoList.length === 0) return '暂无会议记录'
+  if (!meetingInfoList || !Array.isArray(meetingInfoList)) return '暂无会议记录'
   
-  return meetingInfoList.map(info => {
-    const items = info.meetingItemList?.map(item => item.content).join('；') || ''
-    return `${info.date}: ${items}`
-  }).join('\n')
+  return meetingInfoList
+    .map(info => `${info.date}: ${info.content || ''}`)
+    .join('\n')
 }
 
 // 生命周期
