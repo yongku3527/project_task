@@ -74,47 +74,45 @@
               </el-button>
             </div>
             <div v-if="minute.rawData?.meetingInfoList?.length && minute.rawData.meetingInfoList.some(m => m.content !== null && m.content !== undefined)" class="meetings">
-             
-              <div 
-                v-for="(meeting, meetingIndex) in minute.rawData.meetingInfoList" 
-                :key="meeting.id" 
-                class="meeting-entry"
-              >
-                <div class="meeting-header">
-                  <!-- <div class="meeting-date">{{ meeting.date }}</div> -->
-                  <el-button 
-                    size="small" 
-                    type="danger" 
-                    text 
-                    @click="deleteMeetingInfo(minute, meetingIndex)"
-                  >
-                    删除会议记录
-                  </el-button>
-                </div>
-                <ul class="meeting-items">
-                  <li class="meeting-item-with-actions" :class="{ 'marked': meeting.isMarked }">
-                    <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
-                    <div class="item-actions">
-                      <el-button 
-                        size="small" 
-                        :type="meeting.isMarked ? 'warning' : 'info'"
-                        text 
-                        @click="toggleMarkItem(meeting)"
-                      >
-                        {{ meeting.isMarked ? '取消标记' : '标记' }}
-                      </el-button>
-                      <el-button 
-                        size="small" 
-                        type="primary" 
-                        text 
-                        @click="editMeetingItem(meeting)"
-                      >
-                        修改
-                      </el-button>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <ul class="meeting-items">
+                <li 
+                  v-for="(meeting, meetingIndex) in minute.rawData.meetingInfoList" 
+                  :key="meeting.id" 
+                  class="meeting-item-with-actions" 
+                  :class="{ 'marked': meeting.isMarked }"
+                >
+                  <div class="meeting-header">
+                    <div class="meeting-date">{{ meeting.date }}</div>
+                    <el-button 
+                      size="small" 
+                      type="danger" 
+                      text 
+                      @click="deleteMeetingInfo(minute, meetingIndex)"
+                    >
+                      删除会议记录
+                    </el-button>
+                  </div>
+                  <span class="item-content" :class="{ 'marked-content': meeting.isMarked }">{{ meeting.content }}</span>
+                  <div class="item-actions">
+                    <el-button 
+                      size="small" 
+                      :type="meeting.isMarked ? 'warning' : 'info'"
+                      text 
+                      @click="toggleMarkItem(meeting)"
+                    >
+                      {{ meeting.isMarked ? '取消标记' : '标记' }}
+                    </el-button>
+                    <el-button 
+                      size="small" 
+                      type="primary" 
+                      text 
+                      @click="editMeetingItem(meeting)"
+                    >
+                      修改
+                    </el-button>
+                  </div>
+                </li>
+              </ul>
             </div>
             <div v-else class="no-meetings">暂无会议记录</div>
           </div>
@@ -807,17 +805,11 @@ onMounted(() => {
   margin-top: 8px;
 }
 
-.meeting-entry {
-  background-color: #f5f7fa;
-  border-left: 3px solid #409eff;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-}
+
 
 .meeting-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
   position: relative;
@@ -827,7 +819,7 @@ onMounted(() => {
   font-weight: 600;
   color: #409eff;
   font-size: 14px;
-  text-align: center;
+  text-align: left;
 }
 
 .meeting-header .el-button {
@@ -851,13 +843,15 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  margin-bottom: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
   background-color: #f5f7fa;
   border-radius: 4px;
   border-left: 3px solid #409eff;
   width: 100%;
   box-sizing: border-box;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .meeting-item-with-actions.marked {
