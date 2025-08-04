@@ -299,7 +299,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Operation, ArrowDown, Lock } from '@element-plus/icons-vue'
 
@@ -533,6 +533,10 @@ const resetForm = () => {
     status: 1
   }
   editingId.value = null
+  // 重置表单验证状态
+  nextTick(() => {
+    formRef.value?.resetFields()
+  })
 }
 
 
@@ -544,6 +548,10 @@ const resetAddMeetingForm = () => {
     content: ''
   }
   currentMinuteId.value = null
+  // 重置表单验证状态
+  nextTick(() => {
+    addMeetingFormRef.value?.resetFields()
+  })
 }
 
 // API基础URL
