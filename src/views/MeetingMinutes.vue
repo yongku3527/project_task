@@ -298,7 +298,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Operation, ArrowDown, Lock } from '@element-plus/icons-vue'
 
@@ -318,7 +318,7 @@ const searchKeyword = ref('')
 const minutes = ref<MeetingMinute[]>([])
 const showAddDialog = ref(false)
 const showAddMeetingDialog = ref(false)
-const showCompleted = ref(true)
+const showCompleted = ref(localStorage.getItem('showCompleted') !== 'false')
 const isEdit = ref(false)
 const editingId = ref<string | null>(null)
 const formRef = ref()
@@ -768,6 +768,11 @@ const formatMeetingNotes = (meetingInfoList) => {
 // 生命周期
 onMounted(() => {
   loadMeetingData()
+})
+
+// 监听showCompleted变化并保存到localStorage
+watch(showCompleted, (newValue) => {
+  localStorage.setItem('showCompleted', String(newValue))
 })
 </script>
 
