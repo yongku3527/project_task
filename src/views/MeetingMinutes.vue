@@ -192,7 +192,7 @@
     <!-- 添加/编辑对话框 -->
     <el-dialog
       v-model="showAddDialog"
-      :title="isEdit ? '编辑会议纪要' : '新增会议纪要'"
+      :title="isEdit ? '编辑项目详情' : '新增项目'"
       width="600px"
     >
       <el-form
@@ -202,20 +202,11 @@
         label-width="100px"
       >
         <el-form-item label="机型名称" prop="modelName">
-          <el-select
+          <el-input
             v-model="formData.modelName"
-            filterable
-            allow-create
-            placeholder="请选择或输入机型名称"
+            placeholder="请输入机型名称"
             style="width: 100%"
-          >
-            <el-option
-              v-for="item in modelNameOptions"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item label="配套厂家" prop="supplier">
           <el-select
@@ -288,6 +279,16 @@
             style="width: 100%"
           />
         </el-form-item>
+        <el-form-item label="会议内容" prop="content">
+          <el-input
+            v-model="addMeetingFormData.content"
+            type="textarea"
+            placeholder="请输入会议内容（可选）"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showAddMeetingDialog = false; resetAddMeetingForm()">取消</el-button>
@@ -346,13 +347,17 @@ const formData = ref({
 
 // 会议日期表单数据
 const addMeetingFormData = ref({
-  date: new Date().toISOString().split('T')[0]
+  date: new Date().toISOString().split('T')[0],
+  content: ''
 })
 
 // 会议日期表单验证规则
 const addMeetingFormRules = {
   date: [
     { required: true, message: '请选择会议日期', trigger: 'change' }
+  ],
+  content: [
+    { required: false, message: '请输入会议内容', trigger: 'blur' }
   ]
 }
 
@@ -535,13 +540,16 @@ const resetForm = () => {
 // 方法：重置会议日期表单
 const resetAddMeetingForm = () => {
   addMeetingFormData.value = {
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    content: ''
   }
   currentMinuteId.value = null
 }
 
 // API基础URL
 const API_BASE_URL = 'http://192.168.100.125:8083'
+//测试服务器
+// const API_BASE_URL = 'http://192.168.90.64:8083'
 
 // 从接口获取数据
 const loadMeetingData = async () => {
@@ -634,12 +642,13 @@ const editMeetingItem = async (meeting) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        inputValue: meeting.content,
-        inputPattern: /^.{1,500}$/,
-        inputErrorMessage: '内容不能为空且不超过500字符'
+        inputValue: meeting.content || '',
+        inputPattern: /^.{0,500}$/,
+        inputErrorMessage: '内容不能超过500字符'
       }
     )
     
+    const content = value.trim() === null ? '' : value.trim()
     if (meeting.id) {
       const response = await fetch(`${API_BASE_URL}/meeting/info/update`, {
         method: 'PUT',
@@ -648,7 +657,7 @@ const editMeetingItem = async (meeting) => {
         },
         body: JSON.stringify({
           id: meeting.id,
-          content: value,
+          content: content,
           isMarked: meeting.isMarked,
           date: meeting.date
         })
@@ -721,9 +730,11 @@ const saveMeetingInfo = () => {
   addMeetingFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        const content = addMeetingFormData.value.content.trim() === null ? '' : addMeetingFormData.value.content.trim()
         const newMeeting = {
           meetingId: currentMinuteId.value,
           date: addMeetingFormData.value.date,
+          content: content,
           meetingItemList: []
         }
 
