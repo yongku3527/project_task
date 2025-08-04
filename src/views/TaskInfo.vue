@@ -26,7 +26,7 @@ const selectedProject = ref('所有项目');
 const activeTab = ref('filters');
 const activeFilters = ref(['basic']);
 const selectedStatus = ref([]);
-const baseUrl = 'http://192.168.90.64:8083'
+const baseUrl = 'http://192.168.100.125:8083'
 
 // 筛选状态保存键名
 const FILTER_STORAGE_KEY = 'task_filter_state'

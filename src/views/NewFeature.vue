@@ -83,7 +83,7 @@ const scrollInterval = ref<number | null>(null);
 const selectedTaskId = ref('');
 const panelLoading = ref(false);
 const panelError = ref('');
-const baseUrl = 'http://192.168.90.64:8083'
+const baseUrl = 'http://192.168.100.125:8083'
 // 获取面板任务数据 - 仅使用指定接口
 const fetchPanelTasks = async () => {
   panelLoading.value = true;

@@ -150,7 +150,7 @@ import { ElMessage } from 'element-plus';
 import axios from 'axios';
 import { Back, Close, FullScreen, VideoPlay, VideoPause } from '@element-plus/icons-vue';
 
-const baseUrl = 'http://192.168.90.64:8083';
+const baseUrl = 'http://192.168.100.125:8083';
 
 interface Task {
   id: string;

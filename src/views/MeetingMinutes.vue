@@ -26,9 +26,20 @@
                 </el-checkbox>
               </div>
             </el-dropdown-item>
+            <el-dropdown-item divided>
+              <div class="dropdown-item-content">
+                <el-button 
+                  :type="isAuthenticated ? 'success' : 'warning'" 
+                  @click="showPasswordDialog = true" 
+                  style="width: 100%">
+                  <el-icon><Lock /></el-icon>
+                  {{ isAuthenticated ? '已验证' : '管理员验证' }}
+                </el-button>
+              </div>
+            </el-dropdown-item>
             <el-dropdown-item>
               <div class="dropdown-item-content">
-                <el-button type="primary" @click="showAddDialog = true" style="width: 100%">
+                <el-button type="primary" @click="showAddDialog = true" style="width: 100%" v-if="isAuthenticated">
                   <el-icon><Plus /></el-icon>
                   新增项目
                 </el-button>
@@ -70,8 +81,8 @@
             <el-tag :type="minute.status === 0 ? 'success' : minute.status === 1 ? 'primary' : 'warning'" style="margin-top: 4px;">
             {{ minute.status === 0 ? '已完成' : minute.status === 1 ? '开发中' : '暂停中' }}
             </el-tag>
-            <el-button type="primary" text @click="editMinutes(minute)">编辑</el-button>
-            <!-- <el-button type="danger" text @click="deleteMinutes(minute)">删除</el-button> -->
+            <el-button type="primary" text @click="editMinutes(minute)" v-if="isAuthenticated">编辑</el-button>
+            <el-button type="danger" text @click="deleteMinutes(minute)" v-if="isAuthenticated">删除</el-button>
             <span hidden>admin meetingId{{ minute.id }}</span>
           </div>
           </div>
@@ -99,6 +110,7 @@
                         :type="meeting.isMarked ? 'warning' : 'info'"
                         text 
                         @click="toggleMarkItem(meeting)"
+                        v-if="isAuthenticated"
                       >
                         {{ meeting.isMarked ? '取消标记' : '标记' }}
                       </el-button>
@@ -107,8 +119,18 @@
                         type="primary" 
                         text 
                         @click="editMeetingItem(meeting)"
+                        v-if="isAuthenticated"
                       >
                         修改
+                      </el-button>
+                      <el-button 
+                        size="small" 
+                        type="danger" 
+                        text 
+                        @click="deleteMeetingItem(meeting)"
+                        v-if="isAuthenticated"
+                      >
+                        删除
                       </el-button>
                     </div>
                   </div>
@@ -119,6 +141,7 @@
                   size="small" 
                   type="primary" 
                   @click="addMeetingInfo(minute)"
+                  v-if="isAuthenticated"
                 >
                   <el-icon><Plus /></el-icon>
                   <!-- 新增会议记录 -->
@@ -132,6 +155,7 @@
                   size="small" 
                   type="primary" 
                   @click="addMeetingInfo(minute)"
+                  v-if="isAuthenticated"
                 >
                   <el-icon><Plus /></el-icon>
                   新增会议记录
@@ -142,6 +166,28 @@
         </div>
       </div>
     </div>
+
+    <!-- 管理员密码验证对话框 -->
+    <el-dialog
+      v-model="showPasswordDialog"
+      title="管理员验证"
+      width="400px"
+    >
+      <el-form>
+        <el-form-item label="密码">
+          <el-input
+            v-model="passwordInput"
+            type="password"
+            placeholder="请输入管理员密码"
+            @keyup.enter="authenticateAdmin"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPasswordDialog = false">取消</el-button>
+        <el-button type="primary" @click="authenticateAdmin">验证</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 添加/编辑对话框 -->
     <el-dialog
@@ -254,7 +300,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Operation, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Search, Operation, ArrowDown, Lock } from '@element-plus/icons-vue'
 
 interface MeetingMinute {
   id: string
@@ -278,6 +324,10 @@ const editingId = ref<string | null>(null)
 const formRef = ref()
 const addMeetingFormRef = ref()
 const currentMinuteId = ref<string | null>(null)
+const isAuthenticated = ref(false)
+const showPasswordDialog = ref(false)
+const passwordInput = ref('')
+const ADMIN_PASSWORD = 'admin123' // 管理员密码
 
 // 历史数据选项
 const modelNameOptions = ref<string[]>([])
@@ -456,6 +506,19 @@ const deleteMinutes = async (row: MeetingMinute) => {
   }
 }
 
+// 方法：管理员验证
+const authenticateAdmin = () => {
+  if (passwordInput.value === ADMIN_PASSWORD) {
+    isAuthenticated.value = true
+    showPasswordDialog.value = false
+    passwordInput.value = ''
+    ElMessage.success('管理员验证成功')
+  } else {
+    ElMessage.error('密码错误，请重试')
+    passwordInput.value = ''
+  }
+}
+
 // 方法：重置表单
 const resetForm = () => {
   formData.value = {
@@ -478,7 +541,7 @@ const resetAddMeetingForm = () => {
 }
 
 // API基础URL
-const API_BASE_URL = 'http://192.168.90.64:8083'
+const API_BASE_URL = 'http://192.168.100.125:8083'
 
 // 从接口获取数据
 const loadMeetingData = async () => {
@@ -525,6 +588,40 @@ const loadMeetingData = async () => {
   } catch (error) {
     console.error('获取数据失败:', error)
     ElMessage.error('网络错误，请检查接口连接')
+  }
+}
+
+// 方法：删除会议记录
+const deleteMeetingItem = async (meeting) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这条会议记录吗？',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    if (meeting.id) {
+      const response = await fetch(`${API_BASE_URL}/meeting/info/delete/${meeting.id}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      
+      if (result.code === 200) {
+        await loadMeetingData()
+        ElMessage.success('删除成功')
+      } else {
+        ElMessage.error('删除失败: ' + (result.msg || '未知错误'))
+      }
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('网络错误，请检查接口连接')
+    }
   }
 }
 
