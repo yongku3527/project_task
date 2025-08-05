@@ -10,9 +10,11 @@
     <div class="task-panel" v-if="showTaskPanel">
       <h3>任务管理</h3>
       <div class="task-form">
-        <el-select v-model="selectedTaskId" class="task-select" :disabled="!chartTasks.length" placeholder="选择任务"
-          style="width: 100%">
-          <el-option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId">
+        <el-select v-model="selectedTaskIds" class="task-select" :disabled="!chartTasks.length" placeholder="选择任务"
+          style="width: 100%" popper-class="task-select-dropdown" popper-append-to-body multiple collapse-tags>
+          <!-- TODO -->
+          <el-option v-for="task in chartTasks" :key="task.taskId" :value="task.taskId" 
+            :disabled="isTaskInProjectGroups(task.taskId)">
             <template #default>
               <div class="task-option">
                 <span class="project-name">({{ task.projectName }})</span>
@@ -25,7 +27,7 @@
             </template>
           </el-option>
         </el-select>
-        <el-button @click="addTask" class="add-btn" :disabled="!selectedTaskId">添加任务</el-button>
+        <el-button @click="addTasks" class="add-btn" :disabled="!selectedTaskIds.length">添加任务</el-button>
       </div>
       <div v-if="panelLoading" class="panel-loading">加载中...</div>
       <div v-else-if="panelError" class="panel-error">{{ panelError }}</div>
@@ -80,7 +82,7 @@ const isFullScreen = ref(false);
 // 自动滚动相关变量
 const scrollInterval = ref<number | null>(null);
 // 面板相关变量
-const selectedTaskId = ref('');
+const selectedTaskIds = ref<string[]>([]);
 const panelLoading = ref(false);
 const panelError = ref('');
 const baseUrl = 'http://192.168.100.125:8083'
@@ -108,39 +110,43 @@ const fetchPanelTasks = async () => {
   }
 };
 
-// 添加任务
-const addTask = async () => {
-  if (!selectedTaskId.value) return;
+// 批量添加任务
+const addTasks = async () => {
+  if (!selectedTaskIds.value.length) return;
+  
   try {
     panelLoading.value = true;
-    console.log("!!!!!")
-    console.log(selectedTaskId.value);
-    // 调试任务匹配逻辑
-    console.log('Selected Task ID:', selectedTaskId.value);
-    console.log('Chart Tasks:', chartTasks.value);
-    // 转换为相同类型进行比较
-    const matchedTask = chartTasks.value.find(t => String(t.taskId) === String(selectedTaskId.value));
-    console.log('Matched Task:', matchedTask);
-    console.log('projectName:', matchedTask?.projectName);
-    const response = await axios.post(baseUrl + '/TimeLine/addTimeLineTask', {
-
-      taskId: selectedTaskId.value,
-      taskName: matchedTask?.taskName || '',
-      projectName: matchedTask?.projectName || ''
-
+    
+    // 批量添加选中的任务
+    const addPromises = selectedTaskIds.value.map(async (taskId) => {
+      const matchedTask = chartTasks.value.find(t => String(t.taskId) === String(taskId));
+      if (!matchedTask) return;
+      
+      return axios.post(baseUrl + '/TimeLine/addTimeLineTask', {
+        taskId: taskId,
+        taskName: matchedTask.taskName || '',
+        projectName: matchedTask.projectName || ''
+      });
     });
-
-
-    if (response.data.code === 200) {
-      selectedTaskId.value = '';
-      await fetchPanelTasks(); // 重新获取任务列表
-        nextTick(() => initChart()); // 刷新时间轴
+    
+    const results = await Promise.allSettled(addPromises);
+    
+    // 统计结果
+    const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.data?.code === 200).length;
+    const failCount = results.length - successCount;
+    
+    if (failCount > 0) {
+      panelError.value = `添加完成：成功 ${successCount} 个，失败 ${failCount} 个`;
     } else {
-      panelError.value = '添加失败: ' + response.data.msg;
+      panelError.value = '';
     }
+    
+    selectedTaskIds.value = [];
+    await fetchPanelTasks();
+    nextTick(() => initChart());
   } catch (err) {
-    panelError.value = '网络错误: 无法添加任务';
-    console.error('添加任务失败:', err);
+    panelError.value = '网络错误: 无法批量添加任务';
+    console.error('批量添加任务失败:', err);
   } finally {
     panelLoading.value = false;
   }
@@ -842,4 +848,5 @@ h1 {
 .fullscreen-btn:hover {
   background-color: #85ce61;
 }
+
 </style>
