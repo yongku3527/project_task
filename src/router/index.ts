@@ -5,6 +5,7 @@ import TaskInfo from '../views/TaskInfo.vue';
 import NewFeature from '../views/NewFeature.vue';
 import WBSView from '../views/WBSView.vue';
 import MeetingMinutes from '../views/MeetingMinutes.vue';
+import MemberGanttChart from '../views/MemberGanttChart.vue';
 
 const routes: Array<RouteRecordRaw> = [
   // {
@@ -31,6 +32,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/meeting-minutes',
     name: 'MeetingMinutes',
     component: MeetingMinutes
+  },
+  {
+    path: '/member-gantt',
+    name: 'MemberGanttChart',
+    component: MemberGanttChart
   }
 ];
 

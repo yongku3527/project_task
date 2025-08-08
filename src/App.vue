@@ -30,6 +30,10 @@
         <Grid />
         <span>会议纪要</span>
       </el-menu-item>
+      <el-menu-item index="/member-gantt">
+        <Grid />
+        <span>成员甘特图</span>
+      </el-menu-item>
     </el-menu>
     
     <router-view />
