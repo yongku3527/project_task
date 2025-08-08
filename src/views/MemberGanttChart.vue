@@ -1,24 +1,21 @@
 <template>
   <div class="gantt-container">
-    <div class="gantt-header">
+    <!-- <div class="gantt-header">
       <h1>成员任务甘特图</h1>
-      <div class="gantt-controls">
-        <el-date-picker
-          v-model="selectedMonth"
-          type="month"
-          placeholder="选择月份"
-          @change="handleMonthChange"
-          :clearable="false"
-        />
-        <el-button type="primary" @click="refreshData">
-          <el-icon><RefreshRight /></el-icon>
-          刷新
-        </el-button>
-        <el-button type="info" @click="debugData">
-          <el-icon><InfoFilled /></el-icon>
-          调试
-        </el-button>
-      </div>
+    </div> -->
+    
+    <div class="floating-controls">
+      <el-date-picker
+        v-model="selectedMonth"
+        type="month"
+        placeholder="选择月份"
+        @change="handleMonthChange"
+        :clearable="false"
+      />
+      <el-button type="primary" @click="refreshData">
+        <el-icon><RefreshRight /></el-icon>
+        刷新
+      </el-button>
     </div>
 
     <div v-if="loading" class="loading">
@@ -32,13 +29,6 @@
     </div>
 
     <div v-else class="gantt-content">
-      <div class="data-info">
-        <p>当前月份: {{ dayjs(selectedMonth.value).format('YYYY年MM月') }}</p>
-        <p>日期范围: {{ dateRange.length }} 天</p>
-        <p>成员数量: {{ ganttData && Object.keys(ganttData).length || 0 }}</p>
-        <p>用户映射: {{ userMapping.value && Object.keys(userMapping.value).length || 0 }} 个用户</p>
-      </div>
-      
       <div class="gantt-chart">
         <div class="gantt-grid">
           <!-- 表头：日期行 -->
@@ -121,7 +111,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Loading, CircleClose, RefreshRight, InfoFilled } from '@element-plus/icons-vue';
+import { Loading, CircleClose, RefreshRight } from '@element-plus/icons-vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -210,19 +200,7 @@ const getCellTitle = (tasks: TaskVo[] | undefined, date: Date): string => {
   }
 };
 
-// 调试数据展示
-const debugData = () => {
-  console.log('当前日期范围:', dateRange.value?.map(d => dayjs(d).format('YYYY-MM-DD')) || []);
-  console.log('甘特图数据:', ganttData.value || {});
-  console.log('用户映射:', userMapping.value || {});
-  
-  // 检查每个成员的数据
-  if (ganttData.value) {
-    Object.entries(ganttData.value).forEach(([member, tasksByDate]) => {
-      console.log(`成员 ${member} (${getUserName(member)}):`, Object.keys(tasksByDate || {}));
-    });
-  }
-};
+
 
 // 获取用户映射数据
 const fetchUserMapping = async () => {
@@ -339,7 +317,7 @@ onMounted(() => {
 
 .gantt-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 20px;
   background: white;
@@ -353,10 +331,18 @@ onMounted(() => {
   color: #333;
 }
 
-.gantt-controls {
+.floating-controls {
+  position: fixed;
+  top: 10px;
+  right: 30px;
+  z-index: 1000;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .gantt-content {
@@ -493,20 +479,6 @@ onMounted(() => {
   padding: 15px;
   background-color: #fafafa;
   border-top: 1px solid #e8e8e8;
-}
-
-.data-info {
-  padding: 15px;
-  background-color: #f0f8ff;
-  border-left: 4px solid #1890ff;
-  margin-bottom: 20px;
-  border-radius: 4px;
-}
-
-.data-info p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #333;
 }
 
 .no-data {
