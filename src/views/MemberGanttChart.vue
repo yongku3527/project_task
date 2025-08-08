@@ -369,6 +369,7 @@ onMounted(() => {
 
 .gantt-member-header {
   width: 150px;
+  height: 42px;
   padding: 12px;
   font-weight: bold;
   text-align: center;
@@ -377,6 +378,10 @@ onMounted(() => {
   position: sticky;
   left: 0;
   z-index: 10;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gantt-date-headers {
@@ -385,12 +390,13 @@ onMounted(() => {
 }
 
 .gantt-date-header {
-  width: 40px;
+  width: 42px;
   padding: 8px 4px;
   text-align: center;
   font-size: 12px;
   border-right: 1px solid #e8e8e8;
   font-weight: bold;
+  box-sizing: border-box;
 }
 
 .gantt-date-header.weekend {
@@ -409,6 +415,7 @@ onMounted(() => {
 
 .gantt-member-name {
   width: 150px;
+  height: 42px;
   padding: 12px;
   font-weight: bold;
   text-align: center;
@@ -417,6 +424,10 @@ onMounted(() => {
   position: sticky;
   left: 0;
   z-index: 5;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gantt-task-cells {
@@ -425,8 +436,8 @@ onMounted(() => {
 }
 
 .gantt-task-cell {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-right: 1px solid #e8e8e8;
   border-bottom: 1px solid #e8e8e8;
   display: flex;
@@ -434,6 +445,7 @@ onMounted(() => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .gantt-task-cell:hover {
