@@ -10,7 +10,14 @@
           @change="handleMonthChange"
           :clearable="false"
         />
-        <el-button type="primary" @click="refreshData">刷新数据</el-button>
+        <el-button type="primary" @click="refreshData">
+          <el-icon><RefreshRight /></el-icon>
+          刷新
+        </el-button>
+        <el-button type="info" @click="debugData">
+          <el-icon><InfoFilled /></el-icon>
+          调试
+        </el-button>
       </div>
     </div>
 
@@ -25,6 +32,12 @@
     </div>
 
     <div v-else class="gantt-content">
+      <div class="data-info">
+        <p>当前月份: {{ dayjs(selectedMonth.value).format('YYYY年MM月') }}</p>
+        <p>日期范围: {{ dateRange.length }} 天</p>
+        <p>成员数量: {{ Object.keys(ganttData).length }}</p>
+      </div>
+      
       <div class="gantt-chart">
         <div class="gantt-grid">
           <!-- 表头：日期行 -->
@@ -54,14 +67,20 @@
                 v-for="date in dateRange"
                 :key="`${memberName}-${date.toISOString()}`"
                 class="gantt-task-cell"
-                :class="getCellClass(memberData[date], date)"
-                :title="getCellTitle(memberData[date], date)"
+                :class="getCellClass(memberData[formatDateKey(date)], date)"
+                :title="getCellTitle(memberData[formatDateKey(date)], date)"
               >
-                <span v-if="memberData[date] && memberData[date].length > 0" class="task-count">
-                  {{ memberData[date].length }}
+                <span v-if="memberData[formatDateKey(date)] && memberData[formatDateKey(date)].length > 0" class="task-count">
+                  {{ memberData[formatDateKey(date)].length }}
                 </span>
               </div>
             </div>
+          </div>
+          
+          <!-- 无数据提示 -->
+          <div v-if="Object.keys(ganttData).length === 0" class="no-data">
+            <el-icon><InfoFilled /></el-icon>
+            <p>暂无数据，请检查接口返回或选择其他月份</p>
           </div>
         </div>
 
@@ -99,7 +118,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Loading, CircleClose } from '@element-plus/icons-vue';
+import { Loading, CircleClose, RefreshRight, InfoFilled } from '@element-plus/icons-vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -144,6 +163,10 @@ const formatDateHeader = (date: Date): string => {
   return dayjs(date).format('MM/DD');
 };
 
+const formatDateKey = (date: Date): string => {
+  return dayjs(date).format('YYYY-MM-DD');
+};
+
 const isWeekend = (date: Date): boolean => {
   const day = dayjs(date).day();
   return day === 0 || day === 6;
@@ -179,6 +202,17 @@ const getCellTitle = (tasks: TaskVo[] | undefined, date: Date): string => {
   }
 };
 
+// 调试数据展示
+const debugData = () => {
+  console.log('当前日期范围:', dateRange.value.map(d => dayjs(d).format('YYYY-MM-DD')));
+  console.log('甘特图数据:', ganttData.value);
+  
+  // 检查每个成员的数据
+  Object.entries(ganttData.value).forEach(([member, tasksByDate]) => {
+    console.log(`成员 ${member}:`, Object.keys(tasksByDate));
+  });
+};
+
 // 数据获取
 const fetchGanttData = async () => {
   loading.value = true;
@@ -188,7 +222,10 @@ const fetchGanttData = async () => {
     const startDate = dayjs(selectedMonth.value).startOf('month').format('YYYY-MM-DD');
     const endDate = dayjs(selectedMonth.value).endOf('month').format('YYYY-MM-DD');
     
-    const response = await axios.get('http://192.168.90.64:8083/gantt/getGanttData', {
+    const baseUrl = 'http://192.168.90.64:8083';
+    console.log('请求参数:', { startDate, endDate });
+    
+    const response = await axios.get(`${baseUrl}/gantt/getGanttData`, {
       params: {
         startDate,
         endDate
@@ -211,16 +248,27 @@ const fetchGanttData = async () => {
 const processGanttData = (rawData: any) => {
   const processed: GanttData = {};
   
+  console.log('原始数据:', rawData);
+  
   // 按成员和日期分组任务
   Object.entries(rawData).forEach(([memberName, memberTasks]: [string, any]) => {
     processed[memberName] = {};
     
-    Object.entries(memberTasks).forEach(([dateStr, tasks]: [string, TaskVo[]]) => {
-      const date = dayjs(dateStr).format('YYYY-MM-DD');
-      processed[memberName][date] = tasks;
-    });
+    // 确保memberTasks是一个对象
+    if (typeof memberTasks === 'object' && memberTasks !== null) {
+      Object.entries(memberTasks).forEach(([dateStr, tasks]: [string, any]) => {
+        // 确保日期格式一致，处理可能的LocalDate格式
+        const date = dayjs(dateStr).format('YYYY-MM-DD');
+        processed[memberName][date] = Array.isArray(tasks) ? tasks : [];
+        
+        console.log(`成员 ${memberName} 日期 ${date} 任务数:`, processed[memberName][date].length);
+      });
+    } else {
+      console.warn(`成员 ${memberName} 的任务数据格式不正确:`, memberTasks);
+    }
   });
   
+  console.log('处理后的数据:', processed);
   ganttData.value = processed;
 };
 
@@ -399,10 +447,39 @@ onMounted(() => {
 
 .gantt-legend {
   margin-top: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  background-color: #fafafa;
+  border-top: 1px solid #e8e8e8;
+}
+
+.data-info {
+  padding: 15px;
+  background-color: #f0f8ff;
+  border-left: 4px solid #1890ff;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.data-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.no-data .el-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-data p {
+  font-size: 16px;
+  margin: 0;
 }
 
 .legend-title {
