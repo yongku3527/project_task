@@ -35,7 +35,8 @@
       <div class="data-info">
         <p>当前月份: {{ dayjs(selectedMonth.value).format('YYYY年MM月') }}</p>
         <p>日期范围: {{ dateRange.length }} 天</p>
-        <p>成员数量: {{ Object.keys(ganttData).length }}</p>
+        <p>成员数量: {{ ganttData && Object.keys(ganttData).length || 0 }}</p>
+        <p>用户映射: {{ userMapping.value && Object.keys(userMapping.value).length || 0 }} 个用户</p>
       </div>
       
       <div class="gantt-chart">
@@ -57,15 +58,17 @@
 
           <!-- 成员任务行 -->
           <div 
-            v-for="(memberData, memberName) in ganttData" 
-            :key="memberName"
+            v-for="(memberData, memberId) in ganttData" 
+            :key="memberId"
             class="gantt-member-row"
           >
-            <div class="gantt-member-name">{{ memberName }}</div>
+            <div class="gantt-member-name" :title="memberId">
+              {{ getUserName(memberId) }}
+            </div>
             <div class="gantt-task-cells">
               <div 
                 v-for="date in dateRange"
-                :key="`${memberName}-${date.toISOString()}`"
+                :key="`${memberId}-${date.toISOString()}`"
                 class="gantt-task-cell"
                 :class="getCellClass(memberData[formatDateKey(date)], date)"
                 :title="getCellTitle(memberData[formatDateKey(date)], date)"
@@ -78,7 +81,7 @@
           </div>
           
           <!-- 无数据提示 -->
-          <div v-if="Object.keys(ganttData).length === 0" class="no-data">
+          <div v-if="!ganttData || Object.keys(ganttData).length === 0" class="no-data">
             <el-icon><InfoFilled /></el-icon>
             <p>暂无数据，请检查接口返回或选择其他月份</p>
           </div>
@@ -137,11 +140,16 @@ interface GanttData {
   };
 }
 
+interface UserMapping {
+  [userId: string]: string;
+}
+
 // 状态管理
 const loading = ref(false);
 const error = ref('');
 const ganttData = ref<GanttData>({});
 const selectedMonth = ref(new Date());
+const userMapping = ref<UserMapping>({});
 
 // 计算当前月份的日期范围
 const dateRange = computed(() => {
@@ -204,13 +212,43 @@ const getCellTitle = (tasks: TaskVo[] | undefined, date: Date): string => {
 
 // 调试数据展示
 const debugData = () => {
-  console.log('当前日期范围:', dateRange.value.map(d => dayjs(d).format('YYYY-MM-DD')));
-  console.log('甘特图数据:', ganttData.value);
+  console.log('当前日期范围:', dateRange.value?.map(d => dayjs(d).format('YYYY-MM-DD')) || []);
+  console.log('甘特图数据:', ganttData.value || {});
+  console.log('用户映射:', userMapping.value || {});
   
   // 检查每个成员的数据
-  Object.entries(ganttData.value).forEach(([member, tasksByDate]) => {
-    console.log(`成员 ${member}:`, Object.keys(tasksByDate));
-  });
+  if (ganttData.value) {
+    Object.entries(ganttData.value).forEach(([member, tasksByDate]) => {
+      console.log(`成员 ${member} (${getUserName(member)}):`, Object.keys(tasksByDate || {}));
+    });
+  }
+};
+
+// 获取用户映射数据
+const fetchUserMapping = async () => {
+  try {
+    const baseUrl = 'http://192.168.90.64:8083';
+    const response = await axios.get(`${baseUrl}/basicData/userNameData`);
+    
+    if (response.data.code === 200) {
+      const mapping: UserMapping = {};
+      response.data.data.forEach((item: string) => {
+        const [userId, userName] = item.split(';');
+        mapping[userId] = userName;
+      });
+      userMapping.value = mapping;
+      console.log('用户映射加载完成:', mapping);
+    } else {
+      console.error('获取用户映射失败:', response.data.msg);
+    }
+  } catch (error) {
+    console.error('获取用户映射异常:', error);
+  }
+};
+
+// 获取用户名
+const getUserName = (userId: string): string => {
+  return userMapping.value[userId] || userId;
 };
 
 // 数据获取
@@ -219,6 +257,11 @@ const fetchGanttData = async () => {
   error.value = '';
   
   try {
+    // 先获取用户映射
+    if (Object.keys(userMapping.value).length === 0) {
+      await fetchUserMapping();
+    }
+    
     const startDate = dayjs(selectedMonth.value).startOf('month').format('YYYY-MM-DD');
     const endDate = dayjs(selectedMonth.value).endOf('month').format('YYYY-MM-DD');
     
@@ -261,7 +304,7 @@ const processGanttData = (rawData: any) => {
         const date = dayjs(dateStr).format('YYYY-MM-DD');
         processed[memberName][date] = Array.isArray(tasks) ? tasks : [];
         
-        console.log(`成员 ${memberName} 日期 ${date} 任务数:`, processed[memberName][date].length);
+        // console.log(`成员 ${memberName} 日期 ${date} 任务数:`, processed[memberName][date].length);
       });
     } else {
       console.warn(`成员 ${memberName} 的任务数据格式不正确:`, memberTasks);
