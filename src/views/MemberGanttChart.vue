@@ -23,9 +23,17 @@
       />
 
       <el-button type="primary" @click="fetchGanttData" :loading="loading">
-        <el-icon><RefreshRight /></el-icon>
-        刷新
-      </el-button>
+          <el-icon><RefreshRight /></el-icon>
+          刷新
+        </el-button>
+        <el-button 
+          type="warning" 
+          @click="clearMemberSortOrder"
+          :disabled="memberSortOrder.length === 0"
+        >
+          <el-icon><CircleClose /></el-icon>
+          重置排序
+        </el-button>
     </div>
 
     <div v-if="loading" class="loading">
@@ -131,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Loading, CircleClose, RefreshRight, Rank } from '@element-plus/icons-vue';
 import axios from 'axios';
@@ -155,6 +163,9 @@ interface GanttData {
 interface UserMapping {
   [userId: string]: string;
 }
+
+// 常量
+const MEMBER_SORT_STORAGE_KEY = 'member_gantt_sort_order';
 
 // 状态管理
 const loading = ref(false);
@@ -317,6 +328,36 @@ const handleDragEnd = () => {
   dragOverMember.value = null;
 };
 
+// 本地存储相关函数
+const saveMemberSortOrder = () => {
+  try {
+    localStorage.setItem(MEMBER_SORT_STORAGE_KEY, JSON.stringify(memberSortOrder.value));
+    console.log('人员排序已保存到本地存储');
+  } catch (error) {
+    console.error('保存人员排序失败:', error);
+  }
+};
+
+const loadMemberSortOrder = (): string[] => {
+  try {
+    const stored = localStorage.getItem(MEMBER_SORT_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('加载人员排序失败:', error);
+    return [];
+  }
+};
+
+const clearMemberSortOrder = () => {
+  try {
+    localStorage.removeItem(MEMBER_SORT_STORAGE_KEY);
+    memberSortOrder.value = [];
+    console.log('人员排序已清除');
+  } catch (error) {
+    console.error('清除人员排序失败:', error);
+  }
+};
+
 // 数据获取
 const fetchGanttData = async () => {
   loading.value = true;
@@ -384,8 +425,14 @@ const processGanttData = (rawData: any) => {
   const members = Object.keys(processed);
   availableMembers.value = members;
 
-  // 确保排序列表中的人员都在数据中
+  // 清理不存在的成员的排序
   memberSortOrder.value = memberSortOrder.value.filter(m => members.includes(m));
+
+  // 如果是首次加载数据，从本地存储加载排序
+  if (memberSortOrder.value.length === 0) {
+    const savedOrder = loadMemberSortOrder();
+    memberSortOrder.value = savedOrder.filter(member => members.includes(member));
+  }
 };
 
 // 事件处理
@@ -401,6 +448,13 @@ const refreshData = () => {
 onMounted(() => {
   fetchGanttData();
 });
+
+// 监听排序变化并自动保存
+watch(memberSortOrder, (newOrder) => {
+  if (newOrder.length > 0) {
+    saveMemberSortOrder();
+  }
+}, { deep: true });
 </script>
 
 <style scoped>
