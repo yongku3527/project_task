@@ -48,11 +48,11 @@
 
     <div v-else class="gantt-content">
       <div class="gantt-chart">
-        <div class="gantt-grid">
+    <div class="gantt-grid" ref="ganttGridRef">
           <!-- 表头：日期行 -->
           <div class="gantt-header-row">
-            <div class="gantt-member-header">成员</div>
-            <div class="gantt-date-headers">
+            <div class="gantt-member-header frozen-col">成员</div>
+            <div class="gantt-date-headers frozen-row">
               <div 
                 v-for="date in dateRange" 
                 :key="date.toISOString()"
@@ -81,7 +81,7 @@
             @drop="handleDrop(memberId)"
             @dragend="handleDragEnd"
           >
-            <div class="gantt-member-name" :title="memberId">
+            <div class="gantt-member-name frozen-col" :title="memberId">
               <el-icon class="drag-handle"><Rank /></el-icon>
               {{ getUserName(memberId) }}
             </div>
@@ -459,9 +459,13 @@ watch(memberSortOrder, (newOrder) => {
 
 <style scoped>
 .gantt-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
   background-color: #f5f5f5;
-  min-height: 100vh;
 }
 
 .gantt-header {
@@ -504,7 +508,41 @@ watch(memberSortOrder, (newOrder) => {
 }
 
 .gantt-chart {
-  overflow-x: auto;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.gantt-grid {
+  position: relative;
+  min-width: 100%;
+  display: inline-block;
+}
+
+/* 冻结行列样式 */
+.frozen-col {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: white;
+  border-right: 2px solid #e0e0e0;
+}
+
+.frozen-row {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8f9fa;
+}
+
+.gantt-header.frozen-col {
+  z-index: 4;
+  background: #f8f9fa;
+}
+
+.gantt-member-name.frozen-col {
+  z-index: 3;
+  background: white;
 }
 
 .gantt-grid {
@@ -514,8 +552,8 @@ watch(memberSortOrder, (newOrder) => {
 
 .gantt-header-row {
   display: flex;
-  border-bottom: 2px solid #e8e8e8;
-  background-color: #fafafa;
+  border-bottom: 2px solid #e0e0e0;
+  background: #f8f9fa;
 }
 
 .gantt-member-header {
@@ -567,11 +605,19 @@ watch(memberSortOrder, (newOrder) => {
 
 .gantt-member-row.dragging {
   opacity: 0.5;
+}
+
+.gantt-member-row.dragging .gantt-member-name,
+.gantt-member-row.dragging .gantt-task-cells {
   background-color: #e3f2fd;
 }
 
-.gantt-member-row.drag-over {
+.gantt-member-row.drag-over .gantt-member-name,
+.gantt-member-row.drag-over .gantt-task-cells {
   background-color: #bbdefb;
+}
+
+.gantt-member-row.drag-over .gantt-member-name {
   border-left: 3px solid #2196f3;
 }
 
