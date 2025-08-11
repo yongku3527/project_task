@@ -21,22 +21,7 @@
         :clearable="false"
         style="width: 150px"
       />
-      <el-select
-        v-model="memberSortOrder"
-        multiple
-        filterable
-        allow-create
-        placeholder="选择人员排序"
-        style="width: 200px"
-        @change="handleMemberSortChange"
-      >
-        <el-option
-          v-for="member in availableMembers"
-          :key="member"
-          :label="getUserName(member)"
-          :value="member"
-        />
-      </el-select>
+
       <el-button type="primary" @click="fetchGanttData" :loading="loading">
         <el-icon><RefreshRight /></el-icon>
         刷新
@@ -282,11 +267,7 @@ const getUserName = (userId: string): string => {
   return userMapping.value[userId] || userId;
 };
 
-// 处理人员排序变更
-const handleMemberSortChange = () => {
-  // 排序变更会自动通过sortedMembers计算属性生效
-  console.log('人员排序已更新:', memberSortOrder.value);
-};
+
 
 // 拖拽排序相关变量
 const draggedMember = ref<string | null>(null);
@@ -457,7 +438,7 @@ onMounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   flex-wrap: wrap;
-  max-width: 500px;
+  max-width: 400px;
   align-items: flex-start;
 }
 
