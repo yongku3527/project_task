@@ -390,7 +390,7 @@ onMounted(() => {
 }
 
 .gantt-date-header {
-  width: 42px;
+  width: 50px;
   padding: 8px 4px;
   text-align: center;
   font-size: 12px;
@@ -436,7 +436,7 @@ onMounted(() => {
 }
 
 .gantt-task-cell {
-  width: 42px;
+  width: 50px;
   height: 42px;
   border-right: 1px solid #e8e8e8;
   border-bottom: 1px solid #e8e8e8;
