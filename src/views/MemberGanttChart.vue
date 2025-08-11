@@ -520,6 +520,7 @@ watch(memberSortOrder, (newOrder) => {
 
 .gantt-member-header {
   width: 150px;
+  min-width: 110px;
   height: 42px;
   padding: 12px;
   font-weight: bold;
@@ -587,6 +588,7 @@ watch(memberSortOrder, (newOrder) => {
 
 .gantt-member-name {
   width: 150px;
+  min-width: 110px;
   height: 42px;
   padding: 12px;
   font-weight: bold;
