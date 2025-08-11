@@ -6,13 +6,22 @@
     
     <div class="floating-controls">
       <el-date-picker
-        v-model="selectedMonth"
-        type="month"
-        placeholder="选择月份"
-        @change="handleMonthChange"
+        v-model="startDate"
+        type="date"
+        placeholder="开始日期"
+        @change="fetchGanttData"
         :clearable="false"
+        style="width: 150px"
       />
-      <el-button type="primary" @click="refreshData">
+      <el-date-picker
+        v-model="endDate"
+        type="date"
+        placeholder="结束日期"
+        @change="fetchGanttData"
+        :clearable="false"
+        style="width: 150px"
+      />
+      <el-button type="primary" @click="fetchGanttData" :loading="loading">
         <el-icon><RefreshRight /></el-icon>
         刷新
       </el-button>
@@ -138,13 +147,14 @@ interface UserMapping {
 const loading = ref(false);
 const error = ref('');
 const ganttData = ref<GanttData>({});
-const selectedMonth = ref(new Date());
+const startDate = ref(new Date());
+const endDate = ref(dayjs().add(1, 'month').toDate());
 const userMapping = ref<UserMapping>({});
 
-// 计算当前月份的日期范围
+// 计算日期范围
 const dateRange = computed(() => {
-  const start = dayjs(selectedMonth.value).startOf('month');
-  const end = dayjs(selectedMonth.value).endOf('month');
+  const start = dayjs(startDate.value);
+  const end = dayjs(endDate.value);
   const dates: Date[] = [];
   
   let current = start;
@@ -240,16 +250,16 @@ const fetchGanttData = async () => {
       await fetchUserMapping();
     }
     
-    const startDate = dayjs(selectedMonth.value).startOf('month').format('YYYY-MM-DD');
-    const endDate = dayjs(selectedMonth.value).endOf('month').format('YYYY-MM-DD');
+    const startDateStr = dayjs(startDate.value).format('YYYY-MM-DD');
+    const endDateStr = dayjs(endDate.value).format('YYYY-MM-DD');
     
     const baseUrl = 'http://192.168.90.64:8083';
-    console.log('请求参数:', { startDate, endDate });
+    console.log('请求参数:', { startDate: startDateStr, endDate: endDateStr });
     
     const response = await axios.get(`${baseUrl}/gantt/getGanttData`, {
       params: {
-        startDate,
-        endDate
+        startDate: startDateStr,
+        endDate: endDateStr
       }
     });
     
@@ -333,16 +343,18 @@ onMounted(() => {
 
 .floating-controls {
   position: fixed;
-  top: 10px;
+  top: 100px;
   right: 30px;
   z-index: 1000;
   display: flex;
   gap: 12px;
-  align-items: center;
   background: white;
   padding: 15px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  flex-wrap: wrap;
+  max-width: 400px;
+  opacity: 0.88;
 }
 
 .gantt-content {
