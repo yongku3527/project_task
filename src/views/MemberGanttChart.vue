@@ -21,6 +21,22 @@
         :clearable="false"
         style="width: 150px"
       />
+      <el-select
+        v-model="memberSortOrder"
+        multiple
+        filterable
+        allow-create
+        placeholder="选择人员排序"
+        style="width: 200px"
+        @change="handleMemberSortChange"
+      >
+        <el-option
+          v-for="member in availableMembers"
+          :key="member"
+          :label="getUserName(member)"
+          :value="member"
+        />
+      </el-select>
       <el-button type="primary" @click="fetchGanttData" :loading="loading">
         <el-icon><RefreshRight /></el-icon>
         刷新
@@ -57,11 +73,23 @@
 
           <!-- 成员任务行 -->
           <div 
-            v-for="(memberData, memberId) in ganttData" 
+            v-for="memberId in sortedMembers" 
             :key="memberId"
             class="gantt-member-row"
+            :class="{
+              'dragging': draggedMember === memberId,
+              'drag-over': dragOverMember === memberId
+            }"
+            draggable="true"
+            @dragstart="handleDragStart(memberId)"
+            @dragenter="handleDragEnter(memberId)"
+            @dragleave="handleDragLeave"
+            @dragover.prevent
+            @drop="handleDrop(memberId)"
+            @dragend="handleDragEnd"
           >
             <div class="gantt-member-name" :title="memberId">
+              <el-icon class="drag-handle"><Rank /></el-icon>
               {{ getUserName(memberId) }}
             </div>
             <div class="gantt-task-cells">
@@ -69,11 +97,11 @@
                 v-for="date in dateRange"
                 :key="`${memberId}-${date.toISOString()}`"
                 class="gantt-task-cell"
-                :class="getCellClass(memberData[formatDateKey(date)], date)"
-                :title="getCellTitle(memberData[formatDateKey(date)], date)"
+                :class="getCellClass(ganttData[memberId]?.[formatDateKey(date)], date)"
+                :title="getCellTitle(ganttData[memberId]?.[formatDateKey(date)], date)"
               >
-                <span v-if="memberData[formatDateKey(date)] && memberData[formatDateKey(date)].length > 0" class="task-count">
-                  {{ memberData[formatDateKey(date)].length }}
+                <span v-if="ganttData[memberId]?.[formatDateKey(date)] && ganttData[memberId]?.[formatDateKey(date)].length > 0" class="task-count">
+                  {{ ganttData[memberId]?.[formatDateKey(date)].length }}
                 </span>
               </div>
             </div>
@@ -120,7 +148,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Loading, CircleClose, RefreshRight } from '@element-plus/icons-vue';
+import { Loading, CircleClose, RefreshRight, Rank } from '@element-plus/icons-vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -150,6 +178,8 @@ const ganttData = ref<GanttData>({});
 const startDate = ref(new Date());
 const endDate = ref(dayjs().add(1, 'month').toDate());
 const userMapping = ref<UserMapping>({});
+const memberSortOrder = ref<string[]>([]);
+const availableMembers = ref<string[]>([]);
 
 // 计算日期范围
 const dateRange = computed(() => {
@@ -164,6 +194,19 @@ const dateRange = computed(() => {
   }
   
   return dates;
+});
+
+// 排序后的人员列表
+const sortedMembers = computed(() => {
+  const members = Object.keys(ganttData.value);
+  if (memberSortOrder.value.length === 0) {
+    return members;
+  }
+  
+  // 先按自定义排序，其余按原顺序追加
+  const sorted = [...memberSortOrder.value];
+  const remaining = members.filter(m => !memberSortOrder.value.includes(m));
+  return [...sorted, ...remaining];
 });
 
 // 工具函数
@@ -239,6 +282,60 @@ const getUserName = (userId: string): string => {
   return userMapping.value[userId] || userId;
 };
 
+// 处理人员排序变更
+const handleMemberSortChange = () => {
+  // 排序变更会自动通过sortedMembers计算属性生效
+  console.log('人员排序已更新:', memberSortOrder.value);
+};
+
+// 拖拽排序相关变量
+const draggedMember = ref<string | null>(null);
+const dragOverMember = ref<string | null>(null);
+
+// 拖拽开始
+const handleDragStart = (memberId: string) => {
+  draggedMember.value = memberId;
+};
+
+// 拖拽进入
+const handleDragEnter = (memberId: string) => {
+  dragOverMember.value = memberId;
+};
+
+// 拖拽离开
+const handleDragLeave = () => {
+  dragOverMember.value = null;
+};
+
+// 拖拽放置
+const handleDrop = (targetMemberId: string) => {
+  if (!draggedMember.value || draggedMember.value === targetMemberId) return;
+  
+  const members = [...sortedMembers.value];
+  const draggedIndex = members.indexOf(draggedMember.value);
+  const targetIndex = members.indexOf(targetMemberId);
+  
+  if (draggedIndex === -1 || targetIndex === -1) return;
+  
+  // 重新排序
+  const newOrder = [...members];
+  const [removed] = newOrder.splice(draggedIndex, 1);
+  newOrder.splice(targetIndex, 0, removed);
+  
+  // 更新排序状态
+  memberSortOrder.value = newOrder;
+  
+  // 清理拖拽状态
+  draggedMember.value = null;
+  dragOverMember.value = null;
+};
+
+// 拖拽结束
+const handleDragEnd = () => {
+  draggedMember.value = null;
+  dragOverMember.value = null;
+};
+
 // 数据获取
 const fetchGanttData = async () => {
   loading.value = true;
@@ -278,29 +375,36 @@ const fetchGanttData = async () => {
 
 const processGanttData = (rawData: any) => {
   const processed: GanttData = {};
-  
+
   console.log('原始数据:', rawData);
-  
+
   // 按成员和日期分组任务
   Object.entries(rawData).forEach(([memberName, memberTasks]: [string, any]) => {
     processed[memberName] = {};
-    
+
     // 确保memberTasks是一个对象
     if (typeof memberTasks === 'object' && memberTasks !== null) {
       Object.entries(memberTasks).forEach(([dateStr, tasks]: [string, any]) => {
         // 确保日期格式一致，处理可能的LocalDate格式
         const date = dayjs(dateStr).format('YYYY-MM-DD');
         processed[memberName][date] = Array.isArray(tasks) ? tasks : [];
-        
+
         // console.log(`成员 ${memberName} 日期 ${date} 任务数:`, processed[memberName][date].length);
       });
     } else {
       console.warn(`成员 ${memberName} 的任务数据格式不正确:`, memberTasks);
     }
   });
-  
+
   console.log('处理后的数据:', processed);
   ganttData.value = processed;
+
+  // 更新可用人员列表
+  const members = Object.keys(processed);
+  availableMembers.value = members;
+
+  // 确保排序列表中的人员都在数据中
+  memberSortOrder.value = memberSortOrder.value.filter(m => members.includes(m));
 };
 
 // 事件处理
@@ -353,8 +457,8 @@ onMounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   flex-wrap: wrap;
-  max-width: 400px;
-  opacity: 0.88;
+  max-width: 500px;
+  align-items: flex-start;
 }
 
 .gantt-content {
@@ -423,6 +527,27 @@ onMounted(() => {
 
 .gantt-member-row:hover {
   background-color: #f5f5f5;
+}
+
+.gantt-member-row.dragging {
+  opacity: 0.5;
+  background-color: #e3f2fd;
+}
+
+.gantt-member-row.drag-over {
+  background-color: #bbdefb;
+  border-left: 3px solid #2196f3;
+}
+
+.drag-handle {
+  margin-right: 8px;
+  cursor: move;
+  color: #999;
+  font-size: 12px;
+}
+
+.gantt-member-name:hover .drag-handle {
+  color: #666;
 }
 
 .gantt-member-name {
