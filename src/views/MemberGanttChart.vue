@@ -254,7 +254,7 @@ const getCellTitle = (tasks: TaskVo[] | undefined, date: Date): string => {
 // 获取用户映射数据
 const fetchUserMapping = async () => {
   try {
-    const baseUrl = 'http://192.168.90.64:8083';
+    const baseUrl = 'http://192.168.100.125:8083';
     const response = await axios.get(`${baseUrl}/basicData/userNameData`);
     
     if (response.data.code === 200) {
@@ -372,7 +372,7 @@ const fetchGanttData = async () => {
     const startDateStr = dayjs(startDate.value).format('YYYY-MM-DD');
     const endDateStr = dayjs(endDate.value).format('YYYY-MM-DD');
     
-    const baseUrl = 'http://192.168.90.64:8083';
+    const baseUrl = 'http://192.168.100.125:8083';
     console.log('请求参数:', { startDate: startDateStr, endDate: endDateStr });
     
     const response = await axios.get(`${baseUrl}/gantt/getGanttData`, {

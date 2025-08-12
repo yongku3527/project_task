@@ -1,6 +1,23 @@
 <template>
   <div class="wbs-container" :class="{ 'fullscreen-mode': isFullscreen }">
     <div class="control-btns">
+
+       <div class="nav-buttons">
+        <el-button-group>
+          <el-button size="small" type="primary" @click="prevProject">
+            <el-icon>
+              <Back />
+            </el-icon>
+            上一个
+          </el-button>
+          <el-button size="small" type="primary" @click="nextProject">
+            <el-icon>
+              <Back style="transform: rotate(180deg)" />
+            </el-icon>
+            下一个
+          </el-button>
+        </el-button-group>
+      </div>
       <div class="play-pause-btn" @click="toggleAutoSlide">
         <el-button size="small" :type="isPaused ? 'success' : 'warning'">
           <el-icon>
@@ -9,14 +26,7 @@
           </el-icon>
         </el-button>
       </div>
-      <div class="next-project-btn" @click="nextProject">
-        <el-button size="small" type="primary">
-          <el-icon>
-            <Back style="transform: rotate(180deg)" />
-          </el-icon>
-          下一个
-        </el-button>
-      </div>
+     
       <div class="fullscreen-btn" @click="toggleFullscreen">
         <el-button size="small">
           <el-icon>
@@ -363,6 +373,18 @@ const nextProject = () => {
   }
 };
 
+const prevProject = () => {
+  if (wbsData.value.length === 0) return;
+  
+  currentPage.value = (currentPage.value - 1 + wbsData.value.length) % wbsData.value.length;
+  
+  // 如果正在自动播放，暂停自动播放
+  if (!isPaused.value) {
+    stopAutoSlide();
+    isPaused.value = true;
+  }
+};
+
 // 监听全屏状态变化
 const handleFullscreenChange = () => {
   isFullscreen.value = !!document.fullscreenElement;
@@ -383,7 +405,7 @@ const startAutoSlide = () => {
     if (wbsData.value.length > 0 && !isPaused.value) {
       currentPage.value = (currentPage.value + 1) % wbsData.value.length;
     }
-  }, 10000);
+  }, 180000);
 };
 
 const stopAutoSlide = () => {
@@ -430,8 +452,32 @@ onUnmounted(() => {
   z-index: 1001;
   display: flex;
   gap: 15px;
+  align-items: center;
   opacity: 0.7;
   transition: opacity 0.3s ease;
+}
+
+.nav-buttons {
+  margin-left: 10px;
+}
+
+.nav-buttons .el-button-group {
+  display: flex;
+  gap: 0;
+}
+
+.nav-buttons .el-button {
+  border-radius: 0;
+}
+
+.nav-buttons .el-button:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.nav-buttons .el-button:last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 .control-btns:hover {
@@ -458,8 +504,8 @@ onUnmounted(() => {
 
 .legend-panel {
   position: fixed;
-  top: 10px;
-  right: 260px;
+  top: 20px;
+  right: 320px;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #ddd;
