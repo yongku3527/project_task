@@ -32,7 +32,7 @@
       </el-menu-item>
       <el-menu-item index="/member-gantt">
         <Grid />
-        <span>成员甘特图</span>
+        <span>资源管理</span>
       </el-menu-item>
     </el-menu>
     

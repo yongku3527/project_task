@@ -152,6 +152,8 @@ interface TaskVo {
   dueDate: string;
   priority: string;
   status: string;
+  projectName: string;
+
 }
 
 interface GanttData {
@@ -245,7 +247,8 @@ const getCellTitle = (tasks: TaskVo[] | undefined, date: Date): string => {
   if (count === 0) {
     return `${dateStr}: 无任务`;
   } else {
-    return `${dateStr}: ${count}个任务\n${tasks?.map(t => t.taskName).join('\n')}`;
+    return `${dateStr}: ${count}个任务\n${tasks?.map(t => t.projectName+'---'+t.taskName).join('\n')}`;
+
   }
 };
 
@@ -486,7 +489,7 @@ watch(memberSortOrder, (newOrder) => {
 
 .floating-controls {
   position: fixed;
-  top: 100px;
+  top: 10px;
   right: 30px;
   z-index: 1000;
   display: flex;
@@ -498,6 +501,7 @@ watch(memberSortOrder, (newOrder) => {
   flex-wrap: wrap;
   max-width: 400px;
   align-items: flex-start;
+  opacity: 0.8;
 }
 
 .gantt-content {
