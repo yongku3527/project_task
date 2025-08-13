@@ -467,7 +467,7 @@ watch(memberSortOrder, (newOrder) => {
   height: 100vh;
   padding: 20px;
   box-sizing: border-box;
-  overflow: hidden;
+
   background-color: #f5f5f5;
 }
 
@@ -509,18 +509,25 @@ watch(memberSortOrder, (newOrder) => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px); /* 使用固定高度而不是max-height */
 }
 
 .gantt-chart {
   flex: 1;
   overflow: auto;
   position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .gantt-grid {
   position: relative;
   min-width: 100%;
-  display: inline-block;
+  display: block;
 }
 
 /* 冻结行列样式 */
@@ -558,6 +565,8 @@ watch(memberSortOrder, (newOrder) => {
   display: flex;
   border-bottom: 2px solid #e0e0e0;
   background: #f8f9fa;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .gantt-member-header {
@@ -600,7 +609,10 @@ watch(memberSortOrder, (newOrder) => {
 
 .gantt-member-row {
   display: flex;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e0e0e0;
+  min-height: 50px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .gantt-member-row:hover {
