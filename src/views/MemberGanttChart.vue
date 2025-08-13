@@ -50,9 +50,9 @@
       <div class="gantt-chart">
     <div class="gantt-grid" ref="ganttGridRef">
           <!-- 表头：日期行 -->
-          <div class="gantt-header-row">
+          <div class="gantt-header-row frozen-row">
             <div class="gantt-member-header frozen-col">成员</div>
-            <div class="gantt-date-headers frozen-row">
+            <div class="gantt-date-headers">
               <div 
                 v-for="date in dateRange" 
                 :key="date.toISOString()"
@@ -542,7 +542,7 @@ watch(memberSortOrder, (newOrder) => {
 .frozen-row {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 10;
   background: #f8f9fa;
 }
 
@@ -590,6 +590,7 @@ watch(memberSortOrder, (newOrder) => {
 .gantt-date-headers {
   display: flex;
   flex: 1;
+  background: #f8f9fa;
 }
 
 .gantt-date-header {
