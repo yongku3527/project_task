@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quanhai.dingdingdemo.mapper.MeetingMapper">
+
+    <!-- 会议信息映射（包含会议项集合） -->
+    <resultMap id="MeetingInfoResultMap" type="MeetingInfo">
+        <id property="id" column="meeting_info_id"/>
+        <result property="meetingId" column="meeting_id"/>
+        <result property="date" column="meeting_date"/>
+        <result property="content" column="content"/>
+        <result property="isMarked" column="is_marked"/>
+    </resultMap>
+
+    <!-- 会议主映射（包含会议信息集合） -->
+    <resultMap id="MeetingResultMap" type="Meeting">
+        <id property="id" column="meeting_id"/>
+        <result property="machineType" column="machine_type"/>
+        <result property="factory" column="factory"/>
+        <result property="salesPerson" column="sales_person"/>
+        <result property="status" column="status"/>
+        <!-- 嵌套集合映射 -->
+        <collection property="meetingInfoList" ofType="MeetingInfo" resultMap="MeetingInfoResultMap"/>
+    </resultMap>
+
+    <select id="getMeetingList" resultMap="MeetingResultMap">
+        SELECT
+            m.id AS meeting_id,
+            m.machine_type,
+            m.factory,
+            m.sales_person,
+            m.status,
+            mi.id AS meeting_info_id,
+            mi.date AS meeting_date,
+            mi.content,
+            mi.is_marked
+        FROM
+            meeting m
+                LEFT JOIN
+            meeting_info mi ON m.id = mi.meeting_id
+        ORDER BY
+            m.id, mi.id;
+    </select>
+</mapper>

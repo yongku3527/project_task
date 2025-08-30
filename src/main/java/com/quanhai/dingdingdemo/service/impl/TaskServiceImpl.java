@@ -108,13 +108,151 @@ public class TaskServiceImpl implements TaskService {
 
                     taskVos.add(taskVo);
                 }
+
+//                 查询key：ProTaskListId_{项目id}是否存在，如果不存在就去调接口存入redis并设置一天的过期时间
+//                缓存任务分组详细信息，使用List<SearchTaskListResponseBody.SearchTaskListResponseBodyResult>接收
+                if (Boolean.FALSE.equals(redisTemplate.hasKey("ProTaskListId_" + projectId))) {
+//                  调接口
+                    setTaskGroupList(projectId);
+                }
+
             }
 
         }
 
+//         创建方法，传入taskVos，方法中拼接taskid，请求查询项目详情接口，解析taskListId，把taskListId填入taskVos，
+//         再把redis中的ProTaskListId_*全部获取到内存（需要的话创建个实体类），再次遍历taskVos，把任务分组名称填入taskVos
+
+        //接口查询任务详细信息
+        setTaskInfo(taskVos);
+
+        //查询所有任务详情，注入任务分组id
+        injectionGropId(taskVos);
+
+        //为taskVos添加任务分组名称
+        injectionGropTitle(taskVos);
 
         redisTemplate.opsForValue().set("taskVos", taskVos);
         System.out.println("taskVos.size() = " + taskVos.size());
+    }
+
+    private void setTaskInfo(List<TaskVo> taskVos) throws Exception {
+        if (taskVos.size()>redisTemplate.keys("taskInfo_*").size()) {
+            System.out.println("====taskVos数量"+taskVos.size()+"大于redis中任务详情的数量"+redisTemplate.keys("taskInfo_*").size()+"，调用查询任务详情接口====");
+
+            com.aliyun.dingtalkproject_1_0.Client client = myDingClient.getProjectClient();
+            com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsHeaders getTaskByIdsHeaders = new com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsHeaders();
+            getTaskByIdsHeaders.xAcsDingtalkAccessToken = getAccessToken();
+            List<String> taskIdList = new ArrayList<>();
+            List<String> taskIdStrList = new ArrayList<>();
+            for (TaskVo taskVo : taskVos) {
+                taskIdList.add(taskVo.getTaskId());
+                if (taskIdList.size() == 81){
+                    String joinStr = String.join(",", taskIdList);
+                    taskIdStrList.add(joinStr);
+                    taskIdList.clear();
+                }
+            }
+            if (!taskIdList.isEmpty()) {
+                taskIdStrList.add( String.join(",", taskIdList));
+            }
+
+
+            for (String joinTaskIds : taskIdStrList) {
+
+                com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsRequest getTaskByIdsRequest = new com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsRequest()
+                        .setTaskId(joinTaskIds);
+                try {
+                    GetTaskByIdsResponse taskByIdsResponse = client.getTaskByIdsWithOptions(dingAppConfig.getUserid(), getTaskByIdsRequest, getTaskByIdsHeaders, new RuntimeOptions());
+                    List<GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult> taskByIdsResponseData = taskByIdsResponse.getBody().getResult();
+                    for (GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult taskInfo : taskByIdsResponseData) {
+                        redisTemplate.opsForValue().set("taskInfo_" + taskInfo.getTaskId(), taskInfo,1, TimeUnit.DAYS);
+                    }
+                } catch (TeaException err) {
+                    System.out.println("err = " + err.getMessage());
+
+                } catch (Exception _err) {
+                    System.out.println("_err = " + _err.getMessage());
+
+                }
+            }
+        }
+
+    }
+
+    private void injectionGropId(List<TaskVo> taskVos) {
+        System.out.println("====为taskVos注入TaskListId====");
+
+        for (TaskVo taskVo : taskVos) {
+            GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult taskInfo = (GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult) redisTemplate.opsForValue().get("taskInfo_" + taskVo.getTaskId());
+
+            taskVo.setTaskListId(taskInfo.getTaskListId());
+            taskVo.setParentTaskId(taskInfo.getTaskId());
+        }
+    }
+
+    private void injectionGropTitle(List<TaskVo> taskVos) {
+        System.out.println("====为taskVos注入任务分组名称====");
+        // 获取所有以ProTaskListId_开头的key
+        Set<String> keys = redisTemplate.keys("ProTaskListId_*");
+        if (keys == null || keys.isEmpty()) {
+
+            return;
+        }
+
+        // 收集所有任务分组信息
+        List<SearchTaskListResponseBody.SearchTaskListResponseBodyResult> allTaskGroups = new ArrayList<>();
+        for (String key : keys) {
+            List<SearchTaskListResponseBody.SearchTaskListResponseBodyResult> taskGroupList = 
+                (List<SearchTaskListResponseBody.SearchTaskListResponseBodyResult>) redisTemplate.opsForValue().get(key);
+            
+            if (taskGroupList != null) {
+                allTaskGroups.addAll(taskGroupList);
+            }
+        }
+
+        // 构建taskListId到分组名称的映射
+        Map<String, String> taskGroupMap = new HashMap<>();
+        for (SearchTaskListResponseBody.SearchTaskListResponseBodyResult taskGroup : allTaskGroups) {
+            taskGroupMap.put(taskGroup.getTaskListId(), taskGroup.getTitle());
+        }
+
+        // 为taskVos填充任务分组信息
+        for (TaskVo taskVo : taskVos) {
+            String taskListId = taskVo.getTaskListId();
+            if (taskListId != null && taskGroupMap.containsKey(taskListId)) {
+                taskVo.setTaskListName(taskGroupMap.get(taskListId));
+            }else {
+                taskVo.setTaskListName("未分组");
+            }
+        }
+    }
+
+    private void setTaskGroupList(String projectId) throws Exception {
+        System.out.println("====缓存任务分组名称====");
+
+        com.aliyun.dingtalkproject_1_0.Client client = null;
+        try {
+            client = myDingClient.getProjectClient();
+        } catch (Exception e) {
+            throw new MyExcption("获取ProjectClient失败");
+        }
+
+        com.aliyun.dingtalkproject_1_0.models.SearchTaskListHeaders searchTaskListHeaders = new com.aliyun.dingtalkproject_1_0.models.SearchTaskListHeaders();
+        searchTaskListHeaders.xAcsDingtalkAccessToken = getAccessToken();
+        com.aliyun.dingtalkproject_1_0.models.SearchTaskListRequest searchTaskListRequest = new com.aliyun.dingtalkproject_1_0.models.SearchTaskListRequest()
+                .setMaxResults(dingAppConfig.getSize());
+        try {
+            SearchTaskListResponse searchTaskListResponse = client.searchTaskListWithOptions(dingAppConfig.getUserid(), projectId, searchTaskListRequest, searchTaskListHeaders, new RuntimeOptions());
+            List<SearchTaskListResponseBody.SearchTaskListResponseBodyResult> taskGroupList = searchTaskListResponse.getBody().getResult();
+            redisTemplate.opsForValue().set("ProTaskListId_"+projectId,taskGroupList);
+
+        } catch (TeaException err) {
+            System.out.println("setTaskGroupList TeaException = " + err);
+
+        } catch (Exception _err) {
+            System.out.println("setTaskGroupList Exception = " + _err);
+        }
     }
 
     @Override
@@ -237,7 +375,7 @@ public class TaskServiceImpl implements TaskService {
 
             }
         }
-        redisTemplate.opsForValue().set("projects", filteredProjects, 1, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set("projects", filteredProjects, 2, TimeUnit.HOURS);
 
     }
 
@@ -343,8 +481,8 @@ public class TaskServiceImpl implements TaskService {
                         }
                     }
                 }
-                redisTemplate.opsForValue().set("executorId_" + executorId, userName, 1, TimeUnit.DAYS);
-                redisTemplate.opsForValue().set("deptIdList_" + executorId, deptIdList, 1, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("executorId_" + executorId, userName, 10, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("deptIdList_" + executorId, deptIdList, 10, TimeUnit.DAYS);
             } catch (Exception e) {
                 throw new MyExcption("获取用户信息报错：" + e.getMessage());
             }

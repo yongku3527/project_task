@@ -29,8 +29,13 @@ public class TaskVo {
     private List<Integer> deptIdList;
     private List<String> deptNameList;
 
+    //任务分组id
+    public String taskListId;
+    //任务分组名称
+    public String taskListName;
 
-
+    //父任务id
+    public String parentTaskId;
 
     private String taskStatus;
     //项目名
