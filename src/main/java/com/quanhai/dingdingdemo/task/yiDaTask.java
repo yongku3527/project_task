@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-//@Component
+@Component
 public class yiDaTask {
     @Autowired
     private PrcsServiceImpl prcsService;
@@ -34,7 +34,7 @@ public class yiDaTask {
 
     private Logger logger = LoggerFactory.getLogger(yiDaTask.class);
 
-    @Scheduled(cron = "0 22 6-20 * * *")
+    @Scheduled(cron = "0 22 8-18 * * *")
     public void checkItemNumber() {
 
         logger.info("=====================checkItemNumber定时任务执行======================");

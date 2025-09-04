@@ -87,14 +87,15 @@ public class PrcsServiceImpl {
         Client client = myDingClient.getyidaClient();
         com.aliyun.dingtalkyida_2_0.models.StartInstanceHeaders startInstanceHeaders = new com.aliyun.dingtalkyida_2_0.models.StartInstanceHeaders();
         startInstanceHeaders.xAcsDingtalkAccessToken = commonTools.getAccessToken();
-        //表单组件数据
+        //将人员组件由人名替换为userid
         Map<String,Object> data = replaceEmployeeFieldIds((Map<String, Object>) interfaceInfo.getData());
 
-        System.out.println("formData = " + data);
-        //TODO 需要修改
+        //将人员组件的前缀去掉，方便在钉钉中映射
+        Map<String, Object> removePrefixData = removePrefix(data);
 
+        System.out.println("formData = " + removePrefixData);
 
-        String formDataJson = JSONUtil.toJsonStr(data);
+        String formDataJson = JSONUtil.toJsonStr(removePrefixData);
         //获取创建人
         String OriginatorUserId = interfaceInfo.getOriginator().getUserId();
 
@@ -161,6 +162,22 @@ public class PrcsServiceImpl {
                 });
 
         return data;
+    }
+
+
+    /**
+     * 返回去掉前缀的新 Map（原 Map 不变）
+     */
+    public static Map<String, Object> removePrefix(Map<String, Object> source) {
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith("employeeField_")) {
+                key = key.substring("employeeField_".length());
+            }
+            result.put(key, entry.getValue());
+        }
+        return result;
     }
 
 
