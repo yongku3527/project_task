@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 
-public class MyExcption extends Exception {
+public class MyExcption extends RuntimeException {
     private static final long serialVersionUID = 1L;
     private String msg;
 
