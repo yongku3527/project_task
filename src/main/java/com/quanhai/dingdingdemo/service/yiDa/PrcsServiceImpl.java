@@ -133,7 +133,7 @@ public class PrcsServiceImpl {
         JSONObject jsonResponse = JSONUtil.parseObj(Response);
 
         JSONObject result = jsonResponse.getJSONObject("result");
-        Object projectNum = result.get("projectNum");
+        Object projectNum = result.get("receiveNum");
        if (result.isEmpty()){
            logger.error(" 未找到物料编号:"+ItemCode);
            return BigDecimal.ZERO;

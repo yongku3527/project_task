@@ -34,7 +34,7 @@ public class yiDaTask {
 
     private Logger logger = LoggerFactory.getLogger(yiDaTask.class);
 
-    @Scheduled(cron = "0 22 8-18 * * *")
+    @Scheduled(cron = "0 5 8-18 * * *")
     public void checkItemNumber() {
 
         logger.info("=====================checkItemNumber定时任务执行======================");
@@ -51,7 +51,7 @@ public class yiDaTask {
                         try {
                             commonTools.send("创建新流程失败(定时任务)",mailConfig.getBadTo(),codeAndPrcsIns.toString()+"\n报错信息： "+e.getMessage());
                         } catch (EmailException ex) {
-                            logger.error("报错邮件发送失败 ："+ex.getMessage()+"\n");
+                            logger.error("报错邮件,发送失败 ："+ex.getMessage()+"\n");
                         }
                     continue;
                 }

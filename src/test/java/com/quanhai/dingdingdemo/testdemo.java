@@ -150,8 +150,15 @@ private PrcsMapper prcsMapper;
 //        commonTools.send("subject","msg");
 //        downloadController.sendMailV1("https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MTEwNTM0MTc1NTg0NzI1Ml9RODY2NjdCMUFCRlkzU0lPOUcwSUs5M1JIOTg2M0RBNUpFM0ZNT0Q%24.zip?Expires=1756965080&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=jBHuf6h5JpsCCusyHK%2By4Z00OAc%3D");
 
-        prcsServiceImpl.creatNewInterface("87f4a87b-aa43-435b-8207-2fb176443be9");
+//        prcsServiceImpl.creatNewInterface("87f4a87b-aa43-435b-8207-2fb176443be9");
 
+//        prcsServiceImpl.getItemNum("0010090872");
+
+        downloadController.sendMailV2("{\"FileUrl\":\"https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MDExOTY1MjMyNjMzODI4NTQzX1E4NjY2N0IxTzJHWUpPTFpBQjMxTDdVMjZJOTAzRkxWQTY2Rk1WRw%24%24.mp3?Expires=1757123207&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=zL7RQRp%2FVu33w9e1TjylaUw4Uy4%3D\"}",
+                "123.mp3",
+                "线路板名称测试测\n试测试测试测试",
+                "钢网名称测试测试测\n试测试测试",
+                "钢网编号测试测\n试测试测试");
 
 //        try {
 //            tools.send("ceshi ","3123544976@qq.com","内容测试");
