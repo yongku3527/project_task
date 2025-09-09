@@ -44,7 +44,7 @@ public class PrcsController {
     public Result addOrSave( String itemCode, String prcsInstance) {
         //传入   物料编码、流程实例
         BigDecimal itemNum = prcsService.getItemNum(itemCode);
-        //TODO 记得改回== 0
+
         if(itemNum.compareTo(new BigDecimal(0)) == 0){
             //直接存数据库 记日志 返回
             prcsMapper.insert(new CodeAndPrcsIns(null,itemCode,prcsInstance));
