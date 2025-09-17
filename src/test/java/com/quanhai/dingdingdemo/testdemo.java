@@ -1,5 +1,7 @@
 package com.quanhai.dingdingdemo;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
@@ -12,10 +14,12 @@ import com.aliyun.teautil.models.RuntimeOptions;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.quanhai.dingdingdemo.client.MyDingClient;
 import com.quanhai.dingdingdemo.config.DingAppConfig;
+import com.quanhai.dingdingdemo.config.msg.MsgConfig;
 import com.quanhai.dingdingdemo.controller.yiDa.DownloadController;
 import com.quanhai.dingdingdemo.controller.yiDa.PrcsController;
 import com.quanhai.dingdingdemo.mapper.yiDa.PrcsMapper;
 import com.quanhai.dingdingdemo.model.yiDa.CodeAndPrcsIns;
+import com.quanhai.dingdingdemo.service.msg.MsgService;
 import com.quanhai.dingdingdemo.service.yiDa.PrcsServiceImpl;
 import com.quanhai.dingdingdemo.tools.CommonTools;
 import lombok.extern.slf4j.Slf4j;
@@ -127,8 +131,8 @@ public class testdemo {
 
     @Autowired
     private PrcsServiceImpl prcsServiceImpl;
-@Autowired
-private PrcsMapper prcsMapper;
+    @Autowired
+    private PrcsMapper prcsMapper;
 
     @Autowired
     private PrcsController prcsController;
@@ -137,6 +141,14 @@ private PrcsMapper prcsMapper;
     private DownloadController downloadController;
     @Autowired
     private CommonTools tools;
+
+
+    @Autowired
+    private MsgService msgService;
+
+    @Autowired
+    private MsgConfig msgConfig;
+
     @Test
     @Transactional
     public void getItemInfoForMES() throws Exception {
@@ -150,15 +162,15 @@ private PrcsMapper prcsMapper;
 //        commonTools.send("subject","msg");
 //        downloadController.sendMailV1("https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MTEwNTM0MTc1NTg0NzI1Ml9RODY2NjdCMUFCRlkzU0lPOUcwSUs5M1JIOTg2M0RBNUpFM0ZNT0Q%24.zip?Expires=1756965080&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=jBHuf6h5JpsCCusyHK%2By4Z00OAc%3D");
 
-//        prcsServiceImpl.creatNewInterface("87f4a87b-aa43-435b-8207-2fb176443be9");
+        prcsServiceImpl.creatNewInterface("14bf8029-0436-42aa-a538-9bab061c2a72");
 
 //        prcsServiceImpl.getItemNum("0010090872");
 
-        downloadController.sendMailV2("{\"FileUrl\":\"https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MDExOTY1MjMyNjMzODI4NTQzX1E4NjY2N0IxTzJHWUpPTFpBQjMxTDdVMjZJOTAzRkxWQTY2Rk1WRw%24%24.mp3?Expires=1757123207&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=zL7RQRp%2FVu33w9e1TjylaUw4Uy4%3D\"}",
-                "123.mp3",
-                "线路板名称测试测\n试测试测试测试",
-                "钢网名称测试测试测\n试测试测试",
-                "钢网编号测试测\n试测试测试");
+//        downloadController.sendMailV2("{\"FileUrl\":\"https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MDExOTY1MjMyNjMzODI4NTQzX1E4NjY2N0IxTzJHWUpPTFpBQjMxTDdVMjZJOTAzRkxWQTY2Rk1WRw%24%24.mp3?Expires=1757123207&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=zL7RQRp%2FVu33w9e1TjylaUw4Uy4%3D\"}",
+//                "123.mp3",
+//                "线路板名称测试测\n试测试测试测试",
+//                "钢网名称测试测试测\n试测试测试",
+//                "钢网编号测试测\n试测试测试");
 
 //        try {
 //            tools.send("ceshi ","3123544976@qq.com","内容测试");
@@ -166,6 +178,11 @@ private PrcsMapper prcsMapper;
 //            e.getCause().printStackTrace();
 //
 //        }
+//        String msgToken = tools.getMsgToken();
+//        System.out.println("msgToken = " + msgToken);
+
+//        msgService.sendMsg("13326351595","【山东泉海汽车科技有限公司】尊敬的贵宾，欢迎您光临山东泉海，请点击链接，点击“打开”按钮开门。https://quanhaikeji.aliwork.com/o/duibi?password=6sa1df6a1sdf54aw6e4f31sd5f4a6wef");
+
 
     }
 

@@ -116,6 +116,7 @@ public class PrcsServiceImpl {
 
         } catch (Exception _err) {
             logger.error("流程创建失败 msg: "+_err.getMessage());
+            logger.error(_err.getCause().toString());
             throw new RuntimeException(_err);
         }
     }

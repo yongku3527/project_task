@@ -40,6 +40,7 @@ public class DownloadController {
 
             logger.error("钢网邮件发送失败："+e.getMessage());
             commonTools.send("钢网邮件发送失败",mailConfig.getBadTo(),msg);
+
         }
 
         return ResultUtil.success("ok");

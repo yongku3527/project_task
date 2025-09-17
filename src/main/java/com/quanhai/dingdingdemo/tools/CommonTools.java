@@ -1,11 +1,16 @@
 package com.quanhai.dingdingdemo.tools;
 
+import cn.hutool.Hutool;
+import cn.hutool.crypto.digest.DigestUtil;
+import cn.hutool.crypto.digest.MD5;
 import com.quanhai.dingdingdemo.config.MailConfig;
+import com.quanhai.dingdingdemo.config.msg.MsgConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.mail.MailSender;
 import org.springframework.stereotype.Component;
 
 import javax.mail.util.ByteArrayDataSource;
@@ -25,6 +30,9 @@ public class CommonTools {
 
     @Autowired
     private MailConfig mailConfig;
+
+    @Autowired
+    private MsgConfig msgConfig;
 
     public String getAccessToken() {
         return (String) redisTemplate.opsForValue().get("accessToken");
@@ -95,4 +103,24 @@ public class CommonTools {
             return bos.toByteArray();
         }
     }
+
+
+
+    public String getMsgToken(String timestamp) {
+
+        // 获取当前时间戳（精确到毫秒）
+//        long timestamp = System.currentTimeMillis();
+        // 将时间戳转换为字符串
+        String timestampStr = String.valueOf(timestamp);
+        // 使用Hutool的DigestUtil进行MD5加密，获取32位小写密文
+        String token = DigestUtil.md5Hex(msgConfig.getUserId() + timestampStr + msgConfig.getApikey());
+
+        return token;
+    }
+
+
+
+
+
+
 }
