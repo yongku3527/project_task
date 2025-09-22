@@ -99,9 +99,14 @@ public class TaskServiceImpl implements TaskService {
 
                     //传入执行者id获取执行者名称、部门id
                     setUserInfo(taskResp.getExecutorId(), taskVo);
+                    //TODO 上面这个接口查不到传入用户的部门列表
+
                     //根据部门id获取部门名称
-                    List<String> deptNameList = getDeptInfo(taskVo.getDeptIdList());
-                    taskVo.setDeptNameList(deptNameList);
+                    List<Integer> deptIdList = taskVo.getDeptIdList();
+                    if (deptIdList != null && !deptIdList.isEmpty()) {
+                        List<String> deptNameList = getDeptInfo(deptIdList);
+                        taskVo.setDeptNameList(deptNameList);
+                    }
                     //根据状态id获取状态名
                     String statusName = getStatusName(project.getProjectId(), taskResp.getTaskflowstatusId());
                     taskVo.setTaskStatus(statusName);
@@ -186,8 +191,12 @@ public class TaskServiceImpl implements TaskService {
         for (TaskVo taskVo : taskVos) {
             GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult taskInfo = (GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult) redisTemplate.opsForValue().get("taskInfo_" + taskVo.getTaskId());
 
-            taskVo.setTaskListId(taskInfo.getTaskListId());
-            taskVo.setParentTaskId(taskInfo.getTaskId());
+            if (taskInfo != null) {
+                taskVo.setTaskListId(taskInfo.getTaskListId());
+            }
+            if (taskInfo != null) {
+                taskVo.setParentTaskId(taskInfo.getTaskId());
+            }
         }
     }
 
@@ -470,6 +479,9 @@ public class TaskServiceImpl implements TaskService {
 
                 // 提取用户名称
                 userName = userInfo.getStr("name", "未知");
+
+//
+
 
                 // 提取部门ID列表并转换为List<String>
 

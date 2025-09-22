@@ -160,9 +160,19 @@ public class testdemo {
 //        prcsServiceImpl.getInterfaceInfo("123");
 
 //        commonTools.send("subject","msg");
-//        downloadController.sendMailV1("https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MTEwNTM0MTc1NTg0NzI1Ml9RODY2NjdCMUFCRlkzU0lPOUcwSUs5M1JIOTg2M0RBNUpFM0ZNT0Q%24.zip?Expires=1756965080&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=jBHuf6h5JpsCCusyHK%2By4Z00OAc%3D");
+//        downloadController.sendMailV2("{\"FileUrl\":\"https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MDEzMzQwMjM0ODIzMzU1MDA5MTFfSThCNjZFQjE2NFlZWlFROUNFUk9FRFhZN0hGMTJSRDY0WUxGTUk%24.rar?Expires=1758154280&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=R1Iahkc4MOg9OKvCtFDFxlxYN%2Bw%3D\"}",
+//                "1003J-V1.3-20250904(1) 拼板资料.rar",
+//                "1003J-V1.3",
+//                "1钢网名称1",
+//                "2钢网编号2");
 
-        prcsServiceImpl.creatNewInterface("14bf8029-0436-42aa-a538-9bab061c2a72");
+//        tools.send("https://tianshu-vpc-private.oss-cn-shanghai.aliyuncs.com/APP_XZT8TFAQ7QCQQW4QQPP1_MDEzMzQwMjM0ODIzMzU1MDA5MTFfVEQ3NjY2NzFRQVpZSkhRMEU4M0U2NlZZU1JVTDNSR1JYUk5GTU4%24.rar?Expires=1758187952&OSSAccessKeyId=LTAITJPdNYBKla7D&Signature=XGmSW6wB838L4veNA5tRn2fqh38%3D",
+//                "9331J2_MB_V1.1_20250908钢网资料.rar",
+//                "测试邮件",
+//                "3123544976@qq.com",
+//                "这是一个附件测试邮件");
+
+//        prcsServiceImpl.creatNewInterface("14bf8029-0436-42aa-a538-9bab061c2a72");
 
 //        prcsServiceImpl.getItemNum("0010090872");
 
@@ -183,6 +193,8 @@ public class testdemo {
 
 //        msgService.sendMsg("13326351595","【山东泉海汽车科技有限公司】尊敬的贵宾，欢迎您光临山东泉海，请点击链接，点击“打开”按钮开门。https://quanhaikeji.aliwork.com/o/duibi?password=6sa1df6a1sdf54aw6e4f31sd5f4a6wef");
 
+        String userName = tools.getUserName("02186700545626304822");
+        System.out.println("userName = " + userName);
 
     }
 

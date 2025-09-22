@@ -15,5 +15,6 @@ public class MailConfig {
     private String smtp;
     private int port;
     private String badTo;
+    private String developer;
 
 }
