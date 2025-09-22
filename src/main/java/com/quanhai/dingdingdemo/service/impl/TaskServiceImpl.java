@@ -99,7 +99,7 @@ public class TaskServiceImpl implements TaskService {
 
                     //传入执行者id获取执行者名称、部门id
                     setUserInfo(taskResp.getExecutorId(), taskVo);
-                    //TODO 上面这个接口查不到传入用户的部门列表
+                    //TODO 上面这个接口查不到传入用户的部门列表1
 
                     //根据部门id获取部门名称
                     List<Integer> deptIdList = taskVo.getDeptIdList();
