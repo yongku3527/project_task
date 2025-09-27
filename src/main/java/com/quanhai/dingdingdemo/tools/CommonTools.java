@@ -19,8 +19,8 @@ import org.springframework.mail.MailSender;
 import org.springframework.stereotype.Component;
 
 import javax.activation.DataHandler;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeUtility;
+import javax.mail.*;
+import javax.mail.internet.*;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,6 +31,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
@@ -138,7 +139,64 @@ public class CommonTools {
         log.info("附件发送成功：  收件人"+to+"  内容：\n"+msg);
     }
 
+    /**
+     * 发送带附件的邮件（彻底修复 .dat 问题，使用原生 JavaMail）
+     */
+    public void javaMailSend(String downloadUrl,
+                     String attachFileName,
+                     String subject,
+                     String to,
+                     String msgTxt) throws Exception {
 
+        /* 1. 下载文件 */
+        byte[] bytes = downloadOSS(downloadUrl);
+
+        /* 2. 创建 Session */
+        Properties pros = new Properties();
+        pros.put("mail.smtp.host", mailConfig.getSmtp());
+        pros.put("mail.smtp.port", String.valueOf(mailConfig.getPort()));
+        pros.put("mail.smtp.auth", "true");
+        pros.put("mail.smtp.ssl.enable", "true");
+        Session session = Session.getInstance(pros,
+                new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(mailConfig.getUser(), mailConfig.getPwd());
+                    }
+                });
+
+        /* 3. 构建邮件 */
+        MimeMessage msg = new MimeMessage(session);
+        msg.setFrom(new InternetAddress(mailConfig.getUser()));
+        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+        msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse("3123544976@qq.com"));
+        msg.setSubject(subject, "UTF-8");
+
+        /* 3-1 正文 */
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText(msgTxt, "UTF-8");
+
+        /* 3-2 附件 */
+        String mime = URLConnection.guessContentTypeFromName(attachFileName);
+        if (mime == null) mime = "application/octet-stream";
+
+        log.info("发送邮件附件的类型："+mime);
+
+        MimeBodyPart attPart = new MimeBodyPart();
+        attPart.setDataHandler(new DataHandler(new ByteArrayDataSource(bytes, mime)));
+        attPart.setFileName(MimeUtility.encodeText(attachFileName, "UTF-8", null));
+        attPart.setDisposition(Part.ATTACHMENT);
+
+        /* 3-3 拼装 multipart */
+        Multipart multipart = new MimeMultipart();
+        multipart.addBodyPart(textPart);
+        multipart.addBodyPart(attPart);
+        msg.setContent(multipart);
+
+        /* 4. 发送 */
+        Transport.send(msg);
+        log.info("附件发送成功：  收件人"+to+"  内容：\n"+msgTxt);
+    }
 
     /**
      * 纯文本发送
