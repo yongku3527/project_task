@@ -24,7 +24,6 @@ import com.quanhai.dingdingdemo.model.TaskVo;
 import com.quanhai.dingdingdemo.model.excption.MyExcption;
 import com.quanhai.dingdingdemo.service.TaskService;
 
-import lombok.SneakyThrows;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -99,14 +98,13 @@ public class TaskServiceImpl implements TaskService {
 
                     //传入执行者id获取执行者名称、部门id
                     setUserInfo(taskResp.getExecutorId(), taskVo);
-                    //TODO 上面这个接口查不到传入用户的部门列表1
+                    //上面这个接口查不到传入用户 就将名称保存为“未知人员” 部门ia列表内容为0 （integer）
 
                     //根据部门id获取部门名称
-                    List<Integer> deptIdList = taskVo.getDeptIdList();
-                    if (deptIdList != null && !deptIdList.isEmpty()) {
-                        List<String> deptNameList = getDeptInfo(deptIdList);
-                        taskVo.setDeptNameList(deptNameList);
-                    }
+                    List<String> deptNameList = getDeptInfo(taskVo.getDeptIdList());
+                    taskVo.setDeptNameList(deptNameList);
+
+//
                     //根据状态id获取状态名
                     String statusName = getStatusName(project.getProjectId(), taskResp.getTaskflowstatusId());
                     taskVo.setTaskStatus(statusName);
@@ -467,6 +465,12 @@ public class TaskServiceImpl implements TaskService {
                 // 检查接口调用状态
                 if (jsonObj.getInt("errcode") != 0) {
                     System.out.println("接口调用失败: " + jsonObj.getStr("errmsg"));
+                    redisTemplate.opsForValue().set("executorId_" + executorId, "离职人员", 3, TimeUnit.DAYS);
+                    deptIdList.add(0);
+                    redisTemplate.opsForValue().set("deptIdList_" + executorId, deptIdList, 3, TimeUnit.DAYS);
+
+                    taskVo.setExecutorName("离职人员");
+                    taskVo.setDeptIdList(deptIdList);
                     return;
                 }
 
@@ -480,11 +484,7 @@ public class TaskServiceImpl implements TaskService {
                 // 提取用户名称
                 userName = userInfo.getStr("name", "未知");
 
-//
-
-
                 // 提取部门ID列表并转换为List<String>
-
                 JSONArray deptArray = userInfo.getJSONArray("dept_id_list");
                 if (deptArray != null) {
                     for (Object obj : deptArray) {
@@ -511,6 +511,10 @@ public class TaskServiceImpl implements TaskService {
     //获取部门名称列表
     List<String> getDeptInfo(List<Integer> deptIdList) throws Exception {
         List<String> names = new ArrayList<>();
+        if (deptIdList.get(0) == 0) {
+            names.add("已离职");
+            return names;
+        }
         String accessToken = getAccessToken();
         for (Integer deptId : deptIdList) {
             String deptName;

@@ -268,7 +268,7 @@ public class CommonTools {
 
             } catch (RuntimeException e) {
                 try {
-                    send("获取根据id用户名失败",mailConfig.getDeveloper(),e.getMessage());
+                    send("通用工具下根据userid获取工程师名称失败",mailConfig.getDeveloper(),e.getMessage());
                 } catch (EmailException ex) {
                     log.error("!!!!!!!!他妈的,获取用户名失败而且发送邮件也失败了！！！ "+ex.getMessage());
                 }

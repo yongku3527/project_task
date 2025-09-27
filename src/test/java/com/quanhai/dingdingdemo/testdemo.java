@@ -193,8 +193,7 @@ public class testdemo {
 
 //        msgService.sendMsg("13326351595","【山东泉海汽车科技有限公司】尊敬的贵宾，欢迎您光临山东泉海，请点击链接，点击“打开”按钮开门。https://quanhaikeji.aliwork.com/o/duibi?password=6sa1df6a1sdf54aw6e4f31sd5f4a6wef");
 
-        String userName = tools.getUserName("02186700545626304822");
-        System.out.println("userName = " + userName);
+
 
     }
 
