@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Component
+// @Component
 public class yiDaTask {
     @Autowired
     private PrcsServiceImpl prcsService;
