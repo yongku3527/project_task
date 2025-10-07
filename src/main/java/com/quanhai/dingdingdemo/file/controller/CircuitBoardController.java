@@ -43,27 +43,28 @@ public class CircuitBoardController {
             circuitBoard.setStatus(circuitBoardDTO.getStatus() != null ? circuitBoardDTO.getStatus() : 1);
             circuitBoard.setCreateTime(LocalDateTime.now());
             circuitBoard.setUpdateTime(LocalDateTime.now());
+            circuitBoard.setFileId(circuitBoardDTO.getFileId());
             
-            if (circuitBoardDTO.getFileName() != null && circuitBoardDTO.getFileUrl() != null) {
-                // 保存文件信息
-                FileInfo fileInfo = new FileInfo();
-                fileInfo.setFileName(circuitBoardDTO.getFileName());
-                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
-                fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
-                
-                // 提取文件后缀
-                String fileName = circuitBoardDTO.getFileName();
-                if (fileName != null && fileName.contains(".")) {
-                    fileInfo.setFileSuffix(fileName.substring(fileName.lastIndexOf(".")));
-                } else {
-                    fileInfo.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
-                }
-                
-                fileInfo.setStatus(1);
-                fileInfo.setCreateTime(LocalDateTime.now());
-                fileInfoService.save(fileInfo);
-                circuitBoard.setFileId(fileInfo.getId());
-            }
+//            if (circuitBoardDTO.getFileName() != null && circuitBoardDTO.getFileUrl() != null) {
+//                // 保存文件信息
+//                FileInfo fileInfo = new FileInfo();
+//                fileInfo.setFileName(circuitBoardDTO.getFileName());
+//                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
+//                fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
+//
+//                // 提取文件后缀
+//                String fileName = circuitBoardDTO.getFileName();
+//                if (fileName != null && fileName.contains(".")) {
+//                    fileInfo.setFileSuffix(fileName.substring(fileName.lastIndexOf(".")));
+//                } else {
+//                    fileInfo.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
+//                }
+//
+//                fileInfo.setStatus(1);
+//                fileInfo.setCreateTime(LocalDateTime.now());
+//                fileInfoService.save(fileInfo);
+//                circuitBoard.setFileId(fileInfo.getId());
+//            }
             
             boolean result = circuitBoardService.save(circuitBoard);
             return result ? ResultUtil.success("新增成功") : ResultUtil.fail("新增失败");
@@ -108,28 +109,35 @@ public class CircuitBoardController {
             circuitBoard.setBoardName(circuitBoardDTO.getBoardName());
             circuitBoard.setStatus(circuitBoardDTO.getStatus());
             circuitBoard.setUpdateTime(LocalDateTime.now());
-            
-            // 更新文件信息 - 每次上传新文件都创建新的文件记录
-            if (circuitBoardDTO.getFileName() != null && circuitBoardDTO.getFileUrl() != null) {
-                // 始终创建新的文件记录，避免多个线路板共享同一个文件ID
-                FileInfo fileInfo = new FileInfo();
-                fileInfo.setFileName(circuitBoardDTO.getFileName());
-                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
-                fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
-                
-                // 提取文件后缀
-                String fileName = circuitBoardDTO.getFileName();
-                if (fileName != null && fileName.contains(".")) {
-                    fileInfo.setFileSuffix(fileName.substring(fileName.lastIndexOf(".")));
-                } else {
-                    fileInfo.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
-                }
-                
-                fileInfo.setStatus(1);
-                fileInfo.setCreateTime(LocalDateTime.now());
-                fileInfoService.save(fileInfo);
-                circuitBoard.setFileId(fileInfo.getId());
+            if (circuitBoardDTO.getFileId() != null) {
+                circuitBoard.setFileId(circuitBoardDTO.getFileId());
+            }else {
+                circuitBoard.setFileId(999999999999L);
             }
+            
+//            // 更新文件信息 - 每次上传新文件都创建新的文件记录
+//            if (!circuitBoardDTO.getFileName().isEmpty() && !circuitBoardDTO.getFileUrl().isEmpty()) {
+//                // 始终创建新的文件记录，避免多个线路板共享同一个文件ID
+//                FileInfo fileInfo = new FileInfo();
+//                fileInfo.setFileName(circuitBoardDTO.getFileName());
+//                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
+//                fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
+//
+//                // 提取文件后缀
+//                String fileName = circuitBoardDTO.getFileName();
+//                if (fileName != null && fileName.contains(".")) {
+//                    fileInfo.setFileSuffix(fileName.substring(fileName.lastIndexOf(".")));
+//                } else {
+//                    fileInfo.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
+//                }
+//
+//                fileInfo.setStatus(1);
+//                fileInfo.setCreateTime(LocalDateTime.now());
+//                fileInfoService.save(fileInfo);
+//                circuitBoard.setFileId(fileInfo.getId());
+//            }else {
+//                circuitBoard.setFileId(999999999L);
+//            }
             
             boolean result = circuitBoardService.updateById(circuitBoard);
             return result ? ResultUtil.success("更新成功") : ResultUtil.fail("更新失败");
