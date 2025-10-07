@@ -249,7 +249,9 @@ public class MinioController {
             
             file.setFileName(originalName);
             file.setOriginalName(originalName);
-            
+            long fileSize = Long.parseLong(fileInfo.get("fileSize").toString());
+            file.setFileSize(fileSize);
+
             // 提取文件后缀
             if (originalName != null && originalName.contains(".")) {
                 file.setFileSuffix(originalName.substring(originalName.lastIndexOf(".")));

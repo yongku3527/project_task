@@ -38,6 +38,12 @@ public class FileInfo {
      */
     @TableField("file_suffix")
     private String fileSuffix;
+
+    /**
+     * 文件大小（单位：字节）
+     */
+    @TableField("file_size")
+    private Long fileSize;
     
     /**
      * URL地址
