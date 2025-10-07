@@ -540,7 +540,16 @@ const handleAdd = () => {
 // 编辑线路板
 const handleEdit = (row) => {
   boardDialog.title = '编辑线路板'
-  boardDialog.form = { ...row }
+  // 使用深拷贝避免引用共享问题
+  boardDialog.form = {
+    id: row.id,
+    boardCode: row.boardCode,
+    boardName: row.boardName,
+    fileId: row.fileId,
+    fileUrl: row.fileUrl,
+    fileName: row.fileName,
+    status: row.status
+  }
   boardDialog.fileList = []
   if (row.fileUrl) {
     boardDialog.fileList.push({
