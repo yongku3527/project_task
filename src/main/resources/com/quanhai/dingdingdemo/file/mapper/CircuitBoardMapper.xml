@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quanhai.dingdingdemo.file.mapper.CircuitBoardMapper">
+
+    <!-- ======================== 电路板：文件信息映射 ======================== -->
+    <resultMap id="circuitBoardMap" type="com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO">
+        <id column="id" property="id"/>
+        <result column="board_code" property="boardCode"/>
+        <result column="board_name" property="boardName"/>
+        <result column="file_id" property="fileId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+
+        <!-- 关联文件信息：fileUrl 和 fileName -->
+        <association property="fileUrl" column="file_id"
+                     select="selectFileUrlById"/>
+        <association property="fileName" column="file_id"
+                     select="selectFileNameById"/>
+
+        <!-- 半成品列表 -->
+        <collection property="semiProductDTOList"
+                    column="id"
+                    select="selectSemiProductByBoardId"/>
+    </resultMap>
+
+    <select id="selectCircuitBoardById" resultMap="circuitBoardMap">
+        SELECT *
+        FROM circuit_board
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- ======================== 半成品：原理图 + SMT 文件映射 ======================== -->
+    <resultMap id="semiProductMap" type="com.quanhai.dingdingdemo.file.dto.SemiProductDTO">
+        <id column="id" property="id"/>
+        <result column="circuit_board_id" property="circuitBoardId"/>
+        <result column="circuit_board_code" property="circuitBoardCode"/>
+        <result column="circuit_board_name" property="circuitBoardName"/>
+        <result column="semi_product_code" property="semiProductCode"/>
+        <result column="semi_product_name" property="semiProductName"/>
+        <result column="schematic_file_id" property="schematicFileId"/>
+        <result column="smt_file_id" property="smtFileId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+
+        <!-- 原理图文件 -->
+        <association property="schematicFileUrl" column="schematic_file_id"
+                     select="selectFileUrlById"/>
+        <association property="schematicFileName" column="schematic_file_id"
+                     select="selectFileNameById"/>
+
+        <!-- SMT 文件 -->
+        <association property="smtFileUrl" column="smt_file_id"
+                     select="selectFileUrlById"/>
+        <association property="smtFileName" column="smt_file_id"
+                     select="selectFileNameById"/>
+
+        <!-- 灯板插件列表 -->
+        <collection property="ledBoardPluginSemiProductDTOList"
+                    column="id"
+                    select="selectLedPluginBySemiId"/>
+    </resultMap>
+
+    <select id="selectSemiProductByBoardId" resultMap="semiProductMap">
+        SELECT *
+        FROM semi_product
+        WHERE circuit_board_id = #{boardId} AND deleted = 0
+    </select>
+
+    <!-- ======================== 灯板插件：文件映射 ======================== -->
+    <resultMap id="ledPluginMap" type="com.quanhai.dingdingdemo.file.dto.LedBoardPluginSemiProductDTO">
+        <id column="id" property="id"/>
+        <result column="semi_product_id" property="semiProductId"/>
+        <result column="semi_product_code" property="semiProductCode"/>
+        <result column="semi_product_name" property="semiProductName"/>
+        <result column="led_board_plugin_code" property="ledBoardPluginCode"/>
+        <result column="led_board_plugin_name" property="ledBoardPluginName"/>
+        <result column="file_id" property="fileId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+
+        <!-- 插件文件 -->
+        <association property="fileUrl" column="file_id"
+                     select="selectFileUrlById"/>
+        <association property="fileName" column="file_id"
+                     select="selectFileNameById"/>
+    </resultMap>
+
+    <select id="selectLedPluginBySemiId" resultMap="ledPluginMap">
+        SELECT *
+        FROM led_board_plugin_semi_product
+        WHERE semi_product_id = #{semiId} AND deleted = 0
+    </select>
+
+
+    <!-- ======================== 子查询：根据 file_id 查 file_url ======================== -->
+    <select id="selectFileUrlById" resultType="java.lang.String">
+        SELECT file_url
+        FROM file_info
+        WHERE id = #{fileId}
+    </select>
+
+    <!-- ======================== 子查询：根据 file_id 查 file_name ======================== -->
+    <select id="selectFileNameById" resultType="java.lang.String">
+        SELECT file_name
+        FROM file_info
+        WHERE id = #{fileId}
+    </select>
+
+</mapper>

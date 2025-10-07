@@ -1,7 +1,10 @@
-package com.example.mongodbpractice.service;
+package com.quanhai.dingdingdemo.file.minio.service;
 
+import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.model.Resp.ResultEnum;
+import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import io.minio.*;
-import io.minio.errors.*;
 import io.minio.http.Method;
 import io.minio.messages.Bucket;
 import io.minio.messages.Item;
@@ -10,12 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -29,22 +28,34 @@ public class MinioService {
      * 创建存储桶
      * 
      * @param bucketName 存储桶名称
-     * @return 是否创建成功
+     * @return Result结果
      */
-    public boolean createBucket(String bucketName) {
+    public Result<Map<String, Object>> createBucket(String bucketName) {
         try {
-            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
-            if (!exists) {
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-                log.info("存储桶 '{}' 创建成功", bucketName);
-                return true;
-            } else {
-                log.info("存储桶 '{}' 已存在", bucketName);
-                return true;
+            // 检查存储桶是否已存在
+            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+            
+            if (exists) {
+                return ResultUtil.fail("存储桶已存在: " + bucketName);
             }
+
+            // 创建存储桶
+            minioClient.makeBucket(MakeBucketArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+
+            log.info("存储桶创建成功: {}", bucketName);
+            Map<String, Object> data = new HashMap<>();
+            data.put("bucketName", bucketName);
+            data.put("created", true);
+            
+            return ResultUtil.success(data);
+            
         } catch (Exception e) {
-            log.error("创建存储桶失败: {}", e.getMessage());
-            return false;
+            log.error("创建存储桶失败: {}", bucketName, e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "创建存储桶失败: " + e.getMessage());
         }
     }
 
@@ -52,91 +63,93 @@ public class MinioService {
      * 删除存储桶
      * 
      * @param bucketName 存储桶名称
-     * @return 是否删除成功
+     * @return Result结果
      */
-    public boolean deleteBucket(String bucketName) {
+    public Result<Map<String, Object>> deleteBucket(String bucketName) {
         try {
-            minioClient.removeBucket(RemoveBucketArgs.builder().bucket(bucketName).build());
-            log.info("存储桶 '{}' 删除成功", bucketName);
-            return true;
+            // 检查存储桶是否存在
+            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+            
+            if (!exists) {
+                return ResultUtil.fail("存储桶不存在: " + bucketName);
+            }
+
+            // 删除存储桶
+            minioClient.removeBucket(RemoveBucketArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+
+            log.info("存储桶删除成功: {}", bucketName);
+            Map<String, Object> data = new HashMap<>();
+            data.put("bucketName", bucketName);
+            data.put("deleted", true);
+            
+            return ResultUtil.success(data);
+            
         } catch (Exception e) {
-            log.error("删除存储桶失败: {}", e.getMessage());
-            return false;
+            log.error("删除存储桶失败: {}", bucketName, e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "删除存储桶失败: " + e.getMessage());
         }
     }
 
     /**
      * 获取所有存储桶列表
      * 
-     * @return 存储桶列表
+     * @return Result结果
      */
-    public List<Bucket> listBuckets() {
+    public Result<List<Bucket>> listBuckets() {
         try {
-            return minioClient.listBuckets();
+            List<Bucket> buckets = minioClient.listBuckets();
+            log.info("获取存储桶列表成功，数量: {}", buckets.size());
+            return ResultUtil.success(buckets);
+            
         } catch (Exception e) {
-            log.error("获取存储桶列表失败: {}", e.getMessage());
-            return new ArrayList<>();
+            log.error("获取存储桶列表失败", e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "获取存储桶列表失败: " + e.getMessage());
         }
     }
 
     /**
-     * 上传文件
+     * 上传文件到指定存储桶
      * 
      * @param bucketName 存储桶名称
-     * @param objectName 对象名称（文件路径）
+     * @param objectName 对象名称
      * @param file 文件
-     * @return 是否上传成功
+     * @return Result结果
      */
-    public boolean uploadFile(String bucketName, String objectName, MultipartFile file) {
+    public Result<Map<String, Object>> uploadFile(String bucketName, String objectName, MultipartFile file) {
         try {
-            createBucket(bucketName);
+            // 检查存储桶是否存在
+            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
+                    .bucket(bucketName)
+                    .build());
             
-            minioClient.putObject(
-                PutObjectArgs.builder()
+            if (!exists) {
+                return ResultUtil.fail("存储桶不存在: " + bucketName);
+            }
+
+            // 上传文件
+            minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectName)
                     .stream(file.getInputStream(), file.getSize(), -1)
                     .contentType(file.getContentType())
-                    .build()
-            );
-            
-            log.info("文件上传成功: {}/{}", bucketName, objectName);
-            return true;
-        } catch (Exception e) {
-            log.error("文件上传失败: {}", e.getMessage());
-            return false;
-        }
-    }
+                    .build());
 
-    /**
-     * 上传文件流
-     * 
-     * @param bucketName 存储桶名称
-     * @param objectName 对象名称
-     * @param inputStream 输入流
-     * @param contentType 内容类型
-     * @param size 文件大小
-     * @return 是否上传成功
-     */
-    public boolean uploadFile(String bucketName, String objectName, InputStream inputStream, 
-                               String contentType, long size) {
-        try {
-            createBucket(bucketName);
+            log.info("文件上传成功: {}/{}", bucketName, objectName);
+            Map<String, Object> data = new HashMap<>();
+            data.put("bucketName", bucketName);
+            data.put("objectName", objectName);
+            data.put("size", file.getSize());
+            data.put("contentType", file.getContentType());
             
-            minioClient.putObject(
-                PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(objectName)
-                    .stream(inputStream, size, -1)
-                    .contentType(contentType)
-                    .build()
-            );
+            return ResultUtil.success(data);
             
-            log.info("文件流上传成功: {}/{}", bucketName, objectName);
-            return true;
         } catch (Exception e) {
-            log.error("文件流上传失败: {}", e.getMessage());
-            return false;
+            log.error("文件上传失败: {}/{}", bucketName, objectName, e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "文件上传失败: " + e.getMessage());
         }
     }
 
@@ -145,19 +158,32 @@ public class MinioService {
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 文件输入流
+     * @return Result结果，包含文件流
      */
-    public InputStream downloadFile(String bucketName, String objectName) {
+    public Result<InputStream> downloadFile(String bucketName, String objectName) {
         try {
-            return minioClient.getObject(
-                GetObjectArgs.builder()
+            // 检查文件是否存在
+            boolean exists = minioClient.statObject(StatObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectName)
-                    .build()
-            );
+                    .build()) != null;
+            
+            if (!exists) {
+                return ResultUtil.fail("文件不存在: " + bucketName + "/" + objectName);
+            }
+
+            // 下载文件
+            InputStream stream = minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(objectName)
+                    .build());
+
+            log.info("文件下载成功: {}/{}", bucketName, objectName);
+            return ResultUtil.success(stream);
+            
         } catch (Exception e) {
-            log.error("文件下载失败: {}", e.getMessage());
-            return null;
+            log.error("文件下载失败: {}/{}", bucketName, objectName, e);
+            return ResultUtil.fail("文件下载失败: " + e.getMessage());
         }
     }
 
@@ -166,19 +192,30 @@ public class MinioService {
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 文件状态信息
+     * @return Result结果，包含文件信息
      */
-    public StatObjectResponse getFileInfo(String bucketName, String objectName) {
+    public Result<Map<String, Object>> getFileInfo(String bucketName, String objectName) {
         try {
-            return minioClient.statObject(
-                StatObjectArgs.builder()
+            // 获取文件信息
+            StatObjectResponse stat = minioClient.statObject(StatObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectName)
-                    .build()
-            );
+                    .build());
+
+            log.info("获取文件信息成功: {}/{}", bucketName, objectName);
+            Map<String, Object> data = new HashMap<>();
+            data.put("bucketName", bucketName);
+            data.put("objectName", objectName);
+            data.put("size", stat.size());
+            data.put("contentType", stat.contentType());
+            data.put("etag", stat.etag());
+            data.put("lastModified", stat.lastModified());
+            
+            return ResultUtil.success(data);
+            
         } catch (Exception e) {
-            log.error("获取文件信息失败: {}", e.getMessage());
-            return null;
+            log.error("获取文件信息失败: {}/{}", bucketName, objectName, e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "获取文件信息失败: " + e.getMessage());
         }
     }
 
@@ -187,21 +224,27 @@ public class MinioService {
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 是否删除成功
+     * @return Result结果
      */
-    public boolean deleteFile(String bucketName, String objectName) {
+    public Result<Map<String, Object>> deleteFile(String bucketName, String objectName) {
         try {
-            minioClient.removeObject(
-                RemoveObjectArgs.builder()
+            // 删除文件
+            minioClient.removeObject(RemoveObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectName)
-                    .build()
-            );
+                    .build());
+
             log.info("文件删除成功: {}/{}", bucketName, objectName);
-            return true;
+            Map<String, Object> data = new HashMap<>();
+            data.put("bucketName", bucketName);
+            data.put("objectName", objectName);
+            data.put("deleted", true);
+            
+            return ResultUtil.success(data);
+            
         } catch (Exception e) {
-            log.error("文件删除失败: {}", e.getMessage());
-            return false;
+            log.error("文件删除失败: {}/{}", bucketName, objectName, e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "文件删除失败: " + e.getMessage());
         }
     }
 
@@ -210,27 +253,43 @@ public class MinioService {
      * 
      * @param bucketName 存储桶名称
      * @param prefix 前缀过滤
-     * @param recursive 是否递归
-     * @return 文件列表
+     * @param recursive 是否递归子目录
+     * @return Result结果，包含文件列表
      */
-    public List<Item> listFiles(String bucketName, String prefix, boolean recursive) {
-        List<Item> files = new ArrayList<>();
+    public Result<List<FileInfo>> listFiles(String bucketName, String prefix, boolean recursive) {
         try {
-            Iterable<Result<Item>> results = minioClient.listObjects(
-                ListObjectsArgs.builder()
+            // 检查存储桶是否存在
+            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+            
+            if (!exists) {
+                return ResultUtil.fail("存储桶不存在: " + bucketName);
+            }
+
+            // 获取文件列表
+            Iterable<io.minio.Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
                     .bucket(bucketName)
                     .prefix(prefix)
                     .recursive(recursive)
-                    .build()
-            );
+                    .build());
 
-            for (Result<Item> result : results) {
-                files.add(result.get());
+            List<FileInfo> fileInfos = new ArrayList<>();
+            for (io.minio.Result<Item> result : results) {
+                FileInfo fileInfo = new FileInfo();
+                fileInfo.setFileName(result.get().objectName());
+                fileInfo.setOriginalName(result.get().objectName());
+                fileInfo.setFileSuffix(result.get().objectName().substring(result.get().objectName().lastIndexOf(".")));
+                fileInfos.add(fileInfo);
             }
+
+            log.info("获取文件列表成功: {}，数量: {}", bucketName, fileInfos.size());
+            return ResultUtil.success(fileInfos);
+            
         } catch (Exception e) {
-            log.error("获取文件列表失败: {}", e.getMessage());
+            log.error("获取文件列表失败: {}", bucketName, e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "获取文件列表失败: " + e.getMessage());
         }
-        return files;
     }
 
     /**
@@ -239,77 +298,68 @@ public class MinioService {
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
      * @param expiry 过期时间（分钟）
-     * @return 预签名URL
+     * @param method HTTP方法
+     * @return Result结果，包含预签名URL
      */
-    public String generatePresignedUrl(String bucketName, String objectName, int expiry) {
+    public Result<String> generatePresignedUrl(String bucketName, String objectName, int expiry, Method method) {
         try {
-            return minioClient.getPresignedObjectUrl(
-                GetPresignedObjectUrlArgs.builder()
-                    .method(Method.GET)
+            // 生成预签名URL
+            String presignedUrl = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(method)
                     .bucket(bucketName)
                     .object(objectName)
                     .expiry(expiry, TimeUnit.MINUTES)
-                    .build()
-            );
+                    .build());
+
+            log.info("生成预签名URL成功: {}/{}，方法: {}，过期时间: {}分钟", 
+                    bucketName, objectName, method, expiry);
+            return ResultUtil.success(presignedUrl);
+            
         } catch (Exception e) {
-            log.error("生成预签名URL失败: {}", e.getMessage());
-            return null;
+            log.error("生成预签名URL失败: {}/{}，方法: {}", bucketName, objectName, method, e);
+            return ResultUtil.fail("生成预签名URL失败: " + e.getMessage());
         }
     }
 
     /**
-     * 复制文件
+     * 创建预上传任务，使用普通上传
      * 
-     * @param sourceBucket 源存储桶
-     * @param sourceObject 源对象
-     * @param targetBucket 目标存储桶
-     * @param targetObject 目标对象
-     * @return 是否复制成功
-     */
-    public boolean copyFile(String sourceBucket, String sourceObject, 
-                             String targetBucket, String targetObject) {
-        try {
-            minioClient.copyObject(
-                CopyObjectArgs.builder()
-                    .source(CopySource.builder()
-                        .bucket(sourceBucket)
-                        .object(sourceObject)
-                        .build())
-                    .bucket(targetBucket)
-                    .object(targetObject)
-                    .build()
-            );
-            log.info("文件复制成功: {}/{} -> {}/{}", 
-                    sourceBucket, sourceObject, targetBucket, targetObject);
-            return true;
-        } catch (Exception e) {
-            log.error("文件复制失败: {}", e.getMessage());
-            return false;
-        }
-    }
-
-
-    /**
-     * 生成预签名上传URL
-     *
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @param expiry 过期时间（分钟）
-     * @return 预签名上传URL
+     * @param fileSize 文件大小
+     * @return Result结果，包含上传任务信息
      */
-    public String generatePresignedUploadUrl(String bucketName, String objectName, int expiry) {
+    public Result<Map<String, Object>> createPresignedUploadTask(String bucketName, String objectName, 
+            long fileSize) {
         try {
-            return minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Method.PUT)
-                            .bucket(bucketName)
-                            .object(objectName)
-                            .expiry(expiry, TimeUnit.MINUTES)
-                            .build()
-            );
+            // 检查存储桶是否存在，不存在则创建
+            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+            
+            if (!exists) {
+                minioClient.makeBucket(MakeBucketArgs.builder()
+                        .bucket(bucketName)
+                        .build());
+                log.info("自动创建存储桶: {}", bucketName);
+            }
+
+            // 生成普通上传的预签名URL
+            String presignedUrl = generatePresignedUrl(bucketName, objectName, 60, Method.PUT).getData();
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("uploadType", "simple");
+            data.put("presignedUrl", presignedUrl);
+            data.put("bucketName", bucketName);
+            data.put("objectName", objectName);
+            data.put("fileSize", fileSize);
+            
+            log.info("创建普通上传任务成功: {}/{}，文件大小: {}字节", bucketName, objectName, fileSize);
+            return ResultUtil.success(data);
+            
         } catch (Exception e) {
-            log.error("生成预签名上传URL失败: {}", e.getMessage());
-            return null;
+            log.error("创建预上传任务失败: {}/{}，文件大小: {}字节", bucketName, objectName, fileSize, e);
+            return ResultUtil.fail("创建预上传任务失败: " + e.getMessage());
         }
     }
 

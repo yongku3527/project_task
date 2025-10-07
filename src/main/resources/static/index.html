@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            margin: 2px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+        }
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        /* 树形结构样式 */
+        .tree-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .product-tree {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .tree-node {
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .tree-node:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .tree-item:hover {
+            background-color: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.3);
+            transform: translateX(2px);
+        }
+        
+        .tree-item.active {
+            background-color: rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+        
+        .tree-toggle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .tree-toggle:hover {
+            background: #5a6fd8;
+            transform: scale(1.1);
+        }
+        
+        .tree-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        
+        .tree-icon {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .tree-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tree-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .tree-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+        
+        .tree-subtitle {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .tree-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .tree-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .tree-children {
+            margin-left: 2rem;
+            border-left: 2px solid #e9ecef;
+            padding-left: 1rem;
+            display: none;
+        }
+        
+        .tree-children.expanded {
+            display: block;
+        }
+        
+        .tree-level-0 { border-left-color: #667eea; }
+        .tree-level-1 { border-left-color: #28a745; }
+        .tree-level-2 { border-left-color: #ffc107; }
+        
+        .tree-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+        
+        .tree-action-btn {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tree-action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .tree-stats {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .tree-stat-item h5 {
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+        
+        .tree-stat-item p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        /* 树形结构样式 */
+        .tree-stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .tree-stat-item {
+            text-align: center;
+        }
+        
+        .tree-stat-item h5 {
+            margin: 0;
+            color: #007bff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .tree-stat-item p {
+            margin: 5px 0 0 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .tree-container {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .tree-node {
+            margin-bottom: 5px;
+        }
+        
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            background: #fff;
+            transition: all 0.3s ease;
+            margin-bottom: 5px;
+        }
+        
+        .tree-item:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+        }
+        
+        .tree-toggle {
+            background: none;
+            border: none;
+            font-size: 12px;
+            color: #6c757d;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: transform 0.3s ease;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tree-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        
+        .tree-toggle:hover {
+            color: #007bff;
+        }
+        
+        .tree-icon {
+            font-size: 18px;
+            margin-right: 10px;
+            color: #007bff;
+        }
+        
+        .tree-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tree-info {
+            flex: 1;
+        }
+        
+        .tree-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+        
+        .tree-subtitle {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 0;
+        }
+        
+        .tree-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tree-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .tree-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .tree-action-btn {
+            padding: 4px 6px;
+            font-size: 12px;
+            border: 1px solid;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tree-action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .tree-children {
+            margin-left: 40px;
+            border-left: 2px solid #e9ecef;
+            padding-left: 15px;
+            display: none;
+        }
+        
+        .tree-children.expanded {
+            display: block;
+        }
+        
+        .tree-level-0 { border-left-color: #007bff; }
+        .tree-level-1 { border-left-color: #28a745; }
+        .tree-level-2 { border-left-color: #ffc107; }
+        
+        .tree-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .tree-search-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .tree-search-input {
+            flex: 1;
+        }
+        
+        .tree-expand-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .tree-expand-controls .btn {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .circuit-board-node .tree-item {
+            border-left: 4px solid #007bff;
+        }
+        
+        .semi-product-node .tree-item {
+            border-left: 4px solid #28a745;
+        }
+        
+        .led-board-plugin-node .tree-item {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .circuit-board-node .tree-icon {
+            color: #007bff;
+        }
+        
+        .semi-product-node .tree-icon {
+            color: #28a745;
+        }
+        
+        .led-board-plugin-node .tree-icon {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <div class="col-md-2 sidebar p-3">
+                <div class="text-center mb-4">
+                    <h4 class="text-white fw-bold">
+                        <i class="bi bi-cpu"></i> 生产管理系统
+                    </h4>
+                </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="#" onclick="showSection('tree')">
+                        <i class="bi bi-diagram-3"></i> 产品结构树
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('circuit-board')">
+                        <i class="bi bi-motherboard"></i> 线路板管理
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('semi-product')">
+                        <i class="bi bi-box"></i> 半成品管理
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('led-board-plugin')">
+                        <i class="bi bi-lightbulb"></i> 灯板插件管理
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-10 main-content p-4">
+                <!-- 树形结构管理 -->
+                <div id="tree-section" class="content-section">
+                    <div class="page-header">
+                        <h2><i class="bi bi-diagram-3"></i> 产品结构树</h2>
+                        <p class="mb-0">树形结构展示线路板、半成品、灯板插件的层级关系</p>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="treeSearchInput" placeholder="搜索产品名称或编码">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="treeStatusFilter">
+                                <option value="">全部状态</option>
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-gradient" onclick="searchTreeData()">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="expandAllTreeNodes()">
+                                <i class="bi bi-arrows-expand"></i> 展开全部
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="collapseAllTreeNodes()">
+                                <i class="bi bi-arrows-collapse"></i> 收起全部
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tree-container">
+                        <div id="productTree" class="product-tree">
+                            <!-- 树形结构将在这里动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 线路板管理 -->
+                <div id="circuit-board-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h2><i class="bi bi-motherboard"></i> 线路板管理</h2>
+                        <p class="mb-0">管理线路板信息，包括新增、编辑、删除和查询功能</p>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="circuitBoardCode" placeholder="线路板编码">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="circuitBoardName" placeholder="线路板名称">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="circuitBoardStatus">
+                                <option value="">全部状态</option>
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-gradient" onclick="searchCircuitBoards()">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                            <button class="btn btn-success" onclick="showAddCircuitBoardModal()">
+                                <i class="bi bi-plus-circle"></i> 新增
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>线路板编码</th>
+                                    <th>线路板名称</th>
+                                    <th>规格</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="circuitBoardTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center" id="circuitBoardPagination">
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- 半成品管理 -->
+                <div id="semi-product-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h2><i class="bi bi-box"></i> 半成品管理</h2>
+                        <p class="mb-0">管理半成品信息，包括新增、编辑、删除和查询功能</p>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="semiProductCircuitBoard">
+                                <option value="">选择线路板</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="semiProductCode" placeholder="半成品编码">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="semiProductName" placeholder="半成品名称">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-gradient" onclick="searchSemiProducts()">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                            <button class="btn btn-success" onclick="showAddSemiProductModal()">
+                                <i class="bi bi-plus-circle"></i> 新增
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>半成品编码</th>
+                                    <th>半成品名称</th>
+                                    <th>所属线路板</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="semiProductTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center" id="semiProductPagination">
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- 灯板插件管理 -->
+                <div id="led-board-plugin-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h2><i class="bi bi-lightbulb"></i> 灯板插件管理</h2>
+                        <p class="mb-0">管理灯板插件半成品信息，包括新增、编辑、删除和查询功能</p>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="ledBoardPluginSemiProduct">
+                                <option value="">选择半成品</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="ledBoardPluginCode" placeholder="灯板插件编码">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="ledBoardPluginName" placeholder="灯板插件名称">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-gradient" onclick="searchLedBoardPlugins()">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                            <button class="btn btn-success" onclick="showAddLedBoardPluginModal()">
+                                <i class="bi bi-plus-circle"></i> 新增
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>灯板插件编码</th>
+                                    <th>灯板插件名称</th>
+                                    <th>所属半成品</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledBoardPluginTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center" id="ledBoardPluginPagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 线路板模态框 -->
+    <div class="modal fade" id="circuitBoardModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="circuitBoardModalTitle">新增线路板</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="circuitBoardForm">
+                        <input type="hidden" id="circuitBoardId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">线路板编码</label>
+                                    <input type="text" class="form-control" id="modalCircuitBoardCode" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">线路板名称</label>
+                                    <input type="text" class="form-control" id="modalCircuitBoardName" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">规格</label>
+                                    <input type="text" class="form-control" id="modalCircuitBoardSpec">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">状态</label>
+                                    <select class="form-select" id="modalCircuitBoardStatus">
+                                        <option value="1">启用</option>
+                                        <option value="0">禁用</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <textarea class="form-control" id="modalCircuitBoardRemark" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveCircuitBoard()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 半成品模态框 -->
+    <div class="modal fade" id="semiProductModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="semiProductModalTitle">新增半成品</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="semiProductForm">
+                        <input type="hidden" id="semiProductId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">半成品编码</label>
+                                    <input type="text" class="form-control" id="modalSemiProductCode" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">半成品名称</label>
+                                    <input type="text" class="form-control" id="modalSemiProductName" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">所属线路板</label>
+                                    <select class="form-select" id="modalSemiProductCircuitBoard" required>
+                                        <option value="">选择线路板</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">状态</label>
+                                    <select class="form-select" id="modalSemiProductStatus">
+                                        <option value="1">启用</option>
+                                        <option value="0">禁用</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <textarea class="form-control" id="modalSemiProductRemark" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveSemiProduct()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 灯板插件模态框 -->
+    <div class="modal fade" id="ledBoardPluginModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ledBoardPluginModalTitle">新增灯板插件</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ledBoardPluginForm">
+                        <input type="hidden" id="ledBoardPluginId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">灯板插件编码</label>
+                                    <input type="text" class="form-control" id="modalLedBoardPluginCode" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">灯板插件名称</label>
+                                    <input type="text" class="form-control" id="modalLedBoardPluginName" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">所属半成品</label>
+                                    <select class="form-select" id="modalLedBoardPluginSemiProduct" required>
+                                        <option value="">选择半成品</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">状态</label>
+                                    <select class="form-select" id="modalLedBoardPluginStatus">
+                                        <option value="1">启用</option>
+                                        <option value="0">禁用</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <textarea class="form-control" id="modalLedBoardPluginRemark" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveLedBoardPlugin()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

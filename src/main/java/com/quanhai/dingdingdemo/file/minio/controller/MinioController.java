@@ -1,8 +1,13 @@
-package com.quanhai.dingdingdemo.file.controller.minio;
+package com.quanhai.dingdingdemo.file.minio.controller;
 
-import com.example.mongodbpractice.service.MinioService;
+import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.file.minio.service.MinioService;
+import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import io.minio.messages.Bucket;
 import io.minio.messages.Item;
+import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.file.service.FileInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -13,9 +18,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -24,72 +31,51 @@ import java.util.Map;
 public class MinioController {
 
     private final MinioService minioService;
+    private final FileInfoService fileInfoService;
 
     /**
      * 创建存储桶
      * 
      * @param bucketName 存储桶名称
-     * @return 创建结果
+     * @return Result结果
      */
     @PostMapping("/buckets/{bucketName}")
-    public ResponseEntity<Map<String, Object>> createBucket(@PathVariable String bucketName) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            boolean success = minioService.createBucket(bucketName);
-            response.put("success", success);
-            response.put("message", success ? "存储桶创建成功" : "存储桶创建失败");
-            response.put("bucketName", bucketName);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("创建存储桶失败", e);
-            response.put("success", false);
-            response.put("message", "存储桶创建失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+    public Result<Map<String, Object>> createBucket(@PathVariable String bucketName) {
+        log.info("创建存储桶: {}", bucketName);
+        return minioService.createBucket(bucketName);
     }
 
     /**
      * 删除存储桶
      * 
      * @param bucketName 存储桶名称
-     * @return 删除结果
+     * @return Result结果
      */
     @DeleteMapping("/buckets/{bucketName}")
-    public ResponseEntity<Map<String, Object>> deleteBucket(@PathVariable String bucketName) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            boolean success = minioService.deleteBucket(bucketName);
-            response.put("success", success);
-            response.put("message", success ? "存储桶删除成功" : "存储桶删除失败");
-            response.put("bucketName", bucketName);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("删除存储桶失败", e);
-            response.put("success", false);
-            response.put("message", "存储桶删除失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+    public Result<Map<String, Object>> deleteBucket(@PathVariable String bucketName) {
+        log.info("删除存储桶: {}", bucketName);
+        return minioService.deleteBucket(bucketName);
     }
 
     /**
      * 获取所有存储桶列表
      * 
-     * @return 存储桶列表
+     * @return Result结果，包含存储桶名称列表
      */
     @GetMapping("/buckets")
-    public ResponseEntity<Map<String, Object>> listBuckets() {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            List<Bucket> buckets = minioService.listBuckets();
-            response.put("success", true);
-            response.put("buckets", buckets);
-            response.put("count", buckets.size());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("获取存储桶列表失败", e);
-            response.put("success", false);
-            response.put("message", "获取存储桶列表失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+    public Result<List<String>> listBuckets() {
+        log.info("获取存储桶列表");
+        Result<List<Bucket>> bucketsResult = minioService.listBuckets();
+        
+        if (bucketsResult.getCode() == 200 && bucketsResult.getData() != null) {
+            List<String> bucketNames = bucketsResult.getData().stream()
+                    .map(Bucket::name)
+                    .collect(Collectors.toList());
+            log.info("获取存储桶列表成功，共 {} 个存储桶", bucketNames.size());
+            return ResultUtil.success(bucketNames);
+        } else {
+            log.error("获取存储桶列表失败: {}", bucketsResult.getMsg());
+            return ResultUtil.fail(bucketsResult.getMsg());
         }
     }
 
@@ -98,37 +84,16 @@ public class MinioController {
      * 
      * @param bucketName 存储桶名称
      * @param file 文件
-     * @return 上传结果
+     * @return Result结果
      */
     @PostMapping("/buckets/{bucketName}/files")
-    public ResponseEntity<Map<String, Object>> uploadFile(
+    public Result<Map<String, Object>> uploadFile(
             @PathVariable String bucketName,
             @RequestParam("file") MultipartFile file) {
         
-        Map<String, Object> response = new HashMap<>();
-        try {
-            if (file.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "文件不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            String objectName = file.getOriginalFilename();
-            boolean success = minioService.uploadFile(bucketName, objectName, file);
-            
-            response.put("success", success);
-            response.put("message", success ? "文件上传成功" : "文件上传失败");
-            response.put("bucketName", bucketName);
-            response.put("objectName", objectName);
-            response.put("fileSize", file.getSize());
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("文件上传失败", e);
-            response.put("success", false);
-            response.put("message", "文件上传失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+        log.info("上传文件到存储桶: {}，文件名: {}", bucketName, file.getOriginalFilename());
+        String objectName = file.getOriginalFilename();
+        return minioService.uploadFile(bucketName, objectName, file);
     }
 
     /**
@@ -136,29 +101,26 @@ public class MinioController {
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 文件内容
+     * @return ResponseEntity文件流
      */
     @GetMapping("/buckets/{bucketName}/files/{objectName:.+}")
     public ResponseEntity<InputStreamResource> downloadFile(
             @PathVariable String bucketName,
             @PathVariable String objectName) {
         
-        try {
-            InputStream inputStream = minioService.downloadFile(bucketName, objectName);
-            if (inputStream == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, 
-                            "attachment; filename=\"" + objectName + "\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(new InputStreamResource(inputStream));
-                    
-        } catch (Exception e) {
-            log.error("文件下载失败", e);
-            return ResponseEntity.badRequest().build();
+        log.info("下载文件: {}/{}", bucketName, objectName);
+        
+        Result<InputStream> result = minioService.downloadFile(bucketName, objectName);
+        
+        if (result.getCode() != 200 || result.getData() == null) {
+            return ResponseEntity.notFound().build();
         }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, 
+                        "attachment; filename=\"" + objectName + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(result.getData()));
     }
 
     /**
@@ -166,37 +128,15 @@ public class MinioController {
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 文件信息
+     * @return Result结果
      */
     @GetMapping("/buckets/{bucketName}/files/{objectName:.+}/info")
-    public ResponseEntity<Map<String, Object>> getFileInfo(
+    public Result<Map<String, Object>> getFileInfo(
             @PathVariable String bucketName,
             @PathVariable String objectName) {
         
-        Map<String, Object> response = new HashMap<>();
-        try {
-            var fileInfo = minioService.getFileInfo(bucketName, objectName);
-            if (fileInfo == null) {
-                response.put("success", false);
-                response.put("message", "文件不存在");
-                return ResponseEntity.notFound().build();
-            }
-
-            response.put("success", true);
-            response.put("bucketName", bucketName);
-            response.put("objectName", objectName);
-            response.put("size", fileInfo.size());
-            response.put("contentType", fileInfo.contentType());
-            response.put("lastModified", fileInfo.lastModified());
-            response.put("etag", fileInfo.etag());
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("获取文件信息失败", e);
-            response.put("success", false);
-            response.put("message", "获取文件信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+        log.info("获取文件信息: {}/{}", bucketName, objectName);
+        return minioService.getFileInfo(bucketName, objectName);
     }
 
     /**
@@ -204,27 +144,15 @@ public class MinioController {
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 删除结果
+     * @return Result结果
      */
     @DeleteMapping("/buckets/{bucketName}/files/{objectName:.+}")
-    public ResponseEntity<Map<String, Object>> deleteFile(
+    public Result<Map<String, Object>> deleteFile(
             @PathVariable String bucketName,
             @PathVariable String objectName) {
         
-        Map<String, Object> response = new HashMap<>();
-        try {
-            boolean success = minioService.deleteFile(bucketName, objectName);
-            response.put("success", success);
-            response.put("message", success ? "文件删除成功" : "文件删除失败");
-            response.put("bucketName", bucketName);
-            response.put("objectName", objectName);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("文件删除失败", e);
-            response.put("success", false);
-            response.put("message", "文件删除失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+        log.info("删除文件: {}/{}", bucketName, objectName);
+        return minioService.deleteFile(bucketName, objectName);
     }
 
     /**
@@ -232,107 +160,128 @@ public class MinioController {
      * 
      * @param bucketName 存储桶名称
      * @param prefix 前缀过滤（可选）
-     * @param recursive 是否递归（默认true）
-     * @return 文件列表
+     * @param recursive 是否递归子目录（默认false）
+     * @return Result结果
      */
     @GetMapping("/buckets/{bucketName}/files")
-    public ResponseEntity<Map<String, Object>> listFiles(
+    public Result<List<FileInfo>> listFiles(
             @PathVariable String bucketName,
-            @RequestParam(required = false) String prefix,
-            @RequestParam(defaultValue = "true") boolean recursive) {
+            @RequestParam(value = "prefix", required = false) String prefix,
+            @RequestParam(value = "recursive", defaultValue = "false") boolean recursive) {
         
-        Map<String, Object> response = new HashMap<>();
-        try {
-            List<Item> files = minioService.listFiles(bucketName, prefix, recursive);
-            
-            response.put("success", true);
-            response.put("bucketName", bucketName);
-            response.put("files", files);
-            response.put("count", files.size());
-            response.put("prefix", prefix);
-            response.put("recursive", recursive);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("获取文件列表失败", e);
-            response.put("success", false);
-            response.put("message", "获取文件列表失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+        log.info("获取文件列表: {}，前缀: {}，递归: {}", bucketName, prefix, recursive);
+        return minioService.listFiles(bucketName, prefix, recursive);
     }
 
     /**
-     * 生成预签名URL
+     * 生成文件下载预签名URL
      * 
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @param expiry 过期时间（分钟，默认60）
-     * @return 预签名URL
+     * @param expiry 过期时间（分钟，默认60分钟）
+     * @return Result结果
      */
     @GetMapping("/buckets/{bucketName}/files/{objectName:.+}/presigned-url")
-    public ResponseEntity<Map<String, Object>> generatePresignedUrl(
+    public Result<String> generatePresignedDownloadUrl(
             @PathVariable String bucketName,
             @PathVariable String objectName,
-            @RequestParam(defaultValue = "60") int expiry) {
+            @RequestParam(value = "expiry", defaultValue = "60") int expiry) {
         
-        Map<String, Object> response = new HashMap<>();
-        try {
-            String presignedUrl = minioService.generatePresignedUrl(bucketName, objectName, expiry);
-            
-            if (presignedUrl == null) {
-                response.put("success", false);
-                response.put("message", "生成预签名URL失败");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            response.put("success", true);
-            response.put("bucketName", bucketName);
-            response.put("objectName", objectName);
-            response.put("presignedUrl", presignedUrl);
-            response.put("expiryMinutes", expiry);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("生成预签名URL失败", e);
-            response.put("success", false);
-            response.put("message", "生成预签名URL失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+        log.info("生成预签名下载URL: {}，过期时间: {}分钟", bucketName, expiry);
+        return minioService.generatePresignedUrl(bucketName, objectName, expiry, io.minio.http.Method.GET);
     }
 
     /**
-     * 复制文件
+     * 生成文件上传预签名URL
      * 
-     * @param sourceBucket 源存储桶
-     * @param sourceObject 源对象
-     * @param targetBucket 目标存储桶
-     * @param targetObject 目标对象
-     * @return 复制结果
+     * @param bucketName 存储桶名称
+     * @param objectName 对象名称
+     * @param expiry 过期时间（分钟，默认60分钟）
+     * @return Result结果
      */
-    @PostMapping("/buckets/{sourceBucket}/files/{sourceObject:.+}/copy")
-    public ResponseEntity<Map<String, Object>> copyFile(
-            @PathVariable String sourceBucket,
-            @PathVariable String sourceObject,
-            @RequestParam String targetBucket,
-            @RequestParam String targetObject) {
+    @GetMapping("/buckets/{bucketName}/files/{objectName:.+}/presigned-upload")
+    public Result<String> generatePresignedUploadUrl(
+            @PathVariable String bucketName,
+            @PathVariable String objectName,
+            @RequestParam(value = "expiry", defaultValue = "60") int expiry) {
         
-        Map<String, Object> response = new HashMap<>();
+        log.info("生成预签名上传URL: {}，过期时间: {}分钟", bucketName, expiry);
+        return minioService.generatePresignedUrl(bucketName, objectName, expiry, io.minio.http.Method.PUT);
+    }
+
+    /**
+     * 创建预上传任务，使用普通上传
+     * 
+     * @param bucketName 存储桶名称
+     * @param objectName 对象名称
+     * @param fileSize 文件大小（字节）
+     * @return Result结果，包含上传任务信息
+     */
+    @PostMapping("/buckets/{bucketName}/files/{objectName:.+}/presigned-upload")
+    public Result<Map<String, Object>> createPresignedUploadTask(
+            @PathVariable String bucketName,
+            @PathVariable String objectName,
+            @RequestParam("fileSize") long fileSize) {
+        
+        log.info("创建预上传任务: {}/{}，文件大小: {}字节", 
+                bucketName, objectName, fileSize);
+        return minioService.createPresignedUploadTask(bucketName, objectName, fileSize);
+    }
+
+    /**
+     * 保存文件信息到数据库（客户端直传后调用）
+     * 
+     * @param bucketName 存储桶名称
+     * @param fileInfo 文件信息
+     * @return Result结果
+     */
+    @PostMapping("/buckets/{bucketName}/files/save-info")
+    public Result<Map<String, Object>> saveFileInfo(
+            @PathVariable String bucketName,
+            @RequestBody Map<String, Object> fileInfo) {
+        
+        log.info("保存文件信息到数据库: {}，文件名: {}", bucketName, fileInfo.get("objectName"));
+        
         try {
-            boolean success = minioService.copyFile(sourceBucket, sourceObject, targetBucket, targetObject);
+            FileInfo file = new FileInfo();
+            String originalName = (String) fileInfo.get("originalName");
+            String objectName = (String) fileInfo.get("objectName");
             
-            response.put("success", success);
-            response.put("message", success ? "文件复制成功" : "文件复制失败");
-            response.put("sourceBucket", sourceBucket);
-            response.put("sourceObject", sourceObject);
-            response.put("targetBucket", targetBucket);
-            response.put("targetObject", targetObject);
+            file.setFileName(originalName);
+            file.setOriginalName(originalName);
             
-            return ResponseEntity.ok(response);
+            // 提取文件后缀
+            if (originalName != null && originalName.contains(".")) {
+                file.setFileSuffix(originalName.substring(originalName.lastIndexOf(".")));
+            } else {
+                file.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
+            }
+            
+            // 构建文件URL
+            String fileUrl = String.format("/minio/buckets/%s/files/%s", bucketName, objectName);
+            file.setFileUrl(fileUrl);
+            file.setStatus(1); // 启用状态
+            file.setCreateTime(LocalDateTime.now());
+            
+            boolean saved = fileInfoService.save(file);
+            
+            if (saved) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("fileId", file.getId());
+                data.put("fileUrl", fileUrl);
+                data.put("fileName", file.getFileName());
+                data.put("originalName", file.getOriginalName());
+                
+                log.info("文件信息保存成功，文件ID: {}", file.getId());
+                return ResultUtil.success(data);
+            } else {
+                log.error("文件信息保存失败");
+                return ResultUtil.fail("文件信息保存失败");
+            }
+            
         } catch (Exception e) {
-            log.error("文件复制失败", e);
-            response.put("success", false);
-            response.put("message", "文件复制失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            log.error("保存文件信息异常", e);
+            return ResultUtil.fail("保存文件信息失败: " + e.getMessage());
         }
     }
 }

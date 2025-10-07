@@ -48,7 +48,17 @@ public class CircuitBoardController {
                 // 保存文件信息
                 FileInfo fileInfo = new FileInfo();
                 fileInfo.setFileName(circuitBoardDTO.getFileName());
+                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
                 fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
+                
+                // 提取文件后缀
+                String fileName = circuitBoardDTO.getFileName();
+                if (fileName != null && fileName.contains(".")) {
+                    fileInfo.setFileSuffix(fileName.substring(fileName.lastIndexOf(".")));
+                } else {
+                    fileInfo.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
+                }
+                
                 fileInfo.setStatus(1);
                 fileInfo.setCreateTime(LocalDateTime.now());
                 fileInfoService.save(fileInfo);
@@ -99,26 +109,26 @@ public class CircuitBoardController {
             circuitBoard.setStatus(circuitBoardDTO.getStatus());
             circuitBoard.setUpdateTime(LocalDateTime.now());
             
-            // 更新文件信息
+            // 更新文件信息 - 每次上传新文件都创建新的文件记录
             if (circuitBoardDTO.getFileName() != null && circuitBoardDTO.getFileUrl() != null) {
-                if (circuitBoard.getFileId() != null) {
-                    // 更新现有文件
-                    FileInfo fileInfo = fileInfoService.getById(circuitBoard.getFileId());
-                    if (fileInfo != null) {
-                        fileInfo.setFileName(circuitBoardDTO.getFileName());
-                        fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
-                        fileInfoService.updateById(fileInfo);
-                    }
+                // 始终创建新的文件记录，避免多个线路板共享同一个文件ID
+                FileInfo fileInfo = new FileInfo();
+                fileInfo.setFileName(circuitBoardDTO.getFileName());
+                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
+                fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
+                
+                // 提取文件后缀
+                String fileName = circuitBoardDTO.getFileName();
+                if (fileName != null && fileName.contains(".")) {
+                    fileInfo.setFileSuffix(fileName.substring(fileName.lastIndexOf(".")));
                 } else {
-                    // 新增文件
-                    FileInfo fileInfo = new FileInfo();
-                    fileInfo.setFileName(circuitBoardDTO.getFileName());
-                    fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
-                    fileInfo.setStatus(1);
-                    fileInfo.setCreateTime(LocalDateTime.now());
-                    fileInfoService.save(fileInfo);
-                    circuitBoard.setFileId(fileInfo.getId());
+                    fileInfo.setFileSuffix(""); // 设置空后缀避免NOT NULL约束
                 }
+                
+                fileInfo.setStatus(1);
+                fileInfo.setCreateTime(LocalDateTime.now());
+                fileInfoService.save(fileInfo);
+                circuitBoard.setFileId(fileInfo.getId());
             }
             
             boolean result = circuitBoardService.updateById(circuitBoard);
@@ -180,6 +190,35 @@ public class CircuitBoardController {
             }
             
             return ResultUtil.success(dtoList);
+        } catch (Exception e) {
+            return ResultUtil.fail("查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取所有线路板及其嵌套数据（用于前端表格展示）
+     */
+    @GetMapping("/all-with-details")
+    public Result getAllCircuitBoardsWithDetails() {
+        try {
+            List<CircuitBoardDTO> circuitBoardList = circuitBoardService.getAllCircuitBoardsWithDetails();
+            return ResultUtil.success(circuitBoardList);
+        } catch (Exception e) {
+            return ResultUtil.fail("查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据ID获取线路板及其嵌套数据
+     */
+    @GetMapping("/with-details/{id}")
+    public Result getCircuitBoardWithDetails(@PathVariable Long id) {
+        try {
+            CircuitBoardDTO circuitBoardDTO = circuitBoardService.getCircuitBoardWithDetails(id);
+            if (circuitBoardDTO == null) {
+                return ResultUtil.fail("线路板不存在");
+            }
+            return ResultUtil.success(circuitBoardDTO);
         } catch (Exception e) {
             return ResultUtil.fail("查询失败：" + e.getMessage());
         }

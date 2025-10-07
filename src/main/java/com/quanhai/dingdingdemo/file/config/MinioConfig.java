@@ -1,4 +1,4 @@
-package com.example.mongodbpractice.config;
+package com.quanhai.dingdingdemo.file.config;
 
 import io.minio.MinioClient;
 import lombok.Data;
