@@ -3,11 +3,11 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>文件管理器</span>
+          <span>文件管理器（数据库）</span>
           <div class="header-actions">
             <el-button type="primary" size="small" @click="showUploadDialog = true">
               <el-icon><Upload /></el-icon>
-              上传文件
+              上传到MinIO
             </el-button>
             <el-button type="success" size="small" @click="refreshFiles">
               <el-icon><Refresh /></el-icon>
@@ -18,23 +18,43 @@
       </template>
 
       <div class="file-manager-content">
-        <!-- 存储桶选择 -->
-        <div class="bucket-selector">
+        <!-- 搜索和筛选 -->
+        <div class="file-filter">
           <el-form :inline="true" size="small">
-            <el-form-item label="存储桶:">
-              <el-select v-model="currentBucket" @change="onBucketChange" style="width: 200px">
-                <el-option 
-                  v-for="bucket in buckets" 
-                  :key="bucket.name" 
-                  :label="bucket.name" 
-                  :value="bucket.name" 
-                />
+            <el-form-item label="文件名:">
+              <el-input 
+                v-model="searchKeyword" 
+                placeholder="请输入文件名关键字" 
+                style="width: 200px"
+                clearable
+                @clear="loadFiles"
+                @keyup.enter="loadFiles"
+              />
+            </el-form-item>
+            <el-form-item label="文件类型:">
+              <el-select 
+                v-model="searchSuffix" 
+                placeholder="全部类型" 
+                style="width: 120px"
+                clearable
+                @clear="loadFiles"
+              >
+                <el-option label="全部类型" value="" />
+                <el-option label="PDF文件" value=".pdf" />
+                <el-option label="图片文件" value=".jpg" />
+                <el-option label="Excel文件" value=".xlsx" />
+                <el-option label="Word文件" value=".docx" />
+                <el-option label="其他" value="other" />
               </el-select>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" size="small" @click="showCreateBucketDialog = true">
-                <el-icon><Plus /></el-icon>
-                新建存储桶
+              <el-button type="primary" size="small" @click="loadFiles">
+                <el-icon><Search /></el-icon>
+                搜索
+              </el-button>
+              <el-button size="small" @click="resetSearch">
+                <el-icon><Refresh /></el-icon>
+                重置
               </el-button>
             </el-form-item>
           </el-form>
@@ -62,12 +82,12 @@
             </el-table-column>
             <el-table-column prop="size" label="大小" width="120">
               <template #default="{ row }">
-                {{ formatFileSize(row.size) }}
+                {{ row.size > 0 ? formatFileSize(row.size) : '-' }}
               </template>
             </el-table-column>
-            <el-table-column prop="lastModified" label="修改时间" width="180">
+            <el-table-column prop="createTime" label="上传时间" width="180">
               <template #default="{ row }">
-                {{ formatDate(row.lastModified) }}
+                {{ formatDate(row.createTime) }}
               </template>
             </el-table-column>
             <el-table-column label="操作" width="200" fixed="right">
@@ -113,116 +133,71 @@
     <!-- 上传文件对话框 -->
     <el-dialog
       v-model="showUploadDialog"
-      title="上传文件"
+      title="上传文件到MinIO"
       width="80%"
       :close-on-click-modal="false"
     >
       <FileUpload />
     </el-dialog>
 
-    <!-- 创建存储桶对话框 -->
-    <el-dialog
-      v-model="showCreateBucketDialog"
-      title="创建存储桶"
-      width="400px"
-    >
-      <el-form :model="bucketForm" :rules="bucketRules" ref="bucketFormRef">
-        <el-form-item label="存储桶名称" prop="name">
-          <el-input v-model="bucketForm.name" placeholder="请输入存储桶名称" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showCreateBucketDialog = false">取消</el-button>
-          <el-button type="primary" @click="createBucket">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, Folder, Download, Delete, Plus, Refresh, Upload } from '@element-plus/icons-vue'
+import { Document, Folder, Download, Delete, Plus, Refresh, Upload, Search } from '@element-plus/icons-vue'
 import FileUpload from '../components/FileUpload.vue'
 import axios from 'axios'
 
 const baseUrl = 'http://192.168.90.64:8083'
 
 // 响应式数据
-const buckets = ref([])
 const files = ref([])
-const currentBucket = ref('files')
 const loading = ref(false)
 const selectedFiles = ref([])
 const currentPage = ref(1)
 const pageSize = ref(20)
 const totalFiles = ref(0)
 const showUploadDialog = ref(false)
-const showCreateBucketDialog = ref(false)
-const bucketFormRef = ref()
-
-const bucketForm = reactive({
-  name: ''
-})
-
-const bucketRules = {
-  name: [
-    { required: true, message: '请输入存储桶名称', trigger: 'blur' },
-    { pattern: /^[a-z0-9][a-z0-9-]*[a-z0-9]$/, message: '存储桶名称只能包含小写字母、数字和连字符', trigger: 'blur' }
-  ]
-}
+const searchKeyword = ref('')
+const searchSuffix = ref('')
 
 // 生命周期
 onMounted(() => {
-  loadBuckets()
   loadFiles()
 })
 
-// 加载存储桶列表
-const loadBuckets = async () => {
-  try {
-    const response = await axios.get(`${baseUrl}/minio/buckets`)
-    if (response.data.code === 200) {
-      // 后端现在返回的是字符串数组，直接作为桶名称
-      buckets.value = response.data.data.map(bucketName => ({
-        name: bucketName
-      }))
-      if (buckets.value.length > 0 && !currentBucket.value) {
-        currentBucket.value = buckets.value[0].name
-      }
-    } else {
-      ElMessage.error('获取存储桶列表失败')
-    }
-  } catch (error) {
-    ElMessage.error('获取存储桶列表失败: ' + error.message)
-  }
-}
 
-// 加载文件列表
+
+// 加载文件列表（从数据库）
 const loadFiles = async () => {
-  if (!currentBucket.value) return
-  
   loading.value = true
   try {
-    const response = await axios.get(`${baseUrl}/minio/buckets/${currentBucket.value}/files`, {
+    const response = await axios.get(`${baseUrl}/file-info/list`, {
       params: {
-        prefix: '',
-        recursive: true
+        page: currentPage.value,
+        pageSize: pageSize.value,
+        keyword: searchKeyword.value,
+        suffix: searchSuffix.value
       }
     })
     
     if (response.data.code === 200) {
-      // debugger
-      files.value = response.data.data.map(item => ({
+      const data = response.data.data
+      // 将数据库的文件信息转换为文件列表格式
+      files.value = data.list.map(item => ({
         ...item,
-        objectName: item.objectName || item.name,
-        size: item.size || 0,
-        lastModified: item.lastModified || new Date(),
-        isFile: !item.objectName?.endsWith('/')
+        objectName: item.fileName || item.originalName, // 使用文件名作为显示名称
+        name: item.fileName || item.originalName,
+        size: 0, // 数据库中没有文件大小信息，可以后续添加
+        lastModified: item.createTime, // 使用创建时间作为修改时间
+        isFile: true, // 数据库中的记录都是文件
+        id: item.id, // 添加数据库ID
+        fileUrl: item.fileUrl // 添加文件URL
       }))
-      totalFiles.value = files.value.length
+      totalFiles.value = data.total
     } else {
       ElMessage.error('获取文件列表失败')
     }
@@ -233,11 +208,7 @@ const loadFiles = async () => {
   }
 }
 
-// 存储桶切换
-const onBucketChange = () => {
-  currentPage.value = 1
-  loadFiles()
-}
+
 
 // 文件选择变化
 const handleSelectionChange = (selection) => {
@@ -252,35 +223,44 @@ const handleFileClick = (file) => {
   }
 }
 
-// 下载文件
+// 下载文件（使用文件ID）
 const downloadFile = async (file) => {
   try {
-    // 获取预签名下载URL
-    const response = await axios.get(
-      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${file.objectName}/presigned-url`
-    )
-    
-    if (response.data.code === 200) {
-      const downloadUrl = response.data.data
+    // 从文件URL中提取桶名和对象名
+    const urlMatch = file.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (urlMatch) {
+      const bucketName = urlMatch[1]
+      const objectName = urlMatch[2]
       
-      // 创建下载链接
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = file.objectName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      // 获取预签名下载URL
+      const response = await axios.get(
+        `${baseUrl}/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
+      )
       
-      ElMessage.success('文件下载开始')
+      if (response.data.code === 200) {
+        const downloadUrl = response.data.data
+        
+        // 创建下载链接
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = file.objectName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        ElMessage.success('文件下载开始')
+      } else {
+        ElMessage.error('获取下载链接失败')
+      }
     } else {
-      ElMessage.error('获取下载链接失败')
+      ElMessage.error('文件URL格式不正确')
     }
   } catch (error) {
     ElMessage.error('下载文件失败: ' + error.message)
   }
 }
 
-// 删除文件
+// 删除文件（从数据库）
 const deleteFile = async (file) => {
   try {
     await ElMessageBox.confirm(
@@ -293,8 +273,9 @@ const deleteFile = async (file) => {
       }
     )
     
+    // 使用文件ID删除数据库记录
     const response = await axios.delete(
-      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${file.objectName}`
+      `${baseUrl}/file-info/${file.id}`
     )
     
     if (response.data.code === 200) {
@@ -310,28 +291,14 @@ const deleteFile = async (file) => {
   }
 }
 
-// 创建存储桶
-const createBucket = async () => {
-  if (!bucketFormRef.value) return
-  
-  try {
-    await bucketFormRef.value.validate()
-    
-    const response = await axios.post(`${baseUrl}/minio/buckets/${bucketForm.name}`)
-    
-    if (response.data.code === 200) {
-      ElMessage.success('存储桶创建成功')
-      showCreateBucketDialog.value = false
-      bucketForm.name = ''
-      loadBuckets()
-    } else {
-      ElMessage.error(response.data.msg || '创建存储桶失败')
-    }
-  } catch (error) {
-    if (error !== false) {
-      ElMessage.error('创建存储桶失败: ' + error.message)
-    }
-  }
+
+
+// 重置搜索
+const resetSearch = () => {
+  searchKeyword.value = ''
+  searchSuffix.value = ''
+  currentPage.value = 1
+  loadFiles()
 }
 
 // 刷新文件列表
@@ -385,7 +352,7 @@ const formatDate = (date) => {
   gap: 10px;
 }
 
-.bucket-selector {
+.file-filter {
   margin-bottom: 20px;
   padding: 15px;
   background-color: #f5f7fa;
