@@ -503,14 +503,48 @@ const toggleLedBoardPlugin = (semi) => {
   semi.showLedBoardPlugin = !semi.showLedBoardPlugin
 }
 
-// 文件下载
-const downloadFile = (url, fileName) => {
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName || 'download'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+// 文件下载 - 使用预签名链接
+const downloadFile = async (url, fileName) => {
+  try {
+    // 提取存储桶名称和对象名称
+    const urlMatch = url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      // 如果不是MinIO URL，直接下载
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName || 'download'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    // 获取预签名下载URL
+    const response = await axios.get(
+      `${baseUrl}/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
+    )
+    
+    if (response.data.code === 200) {
+      const downloadUrl = response.data.data
+      
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = fileName || 'download'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      ElMessage.success('文件下载开始')
+    } else {
+      ElMessage.error('获取下载链接失败')
+    }
+  } catch (error) {
+    ElMessage.error('下载文件失败: ' + error.message)
+  }
 }
 
 // 日期格式化
