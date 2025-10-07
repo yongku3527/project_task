@@ -17,6 +17,44 @@
         </div>
       </template>
 
+      <!-- 文件统计信息 -->
+      <div class="file-stats">
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-card shadow="hover">
+              <div class="stat-item">
+                <div class="stat-label">总文件数</div>
+                <div class="stat-value">{{ totalFiles }}</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover">
+              <div class="stat-item">
+                <div class="stat-label">总大小</div>
+                <div class="stat-value">{{ totalSize }}</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover">
+              <div class="stat-item">
+                <div class="stat-label">PDF文件</div>
+                <div class="stat-value">{{ pdfCount }}</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
+            <el-card shadow="hover">
+              <div class="stat-item">
+                <div class="stat-label">图片文件</div>
+                <div class="stat-value">{{ imageCount }}</div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
+
       <div class="file-manager-content">
         <!-- 搜索和筛选 -->
         <div class="file-filter">
@@ -163,11 +201,51 @@ const totalFiles = ref(0)
 const showUploadDialog = ref(false)
 const searchKeyword = ref('')
 const searchSuffix = ref('')
+const totalSize = ref('0 B') // 总文件大小
+const pdfCount = ref(0) // PDF文件数量
+const imageCount = ref(0) // 图片文件数量
 
 // 生命周期
 onMounted(() => {
   loadFiles()
+  loadStatistics()
 })
+
+// 加载文件统计信息
+const loadStatistics = async () => {
+  try {
+    const response = await axios.get(`${baseUrl}/file-info/statistics`)
+    if (response.data.code === 200) {
+      const data = response.data.data
+      
+      // 计算总文件大小
+      let totalBytes = 0
+      files.value.forEach(file => {
+        if (file.fileSize && file.fileSize > 0) {
+          totalBytes += file.fileSize
+        }
+      })
+      totalSize.value = formatFileSize(totalBytes)
+      
+      // 统计PDF和图片文件数量
+      pdfCount.value = files.value.filter(file => 
+        file.fileSuffix && file.fileSuffix.toLowerCase() === '.pdf'
+      ).length
+      
+      imageCount.value = files.value.filter(file => {
+        const suffix = file.fileSuffix ? file.fileSuffix.toLowerCase() : ''
+        return ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg'].includes(suffix)
+      }).length
+      
+      // 如果后端有统计信息，使用后端的总数
+      if (data.totalFiles !== undefined) {
+        totalFiles.value = data.totalFiles
+      }
+    }
+  } catch (error) {
+    console.error('加载统计信息失败:', error)
+  }
+}
 
 
 
@@ -191,13 +269,18 @@ const loadFiles = async () => {
         ...item,
         objectName: item.fileName || item.originalName, // 使用文件名作为显示名称
         name: item.fileName || item.originalName,
-        size: 0, // 数据库中没有文件大小信息，可以后续添加
+        size: item.fileSize || 0, // 使用数据库中的文件大小信息
         lastModified: item.createTime, // 使用创建时间作为修改时间
         isFile: true, // 数据库中的记录都是文件
         id: item.id, // 添加数据库ID
         fileUrl: item.fileUrl // 添加文件URL
       }))
       totalFiles.value = data.total
+      
+      // 加载完成后更新统计信息
+      loadStatistics()
+      
+      ElMessage.success('文件列表加载成功')
     } else {
       ElMessage.error('获取文件列表失败')
     }
@@ -304,6 +387,7 @@ const resetSearch = () => {
 // 刷新文件列表
 const refreshFiles = () => {
   loadFiles()
+  loadStatistics()
   ElMessage.success('文件列表已刷新')
 }
 
@@ -383,6 +467,27 @@ const formatDate = (date) => {
 .file-name:hover {
   color: #409EFF;
   text-decoration: underline;
+}
+
+.file-stats {
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 10px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
 }
 
 .pagination-container {
