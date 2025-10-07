@@ -34,6 +34,14 @@
         <Grid />
         <span>资源管理</span>
       </el-menu-item>
+      <el-menu-item index="/file-manager">
+        <Folder />
+        <span>文件管理</span>
+      </el-menu-item>
+      <el-menu-item index="/circuit-board">
+        <Cpu />
+        <span>线路板管理</span>
+      </el-menu-item>
     </el-menu>
     
     <router-view />
@@ -43,7 +51,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { onMounted, onUnmounted, ref } from 'vue';
-import { House, Menu as MenuIcon, Grid } from '@element-plus/icons-vue';
+import { House, Menu as MenuIcon, Grid, Folder, Cpu } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const isFullScreen = ref(false);

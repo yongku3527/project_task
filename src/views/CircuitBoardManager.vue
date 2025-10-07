@@ -1,0 +1,934 @@
+<template>
+  <div class="circuit-board-manager">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>线路板管理系统</span>
+          <div class="header-actions">
+            <el-button type="primary" size="small" @click="handleAdd">
+              <el-icon><Plus /></el-icon>
+              新增线路板
+            </el-button>
+            <el-button type="success" size="small" @click="loadData">
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <div class="search-bar">
+        <el-form :inline="true" size="small">
+          <el-form-item label="线路板编码:">
+            <el-input v-model="searchForm.boardCode" placeholder="请输入线路板编码" clearable />
+          </el-form-item>
+          <el-form-item label="线路板名称:">
+            <el-input v-model="searchForm.boardName" placeholder="请输入线路板名称" clearable />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch">查询</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="table-container">
+        <el-table 
+          :data="tableData" 
+          v-loading="loading"
+          style="width: 100%"
+          row-key="id"
+          border
+          stripe
+        >
+          <!-- 线路板信息列 -->
+          <el-table-column label="线路板信息" width="300" fixed="left">
+            <template #default="{ row }">
+              <div class="board-info">
+                <div class="info-item">
+                  <span class="label">编码:</span>
+                  <span class="value">{{ row.boardCode }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">名称:</span>
+                  <span class="value">{{ row.boardName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">文件:</span>
+                  <span class="value">
+                    <el-link 
+                      v-if="row.fileUrl" 
+                      type="primary" 
+                      @click="downloadFile(row.fileUrl, row.fileName)"
+                    >
+                      {{ row.fileName }}
+                    </el-link>
+                    <span v-else>-</span>
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="label">状态:</span>
+                  <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+                    {{ row.status === 1 ? '启用' : '禁用' }}
+                  </el-tag>
+                </div>
+                <div class="info-item">
+                  <span class="label">创建时间:</span>
+                  <span class="value">{{ formatDate(row.createTime) }}</span>
+                </div>
+              </div>
+              <div class="board-actions">
+                <el-button type="primary" size="small" link @click="handleEdit(row)">
+                  <el-icon><Edit /></el-icon>编辑
+                </el-button>
+                <el-button type="danger" size="small" link @click="handleDelete(row)">
+                  <el-icon><Delete /></el-icon>删除
+                </el-button>
+                <el-button type="success" size="small" link @click="handleAddSemiProduct(row)">
+                  <el-icon><Plus /></el-icon>添加半成品
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 半成品信息列 -->
+          <el-table-column label="半成品信息" min-width="400">
+            <template #default="{ row }">
+              <div class="semi-product-container">
+                <div v-if="!row.semiProductDTOList || row.semiProductDTOList.length === 0" class="no-data">
+                  <el-empty description="暂无半成品数据" :image-size="60" />
+                </div>
+                <div v-else class="semi-product-list">
+                  <div 
+                    v-for="semi in row.semiProductDTOList" 
+                    :key="semi.id"
+                    class="semi-product-item"
+                  >
+                    <div class="semi-product-info">
+                      <div class="info-row">
+                        <span class="label">编码:</span>
+                        <span class="value">{{ semi.semiProductCode }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label">名称:</span>
+                        <span class="value">{{ semi.semiProductName }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label">原理图:</span>
+                        <el-link 
+                          v-if="semi.schematicFileUrl" 
+                          type="primary" 
+                          @click="downloadFile(semi.schematicFileUrl, semi.schematicFileName)"
+                        >
+                          {{ semi.schematicFileName }}
+                        </el-link>
+                        <span v-else>-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label">SMT文件:</span>
+                        <el-link 
+                          v-if="semi.smtFileUrl" 
+                          type="primary" 
+                          @click="downloadFile(semi.smtFileUrl, semi.smtFileName)"
+                        >
+                          {{ semi.smtFileName }}
+                        </el-link>
+                        <span v-else>-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label">状态:</span>
+                        <el-tag :type="semi.status === 1 ? 'success' : 'danger'" size="small">
+                          {{ semi.status === 1 ? '启用' : '禁用' }}
+                        </el-tag>
+                      </div>
+                    </div>
+                    <div class="semi-product-actions">
+                      <el-button type="warning" size="small" link @click="handleEditSemiProduct(semi)">
+                        <el-icon><Edit /></el-icon>编辑
+                      </el-button>
+                      <el-button type="danger" size="small" link @click="handleDeleteSemiProduct(semi)">
+                        <el-icon><Delete /></el-icon>删除
+                      </el-button>
+                      <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
+                        <el-icon><Plus /></el-icon>添加灯板插件
+                      </el-button>
+                      <el-button 
+                        v-if="semi.ledBoardPluginSemiProductDTOList && semi.ledBoardPluginSemiProductDTOList.length > 0"
+                        type="primary" 
+                        size="small" 
+                        link 
+                        @click="toggleLedBoardPlugin(semi)"
+                      >
+                        <el-icon><ArrowDown v-if="!semi.showLedBoardPlugin" /><ArrowUp v-else /></el-icon>
+                        灯板插件({{ semi.ledBoardPluginSemiProductDTOList.length }})
+                      </el-button>
+                    </div>
+                    
+                    <!-- 灯板插件半成品信息 -->
+                    <div v-if="semi.showLedBoardPlugin" class="led-board-plugin-container">
+                      <div class="led-board-plugin-list">
+                        <div 
+                          v-for="led in semi.ledBoardPluginSemiProductDTOList" 
+                          :key="led.id"
+                          class="led-board-plugin-item"
+                        >
+                          <div class="led-info">
+                            <div class="info-row">
+                              <span class="label">插件编码:</span>
+                              <span class="value">{{ led.ledBoardPluginCode }}</span>
+                            </div>
+                            <div class="info-row">
+                              <span class="label">插件名称:</span>
+                              <span class="value">{{ led.ledBoardPluginName }}</span>
+                            </div>
+                            <div class="info-row">
+                              <span class="label">文件:</span>
+                              <el-link 
+                                v-if="led.fileUrl" 
+                                type="primary" 
+                                @click="downloadFile(led.fileUrl, led.fileName)"
+                              >
+                                {{ led.fileName }}
+                              </el-link>
+                              <span v-else>-</span>
+                            </div>
+                            <div class="info-row">
+                              <span class="label">状态:</span>
+                              <el-tag :type="led.status === 1 ? 'success' : 'danger'" size="small">
+                                {{ led.status === 1 ? '启用' : '禁用' }}
+                              </el-tag>
+                            </div>
+                          </div>
+                          <div class="led-actions">
+                            <el-button type="warning" size="small" link @click="handleEditLedBoardPlugin(led)">
+                              <el-icon><Edit /></el-icon>编辑
+                            </el-button>
+                            <el-button type="danger" size="small" link @click="handleDeleteLedBoardPlugin(led)">
+                              <el-icon><Delete /></el-icon>删除
+                            </el-button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[5, 10, 20, 50]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
+    </el-card>
+
+    <!-- 线路板编辑对话框 -->
+    <el-dialog
+      v-model="boardDialog.visible"
+      :title="boardDialog.title"
+      width="600px"
+    >
+      <el-form :model="boardDialog.form" :rules="boardDialog.rules" ref="boardFormRef" label-width="100px">
+        <el-form-item label="线路板编码" prop="boardCode">
+          <el-input v-model="boardDialog.form.boardCode" placeholder="请输入线路板编码" />
+        </el-form-item>
+        <el-form-item label="线路板名称" prop="boardName">
+          <el-input v-model="boardDialog.form.boardName" placeholder="请输入线路板名称" />
+        </el-form-item>
+        <el-form-item label="上传文件">
+          <el-upload
+            ref="boardUploadRef"
+            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :limit="1"
+            :on-success="handleBoardUploadSuccess"
+            :on-remove="handleBoardUploadRemove"
+            :file-list="boardDialog.fileList"
+            :before-upload="beforeBoardUpload"
+            :http-request="handleBoardUpload"
+          >
+            <el-button type="primary">
+              <el-icon><Upload /></el-icon>选择文件
+            </el-button>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="boardDialog.form.status">
+            <el-radio :label="1">启用</el-radio>
+            <el-radio :label="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="boardDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="saveBoard">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import axios from 'axios'
+
+const baseUrl = 'http://192.168.90.64:8083'
+
+// 响应式数据
+const loading = ref(false)
+const tableData = ref([])
+const currentPage = ref(1)
+const pageSize = ref(5)
+const total = ref(0)
+const currentBucket = ref('files')
+
+// 搜索表单
+const searchForm = reactive({
+  boardCode: '',
+  boardName: ''
+})
+
+// 线路板对话框
+const boardDialog = reactive({
+  visible: false,
+  title: '',
+  form: {
+    id: null,
+    boardCode: '',
+    boardName: '',
+    fileId: null,
+    fileUrl: '',
+    fileName: '',
+    status: 1
+  },
+  rules: {
+    boardCode: [{ required: true, message: '请输入线路板编码', trigger: 'blur' }],
+    boardName: [{ required: true, message: '请输入线路板名称', trigger: 'blur' }],
+    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  },
+  fileList: []
+})
+
+const boardFormRef = ref()
+const boardUploadRef = ref()
+
+// 生命周期
+onMounted(() => {
+  loadData()
+})
+
+// 加载数据
+const loadData = async () => {
+  loading.value = true
+  try {
+    const response = await axios.get(`${baseUrl}/circuit-board/all-with-details`)
+    if (response.data.code === 200) {
+      tableData.value = response.data.data
+      total.value = response.data.data.length
+    } else {
+      ElMessage.error('加载数据失败: ' + response.data.message)
+    }
+  } catch (error) {
+    ElMessage.error('加载数据失败: ' + error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 生成模拟数据
+const generateMockData = async () => {
+  // 实际使用时，这里应该调用后端接口获取数据
+  // 例如：const response = await axios.get(`${baseUrl}/circuit-board/list`, { params: searchForm })
+  
+  const mockData = [
+    {
+      id: 1,
+      boardCode: 'PCB001',
+      boardName: '主控制板',
+      fileUrl: 'http://example.com/file1.pdf',
+      fileName: '主控制板规格书.pdf',
+      status: 1,
+      createTime: '2024-01-15 10:30:00',
+      updateTime: '2024-01-15 10:30:00',
+      semiProductDTOList: [
+        {
+          id: 11,
+          circuitBoardId: 1,
+          circuitBoardCode: 'PCB001',
+          circuitBoardName: '主控制板',
+          semiProductCode: 'SP001',
+          semiProductName: '主控制板半成品A',
+          schematicFileUrl: 'http://example.com/schematic1.pdf',
+          schematicFileName: '原理图A.pdf',
+          smtFileUrl: 'http://example.com/smt1.pdf',
+          smtFileName: 'SMT文件A.pdf',
+          status: 1,
+          createTime: '2024-01-16 14:20:00',
+          updateTime: '2024-01-16 14:20:00',
+          showLedBoardPlugin: false,
+          ledBoardPluginSemiProductDTOList: [
+            {
+              id: 111,
+              semiProductId: 11,
+              semiProductCode: 'SP001',
+              semiProductName: '主控制板半成品A',
+              ledBoardPluginCode: 'LED001',
+              ledBoardPluginName: '灯板插件A1',
+              fileUrl: 'http://example.com/led1.pdf',
+              fileName: '灯板插件规格书A1.pdf',
+              status: 1,
+              createTime: '2024-01-17 09:15:00',
+              updateTime: '2024-01-17 09:15:00'
+            },
+            {
+              id: 112,
+              semiProductId: 11,
+              semiProductCode: 'SP001',
+              semiProductName: '主控制板半成品A',
+              ledBoardPluginCode: 'LED002',
+              ledBoardPluginName: '灯板插件A2',
+              fileUrl: 'http://example.com/led2.pdf',
+              fileName: '灯板插件规格书A2.pdf',
+              status: 1,
+              createTime: '2024-01-17 10:30:00',
+              updateTime: '2024-01-17 10:30:00'
+            }
+          ]
+        },
+        {
+          id: 12,
+          circuitBoardId: 1,
+          circuitBoardCode: 'PCB001',
+          circuitBoardName: '主控制板',
+          semiProductCode: 'SP002',
+          semiProductName: '主控制板半成品B',
+          schematicFileUrl: 'http://example.com/schematic2.pdf',
+          schematicFileName: '原理图B.pdf',
+          smtFileUrl: 'http://example.com/smt2.pdf',
+          smtFileName: 'SMT文件B.pdf',
+          status: 1,
+          createTime: '2024-01-18 16:45:00',
+          updateTime: '2024-01-18 16:45:00',
+          showLedBoardPlugin: false,
+          ledBoardPluginSemiProductDTOList: []
+        }
+      ]
+    },
+    {
+      id: 2,
+      boardCode: 'PCB002',
+      boardName: '电源板',
+      fileUrl: 'http://example.com/file2.pdf',
+      fileName: '电源板规格书.pdf',
+      status: 1,
+      createTime: '2024-01-20 11:20:00',
+      updateTime: '2024-01-20 11:20:00',
+      semiProductDTOList: [
+        {
+          id: 21,
+          circuitBoardId: 2,
+          circuitBoardCode: 'PCB002',
+          circuitBoardName: '电源板',
+          semiProductCode: 'SP003',
+          semiProductName: '电源板半成品C',
+          schematicFileUrl: 'http://example.com/schematic3.pdf',
+          schematicFileName: '原理图C.pdf',
+          smtFileUrl: 'http://example.com/smt3.pdf',
+          smtFileName: 'SMT文件C.pdf',
+          status: 1,
+          createTime: '2024-01-21 13:30:00',
+          updateTime: '2024-01-21 13:30:00',
+          showLedBoardPlugin: false,
+          ledBoardPluginSemiProductDTOList: [
+            {
+              id: 211,
+              semiProductId: 21,
+              semiProductCode: 'SP003',
+              semiProductName: '电源板半成品C',
+              ledBoardPluginCode: 'LED003',
+              ledBoardPluginName: '灯板插件C1',
+              fileUrl: 'http://example.com/led3.pdf',
+              fileName: '灯板插件规格书C1.pdf',
+              status: 1,
+              createTime: '2024-01-22 08:45:00',
+              updateTime: '2024-01-22 08:45:00'
+            }
+          ]
+        }
+      ]
+    }
+  ]
+  
+  return mockData
+}
+
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  loadData()
+}
+
+// 重置
+const handleReset = () => {
+  searchForm.boardCode = ''
+  searchForm.boardName = ''
+  handleSearch()
+}
+
+// 分页处理
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  loadData()
+}
+
+const handleCurrentChange = (val) => {
+  currentPage.value = val
+  loadData()
+}
+
+// 展开/收起灯板插件
+const toggleLedBoardPlugin = (semi) => {
+  semi.showLedBoardPlugin = !semi.showLedBoardPlugin
+}
+
+// 文件下载
+const downloadFile = (url, fileName) => {
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName || 'download'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+// 日期格式化
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  return dateStr.replace('T', ' ').substring(0, 19)
+}
+
+// 新增线路板
+const handleAdd = () => {
+  boardDialog.title = '新增线路板'
+  boardDialog.form = {
+    id: null,
+    boardCode: '',
+    boardName: '',
+    fileId: null,
+    fileUrl: '',
+    fileName: '',
+    status: 1
+  }
+  boardDialog.fileList = []
+  boardDialog.visible = true
+}
+
+
+
+// 编辑线路板
+const handleEdit = (row) => {
+  boardDialog.title = '编辑线路板'
+  boardDialog.form = { ...row }
+  boardDialog.fileList = []
+  if (row.fileUrl) {
+    boardDialog.fileList.push({
+      name: row.fileName,
+      url: row.fileUrl
+    })
+  }
+  boardDialog.visible = true
+}
+
+// 删除线路板
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确认删除该线路板吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const response = await axios.delete(`${baseUrl}/circuit-board/delete/${row.id}`)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error('删除失败: ' + response.data.message)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败: ' + error.message)
+    }
+  }
+}
+
+// 添加半成品
+const handleAddSemiProduct = (row) => {
+  ElMessage.info(`为线路板 ${row.boardName} 添加半成品功能待实现`)
+}
+
+// 编辑半成品
+const handleEditSemiProduct = (semi) => {
+  ElMessage.info(`编辑半成品 ${semi.semiProductName} 功能待实现`)
+}
+
+// 删除半成品
+const handleDeleteSemiProduct = async (semi) => {
+  try {
+    await ElMessageBox.confirm('确认删除该半成品吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败: ' + error.message)
+    }
+  }
+}
+
+// 添加灯板插件
+const handleAddLedBoardPlugin = (semi) => {
+  ElMessage.info(`为半成品 ${semi.semiProductName} 添加灯板插件功能待实现`)
+}
+
+// 编辑灯板插件
+const handleEditLedBoardPlugin = (led) => {
+  ElMessage.info(`编辑灯板插件 ${led.ledBoardPluginName} 功能待实现`)
+}
+
+// 删除灯板插件
+const handleDeleteLedBoardPlugin = async (led) => {
+  try {
+    await ElMessageBox.confirm('确认删除该灯板插件吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败: ' + error.message)
+    }
+  }
+}
+
+// 文件上传处理
+const handleBoardUploadSuccess = (response, file, fileList) => {
+  if (response.code === 200) {
+    boardDialog.form.fileUrl = response.data.fileUrl
+    boardDialog.form.fileName = response.data.fileName
+    boardDialog.form.fileId = response.data.fileId
+  } else {
+    ElMessage.error('文件上传失败: ' + response.message)
+  }
+}
+
+const handleBoardUploadRemove = (file, fileList) => {
+  boardDialog.form.fileUrl = ''
+  boardDialog.form.fileName = ''
+  boardDialog.form.fileId = null
+}
+
+// 客户端直传文件处理
+const beforeBoardUpload = (file) => {
+  // 文件大小限制 (50MB)
+  const maxSize = 50 * 1024 * 1024
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过50MB')
+    return false
+  }
+  return true
+}
+
+const handleBoardUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    // 生成唯一的对象名称
+    const timestamp = new Date().getTime()
+    const objectName = `${timestamp}_${file.name}`
+    
+    // 1. 获取预上传链接
+    const presignedResponse = await axios.get(
+      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      {
+        params: { expiry: 60 }
+      }
+    )
+    
+    if (presignedResponse.data.code !== 200) {
+      throw new Error('获取预上传链接失败: ' + presignedResponse.data.message)
+    }
+    
+    const presignedUrl = presignedResponse.data.data
+    
+    // 2. 使用预签名URL上传文件到MinIO
+    const uploadResponse = await axios.put(presignedUrl, file, {
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress({ percent: percentCompleted })
+      }
+    })
+    
+    // 3. 上传成功后，保存文件信息到数据库
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
+      bucketName: currentBucket.value,
+      objectName: objectName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.data.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+    }
+    
+    // 4. 模拟原上传成功回调格式
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        fileUrl: `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`,
+        fileName: file.name,
+        fileId: saveFileResponse.data.data?.fileId || null
+      }
+    }
+    
+    // 5. 调用原成功处理函数
+    handleBoardUploadSuccess(mockResponse, file, [file])
+    onSuccess(mockResponse)
+    
+    ElMessage.success('文件上传成功')
+    
+  } catch (error) {
+    ElMessage.error('文件上传失败: ' + error.message)
+    onError(error)
+  }
+}
+
+// 保存线路板
+const saveBoard = async () => {
+  try {
+    await boardFormRef.value.validate()
+    
+    const url = boardDialog.form.id 
+      ? `${baseUrl}/circuit-board/update`
+      : `${baseUrl}/circuit-board/add`
+    const method = boardDialog.form.id ? 'put' : 'post'
+    
+    const response = await axios[method](url, boardDialog.form)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('保存成功')
+      boardDialog.visible = false
+      loadData()
+    } else {
+      ElMessage.error('保存失败: ' + response.data.message)
+    }
+  } catch (error) {
+    ElMessage.error('保存失败: ' + error.message)
+  }
+}
+</script>
+
+<style scoped>
+.circuit-board-manager {
+  padding: 20px;
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .search-bar {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+  }
+
+  .table-container {
+    margin-bottom: 20px;
+  }
+
+  .board-info {
+    padding: 10px;
+    background-color: #f0f9ff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+
+    .info-item {
+      display: flex;
+      margin-bottom: 8px;
+      align-items: center;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        font-weight: bold;
+        color: #606266;
+        width: 70px;
+        flex-shrink: 0;
+      }
+
+      .value {
+        flex: 1;
+        color: #303133;
+      }
+    }
+  }
+
+  .board-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .semi-product-container {
+    padding: 10px;
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 20px;
+  }
+
+  .semi-product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .semi-product-item {
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    padding: 15px;
+    background-color: #fafafa;
+  }
+
+  .semi-product-info {
+    margin-bottom: 10px;
+
+    .info-row {
+      display: flex;
+      margin-bottom: 6px;
+      align-items: center;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        font-weight: bold;
+        color: #606266;
+        width: 80px;
+        flex-shrink: 0;
+      }
+
+      .value {
+        flex: 1;
+        color: #303133;
+      }
+    }
+  }
+
+  .semi-product-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    border-top: 1px dashed #dcdfe6;
+  }
+
+  .led-board-plugin-container {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+    border-left: 4px solid #409eff;
+  }
+
+  .led-board-plugin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .led-board-plugin-item {
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px solid #ebeef5;
+  }
+
+  .led-info {
+    margin-bottom: 8px;
+
+    .info-row {
+      display: flex;
+      margin-bottom: 4px;
+      align-items: center;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        font-weight: bold;
+        color: #606266;
+        width: 90px;
+        flex-shrink: 0;
+      }
+
+      .value {
+        flex: 1;
+        color: #303133;
+      }
+    }
+  }
+
+  .led-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px dashed #dcdfe6;
+  }
+
+  .pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+}
+</style>

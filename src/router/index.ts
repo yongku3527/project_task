@@ -6,6 +6,8 @@ import NewFeature from '../views/NewFeature.vue';
 import WBSView from '../views/WBSView.vue';
 import MeetingMinutes from '../views/MeetingMinutes.vue';
 import MemberGanttChart from '../views/MemberGanttChart.vue';
+import FileManager from '../views/FileManager.vue';
+import CircuitBoardManager from '../views/CircuitBoardManager.vue';
 
 const routes: Array<RouteRecordRaw> = [
   // {
@@ -37,6 +39,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/member-gantt',
     name: 'MemberGanttChart',
     component: MemberGanttChart
+  },
+  {
+    path: '/file-manager',
+    name: 'FileManager',
+    component: FileManager
+  },
+  {
+    path: '/circuit-board',
+    name: 'CircuitBoardManager',
+    component: CircuitBoardManager
   }
 ];
 
