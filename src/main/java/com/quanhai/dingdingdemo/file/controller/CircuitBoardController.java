@@ -238,6 +238,28 @@ public class CircuitBoardController {
     }
 
     /**
+     * 获取所有线路板（用于下拉选项）
+     */
+    @GetMapping("/all")
+    public Result getAllCircuitBoards() {
+        try {
+            LambdaQueryWrapper<CircuitBoard> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(CircuitBoard::getDeleted, 0)
+                       .orderByDesc(CircuitBoard::getCreateTime);
+            
+            List<CircuitBoard> circuitBoardList = circuitBoardService.list(queryWrapper);
+            List<CircuitBoardDTO> dtoList = new ArrayList<>();
+            for (CircuitBoard circuitBoard : circuitBoardList) {
+                dtoList.add(convertToDTO(circuitBoard));
+            }
+            
+            return ResultUtil.success(dtoList);
+        } catch (Exception e) {
+            return ResultUtil.fail("查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 实体转DTO
      */
     private CircuitBoardDTO convertToDTO(CircuitBoard circuitBoard) {

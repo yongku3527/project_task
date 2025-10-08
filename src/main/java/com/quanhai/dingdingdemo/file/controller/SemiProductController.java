@@ -211,6 +211,28 @@ public class SemiProductController {
     }
 
     /**
+     * 获取所有半成品（用于下拉选项）
+     */
+    @GetMapping("/all")
+    public Result getAllSemiProducts() {
+        try {
+            LambdaQueryWrapper<SemiProduct> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(SemiProduct::getDeleted, 0)
+                       .orderByDesc(SemiProduct::getCreateTime);
+            
+            List<SemiProduct> semiProductList = semiProductService.list(queryWrapper);
+            List<SemiProductDTO> dtoList = new ArrayList<>();
+            for (SemiProduct semiProduct : semiProductList) {
+                dtoList.add(convertToDTO(semiProduct));
+            }
+            
+            return ResultUtil.success(dtoList);
+        } catch (Exception e) {
+            return ResultUtil.fail("查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 实体转DTO
      */
     private SemiProductDTO convertToDTO(SemiProduct semiProduct) {
