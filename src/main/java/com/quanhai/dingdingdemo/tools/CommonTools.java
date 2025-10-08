@@ -153,6 +153,7 @@ public class CommonTools {
 
         /* 2. 创建 Session */
         Properties pros = new Properties();
+        pros.put("mail.mime.splitlongparameters", "false");
         pros.put("mail.smtp.host", mailConfig.getSmtp());
         pros.put("mail.smtp.port", String.valueOf(mailConfig.getPort()));
         pros.put("mail.smtp.auth", "true");
