@@ -1031,6 +1031,7 @@ const handleSchematicUpload = async (options) => {
     const timestamp = new Date().getTime()
     const objectName = `schematic_${timestamp}_${file.name}`
     
+    // 1. 获取预上传链接
     const presignedResponse = await axios.get(
       `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
@@ -1044,6 +1045,7 @@ const handleSchematicUpload = async (options) => {
     
     const presignedUrl = presignedResponse.data.data
     
+    // 2. 使用预签名URL上传文件到MinIO
     await axios.put(presignedUrl, file, {
       headers: {
         'Content-Type': file.type || 'application/octet-stream'
@@ -1054,19 +1056,40 @@ const handleSchematicUpload = async (options) => {
       }
     })
     
-    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
-    
-    onSuccess({
-      code: 200,
-      data: {
-        fileId: null,
-        fileName: file.name,
-        fileUrl: fileUrl
-      }
+    // 3. 上传成功后，保存文件信息到数据库
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
+      bucketName: currentBucket.value,
+      objectName: objectName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
     })
+    
+    if (saveFileResponse.data.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+    }
+    
+    // 4. 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        fileUrl: fileUrl,
+        fileName: file.name,
+        fileId: saveFileResponse.data.data?.fileId || null
+      }
+    }
+    
+    // 5. 调用原成功处理函数
+    handleSchematicUploadSuccess(mockResponse, file, [file])
+    onSuccess(mockResponse)
+    
+    ElMessage.success('原理图文件上传成功')
+    
   } catch (error) {
     onError(error)
-    ElMessage.error('文件上传失败: ' + error.message)
+    ElMessage.error('原理图文件上传失败: ' + error.message)
   }
 }
 
@@ -1078,6 +1101,7 @@ const handleSmtUpload = async (options) => {
     const timestamp = new Date().getTime()
     const objectName = `smt_${timestamp}_${file.name}`
     
+    // 1. 获取预上传链接
     const presignedResponse = await axios.get(
       `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
@@ -1091,6 +1115,7 @@ const handleSmtUpload = async (options) => {
     
     const presignedUrl = presignedResponse.data.data
     
+    // 2. 使用预签名URL上传文件到MinIO
     await axios.put(presignedUrl, file, {
       headers: {
         'Content-Type': file.type || 'application/octet-stream'
@@ -1101,19 +1126,40 @@ const handleSmtUpload = async (options) => {
       }
     })
     
-    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
-    
-    onSuccess({
-      code: 200,
-      data: {
-        fileId: null,
-        fileName: file.name,
-        fileUrl: fileUrl
-      }
+    // 3. 上传成功后，保存文件信息到数据库
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
+      bucketName: currentBucket.value,
+      objectName: objectName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
     })
+    
+    if (saveFileResponse.data.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+    }
+    
+    // 4. 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        fileUrl: fileUrl,
+        fileName: file.name,
+        fileId: saveFileResponse.data.data?.fileId || null
+      }
+    }
+    
+    // 5. 调用原成功处理函数
+    handleSmtUploadSuccess(mockResponse, file, [file])
+    onSuccess(mockResponse)
+    
+    ElMessage.success('SMT文件上传成功')
+    
   } catch (error) {
     onError(error)
-    ElMessage.error('文件上传失败: ' + error.message)
+    ElMessage.error('SMT文件上传失败: ' + error.message)
   }
 }
 
@@ -1125,6 +1171,7 @@ const handleLedBoardPluginUpload = async (options) => {
     const timestamp = new Date().getTime()
     const objectName = `led_board_plugin_${timestamp}_${file.name}`
     
+    // 1. 获取预上传链接
     const presignedResponse = await axios.get(
       `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
@@ -1138,6 +1185,7 @@ const handleLedBoardPluginUpload = async (options) => {
     
     const presignedUrl = presignedResponse.data.data
     
+    // 2. 使用预签名URL上传文件到MinIO
     await axios.put(presignedUrl, file, {
       headers: {
         'Content-Type': file.type || 'application/octet-stream'
@@ -1148,19 +1196,40 @@ const handleLedBoardPluginUpload = async (options) => {
       }
     })
     
-    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
-    
-    onSuccess({
-      code: 200,
-      data: {
-        fileId: null,
-        fileName: file.name,
-        fileUrl: fileUrl
-      }
+    // 3. 上传成功后，保存文件信息到数据库
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
+      bucketName: currentBucket.value,
+      objectName: objectName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
     })
+    
+    if (saveFileResponse.data.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+    }
+    
+    // 4. 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        fileUrl: fileUrl,
+        fileName: file.name,
+        fileId: saveFileResponse.data.data?.fileId || null
+      }
+    }
+    
+    // 5. 调用原成功处理函数
+    handleLedBoardPluginUploadSuccess(mockResponse, file, [file])
+    onSuccess(mockResponse)
+    
+    ElMessage.success('灯板插件文件上传成功')
+    
   } catch (error) {
     onError(error)
-    ElMessage.error('文件上传失败: ' + error.message)
+    ElMessage.error('灯板插件文件上传失败: ' + error.message)
   }
 }
 
