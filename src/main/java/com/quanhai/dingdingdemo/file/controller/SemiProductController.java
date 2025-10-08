@@ -38,6 +38,7 @@ public class SemiProductController {
 
     /**
      * 新增半成品
+     * 
      */
     @PostMapping("/add")
     public Result addSemiProduct(@RequestBody SemiProductDTO semiProductDTO) {
