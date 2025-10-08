@@ -49,27 +49,17 @@ public class SemiProductController {
             semiProduct.setStatus(semiProductDTO.getStatus() != null ? semiProductDTO.getStatus() : 1);
             semiProduct.setCreateTime(LocalDateTime.now());
             semiProduct.setUpdateTime(LocalDateTime.now());
-            
-            // 保存原理图文件
-            if (semiProductDTO.getSchematicFileName() != null && semiProductDTO.getSchematicFileUrl() != null) {
-                FileInfo schematicFile = new FileInfo();
-                schematicFile.setFileName(semiProductDTO.getSchematicFileName());
-                schematicFile.setFileUrl(semiProductDTO.getSchematicFileUrl());
-                schematicFile.setStatus(1);
-                schematicFile.setCreateTime(LocalDateTime.now());
-                fileInfoService.save(schematicFile);
-                semiProduct.setSchematicFileId(schematicFile.getId());
+
+            if (semiProductDTO.getSchematicFileId() != null) {
+                semiProduct.setSchematicFileId(semiProductDTO.getSchematicFileId());
+            }else {
+                semiProduct.setSchematicFileId(999999999999L);
             }
-            
-            // 保存贴片图文件
-            if (semiProductDTO.getSmtFileName() != null && semiProductDTO.getSmtFileUrl() != null) {
-                FileInfo smtFile = new FileInfo();
-                smtFile.setFileName(semiProductDTO.getSmtFileName());
-                smtFile.setFileUrl(semiProductDTO.getSmtFileUrl());
-                smtFile.setStatus(1);
-                smtFile.setCreateTime(LocalDateTime.now());
-                fileInfoService.save(smtFile);
-                semiProduct.setSmtFileId(smtFile.getId());
+
+            if (semiProductDTO.getSmtFileId() != null) {
+                semiProduct.setSmtFileId(semiProductDTO.getSmtFileId());
+            }else {
+                semiProduct.setSmtFileId(999999999999L);
             }
             
             boolean result = semiProductService.save(semiProduct);
@@ -117,44 +107,16 @@ public class SemiProductController {
             semiProduct.setStatus(semiProductDTO.getStatus());
             semiProduct.setUpdateTime(LocalDateTime.now());
             
-            // 更新原理图文件
-            if (semiProductDTO.getSchematicFileName() != null && semiProductDTO.getSchematicFileUrl() != null) {
-                if (semiProduct.getSchematicFileId() != null) {
-                    FileInfo fileInfo = fileInfoService.getById(semiProduct.getSchematicFileId());
-                    if (fileInfo != null) {
-                        fileInfo.setFileName(semiProductDTO.getSchematicFileName());
-                        fileInfo.setFileUrl(semiProductDTO.getSchematicFileUrl());
-                        fileInfoService.updateById(fileInfo);
-                    }
-                } else {
-                    FileInfo fileInfo = new FileInfo();
-                    fileInfo.setFileName(semiProductDTO.getSchematicFileName());
-                    fileInfo.setFileUrl(semiProductDTO.getSchematicFileUrl());
-                    fileInfo.setStatus(1);
-                    fileInfo.setCreateTime(LocalDateTime.now());
-                    fileInfoService.save(fileInfo);
-                    semiProduct.setSchematicFileId(fileInfo.getId());
-                }
+            if (semiProductDTO.getSchematicFileId() != null) {
+                semiProduct.setSchematicFileId(semiProductDTO.getSchematicFileId());
+            }else {
+                semiProduct.setSchematicFileId(999999999999L);
             }
-            
-            // 更新贴片图文件
-            if (semiProductDTO.getSmtFileName() != null && semiProductDTO.getSmtFileUrl() != null) {
-                if (semiProduct.getSmtFileId() != null) {
-                    FileInfo fileInfo = fileInfoService.getById(semiProduct.getSmtFileId());
-                    if (fileInfo != null) {
-                        fileInfo.setFileName(semiProductDTO.getSmtFileName());
-                        fileInfo.setFileUrl(semiProductDTO.getSmtFileUrl());
-                        fileInfoService.updateById(fileInfo);
-                    }
-                } else {
-                    FileInfo fileInfo = new FileInfo();
-                    fileInfo.setFileName(semiProductDTO.getSmtFileName());
-                    fileInfo.setFileUrl(semiProductDTO.getSmtFileUrl());
-                    fileInfo.setStatus(1);
-                    fileInfo.setCreateTime(LocalDateTime.now());
-                    fileInfoService.save(fileInfo);
-                    semiProduct.setSmtFileId(fileInfo.getId());
-                }
+
+            if (semiProductDTO.getSmtFileId() != null) {
+                semiProduct.setSmtFileId(semiProductDTO.getSmtFileId());
+            }else {
+                semiProduct.setSmtFileId(999999999999L);
             }
             
             boolean result = semiProductService.updateById(semiProduct);
@@ -269,7 +231,7 @@ public class SemiProductController {
                 dto.setCircuitBoardName(circuitBoard.getBoardName());
             }
         }
-        
+
         // 设置文件信息
         if (semiProduct.getSchematicFileId() != null) {
             FileInfo schematicFile = fileInfoService.getById(semiProduct.getSchematicFileId());
@@ -278,7 +240,7 @@ public class SemiProductController {
                 dto.setSchematicFileUrl(schematicFile.getFileUrl());
             }
         }
-        
+
         if (semiProduct.getSmtFileId() != null) {
             FileInfo smtFile = fileInfoService.getById(semiProduct.getSmtFileId());
             if (smtFile != null) {

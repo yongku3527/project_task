@@ -48,16 +48,11 @@ public class LedBoardPluginSemiProductController {
             entity.setLedBoardPluginName(dto.getLedBoardPluginName());
             entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
             entity.setCreateTime(LocalDateTime.now());
-            
-            // 保存文件信息
-            if (dto.getFileName() != null && dto.getFileUrl() != null) {
-                FileInfo fileInfo = new FileInfo();
-                fileInfo.setFileName(dto.getFileName());
-                fileInfo.setFileUrl(dto.getFileUrl());
-                fileInfo.setStatus(1);
-                fileInfo.setCreateTime(LocalDateTime.now());
-                fileInfoService.save(fileInfo);
-                entity.setFileId(fileInfo.getId());
+
+            if (dto.getFileId() != null) {
+                entity.setFileId(dto.getFileId());
+            }else {
+                entity.setFileId(999999999999L);
             }
             
             boolean result = ledBoardPluginSemiProductService.save(entity);
@@ -104,25 +99,11 @@ public class LedBoardPluginSemiProductController {
             entity.setLedBoardPluginName(dto.getLedBoardPluginName());
             entity.setStatus(dto.getStatus());
             entity.setUpdateTime(LocalDateTime.now());
-            
-            // 更新文件信息
-            if (dto.getFileName() != null && dto.getFileUrl() != null) {
-                if (entity.getFileId() != null) {
-                    FileInfo fileInfo = fileInfoService.getById(entity.getFileId());
-                    if (fileInfo != null) {
-                        fileInfo.setFileName(dto.getFileName());
-                        fileInfo.setFileUrl(dto.getFileUrl());
-                        fileInfoService.updateById(fileInfo);
-                    }
-                } else {
-                    FileInfo fileInfo = new FileInfo();
-                    fileInfo.setFileName(dto.getFileName());
-                    fileInfo.setFileUrl(dto.getFileUrl());
-                    fileInfo.setStatus(1);
-                    fileInfo.setCreateTime(LocalDateTime.now());
-                    fileInfoService.save(fileInfo);
-                    entity.setFileId(fileInfo.getId());
-                }
+
+            if (dto.getFileId() != null) {
+                entity.setFileId(dto.getFileId());
+            }else {
+                entity.setFileId(999999999999L);
             }
             
             boolean result = ledBoardPluginSemiProductService.updateById(entity);
@@ -218,6 +199,11 @@ public class LedBoardPluginSemiProductController {
 
     /**
      * 实体转DTO
+     * 直接使用实体类不行吗？
+     * 因为实体类中包含了一些不应该暴露给外部的字段，比如deleted
+     * 那么说DTO中的字段应该比实体类中的字段少吗？
+     * 答案是肯定的，因为DTO中只包含了外部需要的字段，而实体类中包含了一些内部使用的字段
+     *
      */
     private LedBoardPluginSemiProductDTO convertToDTO(LedBoardPluginSemiProduct entity) {
         LedBoardPluginSemiProductDTO dto = new LedBoardPluginSemiProductDTO();
@@ -228,7 +214,7 @@ public class LedBoardPluginSemiProductController {
         dto.setStatus(entity.getStatus());
         dto.setCreateTime(entity.getCreateTime());
         dto.setUpdateTime(entity.getUpdateTime());
-        
+
         // 设置半成品信息
         if (entity.getSemiProductId() != null) {
             SemiProduct semiProduct = semiProductService.getById(entity.getSemiProductId());
@@ -237,7 +223,7 @@ public class LedBoardPluginSemiProductController {
                 dto.setSemiProductName(semiProduct.getSemiProductName());
             }
         }
-        
+
         // 设置文件信息
         if (entity.getFileId() != null) {
             FileInfo fileInfo = fileInfoService.getById(entity.getFileId());
