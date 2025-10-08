@@ -2,6 +2,7 @@
   <div class="wbs-container" :class="{ 'fullscreen-mode': isFullscreen }">
     <div class="control-btns">
 
+      
        <div class="nav-buttons">
         <el-button-group>
           <el-button size="small" type="primary" @click="prevProject">
