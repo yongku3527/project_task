@@ -275,6 +275,130 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 半成品编辑对话框 -->
+    <el-dialog
+      v-model="semiProductDialog.visible"
+      :title="semiProductDialog.title"
+      width="700px"
+    >
+      <el-form :model="semiProductDialog.form" :rules="semiProductDialog.rules" ref="semiProductFormRef" label-width="120px">
+        <el-form-item label="所属线路板" prop="circuitBoardId">
+          <el-select v-model="semiProductDialog.form.circuitBoardId" placeholder="请选择线路板" style="width: 100%">
+            <el-option 
+              v-for="board in circuitBoardOptions" 
+              :key="board.id" 
+              :label="`${board.boardCode} - ${board.boardName}`"
+              :value="board.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="半成品编码" prop="semiProductCode">
+          <el-input v-model="semiProductDialog.form.semiProductCode" placeholder="请输入半成品编码" />
+        </el-form-item>
+        <el-form-item label="半成品名称" prop="semiProductName">
+          <el-input v-model="semiProductDialog.form.semiProductName" placeholder="请输入半成品名称" />
+        </el-form-item>
+        <el-form-item label="原理图文件">
+          <el-upload
+            ref="schematicUploadRef"
+            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :limit="1"
+            :on-success="handleSchematicUploadSuccess"
+            :on-remove="handleSchematicUploadRemove"
+            :file-list="semiProductDialog.schematicFileList"
+            :before-upload="beforeBoardUpload"
+            :http-request="handleSchematicUpload"
+          >
+            <el-button type="primary">
+              <el-icon><Upload /></el-icon>选择原理图文件
+            </el-button>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="SMT文件">
+          <el-upload
+            ref="smtUploadRef"
+            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :limit="1"
+            :on-success="handleSmtUploadSuccess"
+            :on-remove="handleSmtUploadRemove"
+            :file-list="semiProductDialog.smtFileList"
+            :before-upload="beforeBoardUpload"
+            :http-request="handleSmtUpload"
+          >
+            <el-button type="primary">
+              <el-icon><Upload /></el-icon>选择SMT文件
+            </el-button>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="semiProductDialog.form.status">
+            <el-radio :label="1">启用</el-radio>
+            <el-radio :label="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="semiProductDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="saveSemiProduct">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 灯板插件编辑对话框 -->
+    <el-dialog
+      v-model="ledBoardPluginDialog.visible"
+      :title="ledBoardPluginDialog.title"
+      width="600px"
+    >
+      <el-form :model="ledBoardPluginDialog.form" :rules="ledBoardPluginDialog.rules" ref="ledBoardPluginFormRef" label-width="120px">
+        <el-form-item label="所属半成品" prop="semiProductId">
+          <el-select v-model="ledBoardPluginDialog.form.semiProductId" placeholder="请选择半成品" style="width: 100%">
+            <el-option 
+              v-for="semi in semiProductOptions" 
+              :key="semi.id" 
+              :label="`${semi.semiProductCode} - ${semi.semiProductName}`"
+              :value="semi.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="灯板插件编码" prop="ledBoardPluginCode">
+          <el-input v-model="ledBoardPluginDialog.form.ledBoardPluginCode" placeholder="请输入灯板插件编码" />
+        </el-form-item>
+        <el-form-item label="灯板插件名称" prop="ledBoardPluginName">
+          <el-input v-model="ledBoardPluginDialog.form.ledBoardPluginName" placeholder="请输入灯板插件名称" />
+        </el-form-item>
+        <el-form-item label="上传文件">
+          <el-upload
+            ref="ledBoardPluginUploadRef"
+            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :limit="1"
+            :on-success="handleLedBoardPluginUploadSuccess"
+            :on-remove="handleLedBoardPluginUploadRemove"
+            :file-list="ledBoardPluginDialog.fileList"
+            :before-upload="beforeBoardUpload"
+            :http-request="handleLedBoardPluginUpload"
+          >
+            <el-button type="primary">
+              <el-icon><Upload /></el-icon>选择文件
+            </el-button>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="ledBoardPluginDialog.form.status">
+            <el-radio :label="1">启用</el-radio>
+            <el-radio :label="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="ledBoardPluginDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="saveLedBoardPlugin">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -293,6 +417,10 @@ const currentPage = ref(1)
 const pageSize = ref(5)
 const total = ref(0)
 const currentBucket = ref('files')
+
+// 下拉选项数据
+const circuitBoardOptions = ref([])
+const semiProductOptions = ref([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -321,8 +449,64 @@ const boardDialog = reactive({
   fileList: []
 })
 
+// 半成品对话框
+const semiProductDialog = reactive({
+  visible: false,
+  title: '',
+  form: {
+    id: null,
+    circuitBoardId: null,
+    semiProductCode: '',
+    semiProductName: '',
+    schematicFileId: null,
+    schematicFileUrl: '',
+    schematicFileName: '',
+    smtFileId: null,
+    smtFileUrl: '',
+    smtFileName: '',
+    status: 1
+  },
+  rules: {
+    circuitBoardId: [{ required: true, message: '请选择所属线路板', trigger: 'change' }],
+    semiProductCode: [{ required: true, message: '请输入半成品编码', trigger: 'blur' }],
+    semiProductName: [{ required: true, message: '请输入半成品名称', trigger: 'blur' }],
+    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  },
+  schematicFileList: [],
+  smtFileList: []
+})
+
+// 灯板插件对话框
+const ledBoardPluginDialog = reactive({
+  visible: false,
+  title: '',
+  form: {
+    id: null,
+    semiProductId: null,
+    ledBoardPluginCode: '',
+    ledBoardPluginName: '',
+    fileId: null,
+    fileUrl: '',
+    fileName: '',
+    status: 1
+  },
+  rules: {
+    semiProductId: [{ required: true, message: '请选择所属半成品', trigger: 'change' }],
+    ledBoardPluginCode: [{ required: true, message: '请输入灯板插件编码', trigger: 'blur' }],
+    ledBoardPluginName: [{ required: true, message: '请输入灯板插件名称', trigger: 'blur' }],
+    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  },
+  fileList: []
+})
+
+// 表单引用
 const boardFormRef = ref()
 const boardUploadRef = ref()
+const semiProductFormRef = ref()
+const schematicUploadRef = ref()
+const smtUploadRef = ref()
+const ledBoardPluginFormRef = ref()
+const ledBoardPluginUploadRef = ref()
 
 // 生命周期
 onMounted(() => {
@@ -619,13 +803,68 @@ const handleDelete = async (row) => {
 }
 
 // 添加半成品
-const handleAddSemiProduct = (row) => {
-  ElMessage.info(`为线路板 ${row.boardName} 添加半成品功能待实现`)
+const handleAddSemiProduct = async (row) => {
+  try {
+    // 加载线路板选项
+    await loadCircuitBoardOptions()
+    
+    semiProductDialog.title = '新增半成品'
+    semiProductDialog.form = {
+      id: null,
+      circuitBoardId: row.id,
+      semiProductCode: '',
+      semiProductName: '',
+      schematicFileId: null,
+      smtFileId: null,
+      status: 1
+    }
+    semiProductDialog.schematicFileList = []
+    semiProductDialog.smtFileList = []
+    semiProductDialog.visible = true
+  } catch (error) {
+    ElMessage.error('加载线路板选项失败: ' + error.message)
+  }
 }
 
 // 编辑半成品
-const handleEditSemiProduct = (semi) => {
-  ElMessage.info(`编辑半成品 ${semi.semiProductName} 功能待实现`)
+const handleEditSemiProduct = async (semi) => {
+  try {
+    // 加载线路板选项
+    await loadCircuitBoardOptions()
+    
+    semiProductDialog.title = '编辑半成品'
+    semiProductDialog.form = {
+      id: semi.id,
+      circuitBoardId: semi.circuitBoardId,
+      semiProductCode: semi.semiProductCode,
+      semiProductName: semi.semiProductName,
+      schematicFileId: semi.schematicFileId,
+      smtFileId: semi.smtFileId,
+      status: semi.status
+    }
+    
+    // 设置文件列表
+    semiProductDialog.schematicFileList = []
+    semiProductDialog.smtFileList = []
+    
+    if (semi.schematicFileUrl) {
+      semiProductDialog.schematicFileList.push({
+        name: semi.schematicFileName,
+        url: semi.schematicFileUrl
+      })
+    }
+    
+    if (semi.smtFileUrl) {
+      semiProductDialog.smtFileList.push({
+        name: semi.smtFileName,
+        url: semi.smtFileUrl
+      })
+    }
+    
+    semiProductDialog.visible = true
+  } catch (error) {
+    ElMessage.error('加载线路板选项失败: ' + error.message)
+  }
 }
 
 // 删除半成品
@@ -637,8 +876,14 @@ const handleDeleteSemiProduct = async (semi) => {
       type: 'warning'
     })
     
-    ElMessage.success('删除成功')
-    loadData()
+    const response = await axios.delete(`${baseUrl}/semi-product/delete/${semi.id}`)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error('删除失败: ' + response.data.message)
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败: ' + error.message)
@@ -647,13 +892,56 @@ const handleDeleteSemiProduct = async (semi) => {
 }
 
 // 添加灯板插件
-const handleAddLedBoardPlugin = (semi) => {
-  ElMessage.info(`为半成品 ${semi.semiProductName} 添加灯板插件功能待实现`)
+const handleAddLedBoardPlugin = async (semi) => {
+  try {
+    // 加载半成品选项
+    await loadSemiProductOptions()
+    
+    ledBoardPluginDialog.title = '新增灯板插件'
+    ledBoardPluginDialog.form = {
+      id: null,
+      semiProductId: semi.id,
+      ledBoardPluginCode: '',
+      ledBoardPluginName: '',
+      fileId: null,
+      status: 1
+    }
+    ledBoardPluginDialog.fileList = []
+    ledBoardPluginDialog.visible = true
+  } catch (error) {
+    ElMessage.error('加载半成品选项失败: ' + error.message)
+  }
 }
 
 // 编辑灯板插件
-const handleEditLedBoardPlugin = (led) => {
-  ElMessage.info(`编辑灯板插件 ${led.ledBoardPluginName} 功能待实现`)
+const handleEditLedBoardPlugin = async (led) => {
+  try {
+    // 加载半成品选项
+    await loadSemiProductOptions()
+    
+    ledBoardPluginDialog.title = '编辑灯板插件'
+    ledBoardPluginDialog.form = {
+      id: led.id,
+      semiProductId: led.semiProductId,
+      ledBoardPluginCode: led.ledBoardPluginCode,
+      ledBoardPluginName: led.ledBoardPluginName,
+      fileId: led.fileId,
+      status: led.status
+    }
+    
+    // 设置文件列表
+    ledBoardPluginDialog.fileList = []
+    if (led.fileUrl) {
+      ledBoardPluginDialog.fileList.push({
+        name: led.fileName,
+        url: led.fileUrl
+      })
+    }
+    
+    ledBoardPluginDialog.visible = true
+  } catch (error) {
+    ElMessage.error('加载半成品选项失败: ' + error.message)
+  }
 }
 
 // 删除灯板插件
@@ -665,8 +953,14 @@ const handleDeleteLedBoardPlugin = async (led) => {
       type: 'warning'
     })
     
-    ElMessage.success('删除成功')
-    loadData()
+    const response = await axios.delete(`${baseUrl}/led-board-plugin-semi-product/delete/${led.id}`)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error('删除失败: ' + response.data.message)
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败: ' + error.message)
@@ -689,6 +983,185 @@ const handleBoardUploadRemove = (file, fileList) => {
   boardDialog.form.fileUrl = ''
   boardDialog.form.fileName = ''
   boardDialog.form.fileId = null
+}
+
+// 半成品文件上传处理
+const handleSchematicUploadSuccess = (response, file, fileList) => {
+  if (response.code === 200) {
+    semiProductDialog.form.schematicFileId = response.data.fileId
+  } else {
+    ElMessage.error('原理图文件上传失败: ' + response.message)
+  }
+}
+
+const handleSchematicUploadRemove = (file, fileList) => {
+  semiProductDialog.form.schematicFileId = null
+}
+
+const handleSmtUploadSuccess = (response, file, fileList) => {
+  if (response.code === 200) {
+    semiProductDialog.form.smtFileId = response.data.fileId
+  } else {
+    ElMessage.error('SMT文件上传失败: ' + response.message)
+  }
+}
+
+const handleSmtUploadRemove = (file, fileList) => {
+  semiProductDialog.form.smtFileId = null
+}
+
+// 灯板插件文件上传处理
+const handleLedBoardPluginUploadSuccess = (response, file, fileList) => {
+  if (response.code === 200) {
+    ledBoardPluginDialog.form.fileId = response.data.fileId
+  } else {
+    ElMessage.error('文件上传失败: ' + response.message)
+  }
+}
+
+const handleLedBoardPluginUploadRemove = (file, fileList) => {
+  ledBoardPluginDialog.form.fileId = null
+}
+
+// 客户端直传文件处理 - 原理图
+const handleSchematicUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    const timestamp = new Date().getTime()
+    const objectName = `schematic_${timestamp}_${file.name}`
+    
+    const presignedResponse = await axios.get(
+      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      {
+        params: { expiry: 60 }
+      }
+    )
+    
+    if (presignedResponse.data.code !== 200) {
+      throw new Error('获取预上传链接失败')
+    }
+    
+    const presignedUrl = presignedResponse.data.data
+    
+    await axios.put(presignedUrl, file, {
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress({ percent: percentCompleted })
+      }
+    })
+    
+    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    
+    onSuccess({
+      code: 200,
+      data: {
+        fileId: null,
+        fileName: file.name,
+        fileUrl: fileUrl
+      }
+    })
+  } catch (error) {
+    onError(error)
+    ElMessage.error('文件上传失败: ' + error.message)
+  }
+}
+
+// 客户端直传文件处理 - SMT
+const handleSmtUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    const timestamp = new Date().getTime()
+    const objectName = `smt_${timestamp}_${file.name}`
+    
+    const presignedResponse = await axios.get(
+      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      {
+        params: { expiry: 60 }
+      }
+    )
+    
+    if (presignedResponse.data.code !== 200) {
+      throw new Error('获取预上传链接失败')
+    }
+    
+    const presignedUrl = presignedResponse.data.data
+    
+    await axios.put(presignedUrl, file, {
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress({ percent: percentCompleted })
+      }
+    })
+    
+    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    
+    onSuccess({
+      code: 200,
+      data: {
+        fileId: null,
+        fileName: file.name,
+        fileUrl: fileUrl
+      }
+    })
+  } catch (error) {
+    onError(error)
+    ElMessage.error('文件上传失败: ' + error.message)
+  }
+}
+
+// 客户端直传文件处理 - 灯板插件
+const handleLedBoardPluginUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    const timestamp = new Date().getTime()
+    const objectName = `led_board_plugin_${timestamp}_${file.name}`
+    
+    const presignedResponse = await axios.get(
+      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      {
+        params: { expiry: 60 }
+      }
+    )
+    
+    if (presignedResponse.data.code !== 200) {
+      throw new Error('获取预上传链接失败')
+    }
+    
+    const presignedUrl = presignedResponse.data.data
+    
+    await axios.put(presignedUrl, file, {
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress({ percent: percentCompleted })
+      }
+    })
+    
+    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    
+    onSuccess({
+      code: 200,
+      data: {
+        fileId: null,
+        fileName: file.name,
+        fileUrl: fileUrl
+      }
+    })
+  } catch (error) {
+    onError(error)
+    ElMessage.error('文件上传失败: ' + error.message)
+  }
 }
 
 // 客户端直传文件处理
@@ -792,6 +1265,98 @@ const saveBoard = async () => {
     }
   } catch (error) {
     ElMessage.error('保存失败: ' + error.message)
+  }
+}
+
+// 保存半成品
+const saveSemiProduct = async () => {
+  try {
+    await semiProductFormRef.value.validate()
+    
+    const formData = {
+      ...semiProductDialog.form
+    }
+    
+    let response
+    if (formData.id) {
+      // 编辑
+      response = await axios.put(`${baseUrl}/semi-product/update`, formData)
+    } else {
+      // 新增
+      response = await axios.post(`${baseUrl}/semi-product/add`, formData)
+    }
+    
+    if (response.data.code === 200) {
+      ElMessage.success('保存成功')
+      semiProductDialog.visible = false
+      loadData()
+    } else {
+      ElMessage.error('保存失败: ' + response.data.message)
+    }
+  } catch (error) {
+    if (error !== false) {
+      ElMessage.error('保存失败: ' + error.message)
+    }
+  }
+}
+
+// 保存灯板插件
+const saveLedBoardPlugin = async () => {
+  try {
+    await ledBoardPluginFormRef.value.validate()
+    
+    const formData = {
+      ...ledBoardPluginDialog.form
+    }
+    
+    let response
+    if (formData.id) {
+      // 编辑
+      response = await axios.put(`${baseUrl}/led-board-plugin-semi-product/update`, formData)
+    } else {
+      // 新增
+      response = await axios.post(`${baseUrl}/led-board-plugin-semi-product/add`, formData)
+    }
+    
+    if (response.data.code === 200) {
+      ElMessage.success('保存成功')
+      ledBoardPluginDialog.visible = false
+      loadData()
+    } else {
+      ElMessage.error('保存失败: ' + response.data.message)
+    }
+  } catch (error) {
+    if (error !== false) {
+      ElMessage.error('保存失败: ' + error.message)
+    }
+  }
+}
+
+// 加载线路板选项
+const loadCircuitBoardOptions = async () => {
+  try {
+    const response = await axios.get(`${baseUrl}/circuit-board/all`)
+    if (response.data.code === 200) {
+      circuitBoardOptions.value = response.data.data
+    } else {
+      ElMessage.error('加载线路板选项失败: ' + response.data.message)
+    }
+  } catch (error) {
+    ElMessage.error('加载线路板选项失败: ' + error.message)
+  }
+}
+
+// 加载半成品选项
+const loadSemiProductOptions = async () => {
+  try {
+    const response = await axios.get(`${baseUrl}/semi-product/all`)
+    if (response.data.code === 200) {
+      semiProductOptions.value = response.data.data
+    } else {
+      ElMessage.error('加载半成品选项失败: ' + response.data.message)
+    }
+  } catch (error) {
+    ElMessage.error('加载半成品选项失败: ' + error.message)
   }
 }
 </script>

@@ -171,6 +171,7 @@ interface Task {
   startDate?: string;
   project?: string;
   description?: string;
+  taskListName?: string;
   children?: Task[];
 }
 
@@ -323,13 +324,7 @@ const getStatusType = (status: string) => {
   return typeMap[status] || 'info';
 };
 
-const getStatusClass = (status: string) => {
-  const classMap: Record<string, string> = {
-    '已完成': 'task-completed',
-    '已取消': 'task-cancelled'
-  };
-  return classMap[status] || '';
-};
+
 
 const getTaskStatusClass = (status: string) => {
   const classMap: Record<string, string> = {
@@ -392,9 +387,7 @@ const handleFullscreenChange = () => {
 
 
 
-const refreshData = () => {
-  fetchWBSData();
-};
+
 
 const startAutoSlide = () => {
   if (intervalId.value) {
