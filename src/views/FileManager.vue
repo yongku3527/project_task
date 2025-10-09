@@ -285,7 +285,7 @@ const loadFiles = async () => {
       ElMessage.error('获取文件列表失败')
     }
   } catch (error) {
-    ElMessage.error('获取文件列表失败: ' + error.message)
+    ElMessage.error('获取文件列表失败: ' + (error.response?.data?.msg || error.message))
   } finally {
     loading.value = false
   }
@@ -339,7 +339,7 @@ const downloadFile = async (file) => {
       ElMessage.error('文件URL格式不正确')
     }
   } catch (error) {
-    ElMessage.error('下载文件失败: ' + error.message)
+    ElMessage.error('下载文件失败: ' + (error.response?.data?.msg || error.message))
   }
 }
 
@@ -369,7 +369,7 @@ const deleteFile = async (file) => {
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除文件失败: ' + error.message)
+      ElMessage.error('删除文件失败: ' + (error.response?.data?.msg || error.message))
     }
   }
 }

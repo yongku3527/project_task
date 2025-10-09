@@ -528,7 +528,7 @@ const loadData = async () => {
       tableData.value = response.data.data
       total.value = response.data.data.length
     } else {
-      ElMessage.error('加载数据失败: ' + response.data.message)
+      ElMessage.error('加载数据失败: ' + response.data.msg)
     }
   } catch (error) {
     ElMessage.error('加载数据失败: ' + error.message)
@@ -799,7 +799,7 @@ const handleDelete = async (row) => {
       ElMessage.success('删除成功')
       loadData()
     } else {
-      ElMessage.error('删除失败: ' + response.data.message)
+      ElMessage.error('删除失败: ' + response.data.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -888,7 +888,7 @@ const handleDeleteSemiProduct = async (semi) => {
       ElMessage.success('删除成功')
       loadData()
     } else {
-      ElMessage.error('删除失败: ' + response.data.message)
+      ElMessage.error('删除失败: ' + response.data.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -965,7 +965,7 @@ const handleDeleteLedBoardPlugin = async (led) => {
       ElMessage.success('删除成功')
       loadData()
     } else {
-      ElMessage.error('删除失败: ' + response.data.message)
+      ElMessage.error('删除失败: ' + response.data.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -1072,7 +1072,7 @@ const handleSchematicUpload = async (options) => {
     })
     
     if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
     // 4. 模拟原上传成功回调格式
@@ -1142,7 +1142,7 @@ const handleSmtUpload = async (options) => {
     })
     
     if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
     // 4. 模拟原上传成功回调格式
@@ -1212,7 +1212,7 @@ const handleLedBoardPluginUpload = async (options) => {
     })
     
     if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
     // 4. 模拟原上传成功回调格式
@@ -1267,7 +1267,7 @@ const handleBoardUpload = async (options) => {
     )
     
     if (presignedResponse.data.code !== 200) {
-      throw new Error('获取预上传链接失败: ' + presignedResponse.data.message)
+      throw new Error('获取预上传链接失败: ' + presignedResponse.data.msg)
     }
     
     const presignedUrl = presignedResponse.data.data
@@ -1293,7 +1293,7 @@ const handleBoardUpload = async (options) => {
     })
     
     if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.message)
+      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
     // 4. 模拟原上传成功回调格式
@@ -1336,7 +1336,7 @@ const saveBoard = async () => {
       boardDialog.visible = false
       loadData()
     } else {
-      ElMessage.error('保存失败: ' + response.data.message)
+      ElMessage.error('保存失败: ' + response.data.msg)
     }
   } catch (error) {
     ElMessage.error('保存失败: ' + error.message)
@@ -1366,7 +1366,7 @@ const saveSemiProduct = async () => {
       semiProductDialog.visible = false
       loadData()
     } else {
-      ElMessage.error('保存失败: ' + response.data.message)
+      ElMessage.error('保存失败: ' + response.data.msg)
     }
   } catch (error) {
     if (error !== false) {
@@ -1398,7 +1398,7 @@ const saveLedBoardPlugin = async () => {
       ledBoardPluginDialog.visible = false
       loadData()
     } else {
-      ElMessage.error('保存失败: ' + response.data.message)
+      ElMessage.error('保存失败: ' + response.data.msg)
     }
   } catch (error) {
     if (error !== false) {
@@ -1414,7 +1414,7 @@ const loadCircuitBoardOptions = async () => {
     if (response.data.code === 200) {
       circuitBoardOptions.value = response.data.data
     } else {
-      ElMessage.error('加载线路板选项失败: ' + response.data.message)
+      ElMessage.error('加载线路板选项失败: ' + response.data.msg)
     }
   } catch (error) {
     ElMessage.error('加载线路板选项失败: ' + error.message)
@@ -1428,7 +1428,7 @@ const loadSemiProductOptions = async () => {
     if (response.data.code === 200) {
       semiProductOptions.value = response.data.data
     } else {
-      ElMessage.error('加载半成品选项失败: ' + response.data.message)
+      ElMessage.error('加载半成品选项失败: ' + response.data.msg)
     }
   } catch (error) {
     ElMessage.error('加载半成品选项失败: ' + error.message)

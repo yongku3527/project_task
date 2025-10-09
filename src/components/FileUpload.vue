@@ -203,8 +203,8 @@ const startUpload = async (task) => {
     
   } catch (error) {
     task.status = 'failed'
-    task.error = error.message
-    ElMessage.error(`文件 ${task.file.name} 上传失败: ${error.message}`)
+    task.error = error.response?.data?.msg || error.message
+    ElMessage.error(`文件 ${task.file.name} 上传失败: ${error.response?.data?.msg || error.message}`)
   } finally {
     task.uploading = false
   }
@@ -268,7 +268,7 @@ const uploadMultipartFile = async (task) => {
       task.progress = Math.round((uploadedCount * 100) / totalParts)
       
     } catch (error) {
-      throw new Error(`分片 ${part.partNumber} 上传失败: ${error.message}`)
+      throw new Error(`分片 ${part.partNumber} 上传失败: ${error.response?.data?.msg || error.message}`)
     }
   }
   
