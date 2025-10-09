@@ -248,7 +248,7 @@
         <el-form-item label="上传文件">
           <el-upload
             ref="boardUploadRef"
-            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :action="`${baseUrl}/minio/upload/${circuitBoardBucket}`"
             :limit="1"
             :on-success="handleBoardUploadSuccess"
             :on-remove="handleBoardUploadRemove"
@@ -302,7 +302,7 @@
         <el-form-item label="原理图文件">
           <el-upload
             ref="schematicUploadRef"
-            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :action="`${baseUrl}/minio/upload/${semiProductBucket}`"
             :limit="1"
             :on-success="handleSchematicUploadSuccess"
             :on-remove="handleSchematicUploadRemove"
@@ -318,7 +318,7 @@
         <el-form-item label="SMT文件">
           <el-upload
             ref="smtUploadRef"
-            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :action="`${baseUrl}/minio/upload/${semiProductBucket}`"
             :limit="1"
             :on-success="handleSmtUploadSuccess"
             :on-remove="handleSmtUploadRemove"
@@ -372,7 +372,7 @@
         <el-form-item label="上传文件">
           <el-upload
             ref="ledBoardPluginUploadRef"
-            :action="`${baseUrl}/minio/upload/${currentBucket}`"
+            :action="`${baseUrl}/minio/upload/${ledBoardPluginBucket}`"
             :limit="1"
             :on-success="handleLedBoardPluginUploadSuccess"
             :on-remove="handleLedBoardPluginUploadRemove"
@@ -416,6 +416,12 @@ const tableData = ref([])
 const currentPage = ref(1)
 const pageSize = ref(5)
 const total = ref(0)
+// 定义不同文件类型的存储桶
+const circuitBoardBucket = ref('circuit-boards')
+const semiProductBucket = ref('semi-products')
+const ledBoardPluginBucket = ref('led-board-plugins')
+
+// 向后兼容，保留currentBucket变量
 const currentBucket = ref('files')
 
 // 下拉选项数据
@@ -1033,7 +1039,7 @@ const handleSchematicUpload = async (options) => {
     
     // 1. 获取预上传链接
     const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      `${baseUrl}/minio/buckets/${semiProductBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
         params: { expiry: 60 }
       }
@@ -1057,8 +1063,8 @@ const handleSchematicUpload = async (options) => {
     })
     
     // 3. 上传成功后，保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
-      bucketName: currentBucket.value,
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/save-info`, {
+      bucketName: circuitBoardBucket.value,
       objectName: objectName,
       originalName: file.name,
       fileSize: file.size,
@@ -1070,7 +1076,7 @@ const handleSchematicUpload = async (options) => {
     }
     
     // 4. 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    const fileUrl = `${baseUrl}/minio/buckets/${semiProductBucket.value}/files/${encodeURIComponent(objectName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
@@ -1103,7 +1109,7 @@ const handleSmtUpload = async (options) => {
     
     // 1. 获取预上传链接
     const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      `${baseUrl}/minio/buckets/${semiProductBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
         params: { expiry: 60 }
       }
@@ -1127,8 +1133,8 @@ const handleSmtUpload = async (options) => {
     })
     
     // 3. 上传成功后，保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
-      bucketName: currentBucket.value,
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${semiProductBucket.value}/files/save-info`, {
+      bucketName: semiProductBucket.value,
       objectName: objectName,
       originalName: file.name,
       fileSize: file.size,
@@ -1140,7 +1146,7 @@ const handleSmtUpload = async (options) => {
     }
     
     // 4. 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    const fileUrl = `${baseUrl}/minio/buckets/${semiProductBucket.value}/files/${encodeURIComponent(objectName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
@@ -1173,7 +1179,7 @@ const handleLedBoardPluginUpload = async (options) => {
     
     // 1. 获取预上传链接
     const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
         params: { expiry: 60 }
       }
@@ -1197,8 +1203,8 @@ const handleLedBoardPluginUpload = async (options) => {
     })
     
     // 3. 上传成功后，保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
-      bucketName: currentBucket.value,
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/save-info`, {
+      bucketName: ledBoardPluginBucket.value,
       objectName: objectName,
       originalName: file.name,
       fileSize: file.size,
@@ -1210,7 +1216,7 @@ const handleLedBoardPluginUpload = async (options) => {
     }
     
     // 4. 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`
+    const fileUrl = `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(objectName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
@@ -1254,7 +1260,7 @@ const handleBoardUpload = async (options) => {
     
     // 1. 获取预上传链接
     const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+      `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
       {
         params: { expiry: 60 }
       }
@@ -1278,8 +1284,8 @@ const handleBoardUpload = async (options) => {
     })
     
     // 3. 上传成功后，保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${currentBucket.value}/files/save-info`, {
-      bucketName: currentBucket.value,
+    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/save-info`, {
+      bucketName: circuitBoardBucket.value,
       objectName: objectName,
       originalName: file.name,
       fileSize: file.size,
@@ -1295,7 +1301,7 @@ const handleBoardUpload = async (options) => {
       code: 200,
       message: '上传成功',
       data: {
-        fileUrl: `${baseUrl}/minio/buckets/${currentBucket.value}/files/${encodeURIComponent(objectName)}`,
+        fileUrl: `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(objectName)}`,
         fileName: file.name,
         fileId: saveFileResponse.data.data?.fileId || null
       }
