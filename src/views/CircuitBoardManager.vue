@@ -1460,9 +1460,7 @@ const loadSemiProductOptions = async () => {
 // MES接口调用 - 根据物料编号查询物料信息
 const getItemInfoFromMES = async (itemCode) => {
   try {
-    const response = await axios.get(`${baseUrl}/mes/item-info`, {
-      params: { itemCode }
-    })
+    const response = await axios.get(`${baseUrl}/mes/item-info/${itemCode}`)
     
     if (response.data.code === 200) {
       return response.data.data

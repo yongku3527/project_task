@@ -42,10 +42,6 @@
         <Cpu />
         <span>线路板管理</span>
       </el-menu-item>
-      <el-menu-item index="/mes-test">
-        <Setting />
-        <span>MES测试</span>
-      </el-menu-item>
     </el-menu>
     
     <router-view />
@@ -55,7 +51,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { onMounted, onUnmounted, ref } from 'vue';
-import { House, Menu as MenuIcon, Grid, Folder, Cpu, Setting } from '@element-plus/icons-vue';
+import { House, Menu as MenuIcon, Grid, Folder, Cpu } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const isFullScreen = ref(false);
