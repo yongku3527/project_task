@@ -240,8 +240,12 @@
     >
       <el-form :model="boardDialog.form" :rules="boardDialog.rules" ref="boardFormRef" label-width="100px">
         <el-form-item label="线路板编码" prop="boardCode">
-          <el-input v-model="boardDialog.form.boardCode" placeholder="请输入线路板编码" />
-        </el-form-item>
+  <el-input 
+    v-model="boardDialog.form.boardCode" 
+    placeholder="请输入线路板编码"
+    @input="handleBoardCodeInput"
+  />
+</el-form-item>
         <el-form-item label="线路板名称" prop="boardName">
           <el-input v-model="boardDialog.form.boardName" placeholder="请输入线路板名称" />
         </el-form-item>
@@ -294,8 +298,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="半成品编码" prop="semiProductCode">
-          <el-input v-model="semiProductDialog.form.semiProductCode" placeholder="请输入半成品编码" />
-        </el-form-item>
+  <el-input 
+    v-model="semiProductDialog.form.semiProductCode" 
+    placeholder="请输入半成品编码"
+    @input="handleSemiProductCodeInput"
+  />
+</el-form-item>
         <el-form-item label="半成品名称" prop="semiProductName">
           <el-input v-model="semiProductDialog.form.semiProductName" placeholder="请输入半成品名称" />
         </el-form-item>
@@ -364,7 +372,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="灯板插件编码" prop="ledBoardPluginCode">
-          <el-input v-model="ledBoardPluginDialog.form.ledBoardPluginCode" placeholder="请输入灯板插件编码" />
+          <el-input 
+            v-model="ledBoardPluginDialog.form.ledBoardPluginCode" 
+            placeholder="请输入灯板插件编码"
+            @input="handleLedBoardPluginCodeInput"
+          />
         </el-form-item>
         <el-form-item label="灯板插件名称" prop="ledBoardPluginName">
           <el-input v-model="ledBoardPluginDialog.form.ledBoardPluginName" placeholder="请输入灯板插件名称" />
@@ -403,7 +415,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import axios from 'axios'
@@ -517,6 +529,16 @@ const ledBoardPluginUploadRef = ref()
 // 生命周期
 onMounted(() => {
   loadData()
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  Object.keys(inputTimers).forEach(key => {
+    if (inputTimers[key]) {
+      clearTimeout(inputTimers[key])
+      inputTimers[key] = null
+    }
+  })
 })
 
 // 加载数据
@@ -1432,6 +1454,103 @@ const loadSemiProductOptions = async () => {
     }
   } catch (error) {
     ElMessage.error('加载半成品选项失败: ' + error.message)
+  }
+}
+
+// MES接口调用 - 根据物料编号查询物料信息
+const getItemInfoFromMES = async (itemCode) => {
+  try {
+    const response = await axios.get(`${baseUrl}/mes/item-info`, {
+      params: { itemCode }
+    })
+    
+    if (response.data.code === 200) {
+      return response.data.data
+    } else {
+      console.warn('MES物料信息查询失败: ' + response.data.msg)
+      return null
+    }
+  } catch (error) {
+    console.warn('MES接口调用失败: ' + error.message)
+    return null
+  }
+}
+
+// 存储定时器ID的对象
+const inputTimers = reactive({
+  boardCode: null,
+  semiProductCode: null,
+  ledBoardPluginCode: null
+})
+
+// 线路板编码输入监听 - 自动查询MES接口
+const handleBoardCodeInput = () => {
+  const boardCode = boardDialog.form.boardCode?.trim()
+  
+  // 清除之前的定时器
+  if (inputTimers.boardCode) {
+    clearTimeout(inputTimers.boardCode)
+  }
+  
+  if (boardCode) {
+    // 延迟查询，避免用户输入过程中频繁调用
+    inputTimers.boardCode = setTimeout(async () => {
+      // 如果当前输入值与之前相同，则进行查询
+      if (boardDialog.form.boardCode?.trim() === boardCode) {
+        const itemInfo = await getItemInfoFromMES(boardCode)
+        if (itemInfo && itemInfo.itemName) {
+          boardDialog.form.boardName = itemInfo.itemName
+          ElMessage.success(`已从MES系统获取物料名称: ${itemInfo.itemName}`)
+        }
+      }
+      inputTimers.boardCode = null
+    }, 1000) // 1秒延迟
+  }
+}
+
+// 半成品编码输入监听 - 自动查询MES接口
+const handleSemiProductCodeInput = () => {
+  const semiProductCode = semiProductDialog.form.semiProductCode?.trim()
+  
+  // 清除之前的定时器
+  if (inputTimers.semiProductCode) {
+    clearTimeout(inputTimers.semiProductCode)
+  }
+  
+  if (semiProductCode) {
+    inputTimers.semiProductCode = setTimeout(async () => {
+      if (semiProductDialog.form.semiProductCode?.trim() === semiProductCode) {
+        const itemInfo = await getItemInfoFromMES(semiProductCode)
+        if (itemInfo && itemInfo.itemName) {
+          semiProductDialog.form.semiProductName = itemInfo.itemName
+          ElMessage.success(`已从MES系统获取物料名称: ${itemInfo.itemName}`)
+        }
+      }
+      inputTimers.semiProductCode = null
+    }, 1000)
+  }
+}
+
+// 灯板插件编码输入监听 - 自动查询MES接口
+const handleLedBoardPluginCodeInput = () => {
+  const ledBoardPluginCode = ledBoardPluginDialog.form.ledBoardPluginCode?.trim()
+  
+  // 清除之前的定时器
+  if (inputTimers.ledBoardPluginCode) {
+    clearTimeout(inputTimers.ledBoardPluginCode)
+  }
+  
+  if (ledBoardPluginCode) {
+    inputTimers.ledBoardPluginCode = setTimeout(async () => {
+      if (ledBoardPluginDialog.form.ledBoardPluginCode?.trim() === ledBoardPluginCode) {
+        const itemInfo = await getItemInfoFromMES(ledBoardPluginCode)
+        if (itemInfo && itemInfo.itemName) {
+          ledBoardPluginDialog.form.ledBoardPluginName = itemInfo.itemName
+          ElMessage.success(`已从MES系统获取物料名称: ${itemInfo.itemName}`)
+        }
+      }
+      inputTimers.ledBoardPluginCode = null
+    }, 1000)
   }
 }
 </script>

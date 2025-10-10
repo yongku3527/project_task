@@ -8,6 +8,7 @@ import MeetingMinutes from '../views/MeetingMinutes.vue';
 import MemberGanttChart from '../views/MemberGanttChart.vue';
 import FileManager from '../views/FileManager.vue';
 import CircuitBoardManager from '../views/CircuitBoardManager.vue';
+import MesTest from '../views/MesTest.vue';
 
 const routes: Array<RouteRecordRaw> = [
   // {
@@ -49,6 +50,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/circuit-board',
     name: 'CircuitBoardManager',
     component: CircuitBoardManager
+  },
+  {
+    path: '/mes-test',
+    name: 'MesTest',
+    component: MesTest
   }
 ];
 
