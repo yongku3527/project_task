@@ -270,11 +270,11 @@ public class CircuitBoardController {
         dto.setStatus(circuitBoard.getStatus());
         dto.setCreateTime(circuitBoard.getCreateTime());
         dto.setUpdateTime(circuitBoard.getUpdateTime());
-        
-        // 设置文件信息
-        if (circuitBoard.getFileId() != null) {
-            FileInfo fileInfo = fileInfoService.getById(circuitBoard.getFileId());
-            if (fileInfo != null) {
+
+            // 设置文件信息
+            if (circuitBoard.getFileId() != null) {
+                FileInfo fileInfo = fileInfoService.getById(circuitBoard.getFileId());
+                if (fileInfo != null) {
                 dto.setFileName(fileInfo.getFileName());
                 dto.setFileUrl(fileInfo.getFileUrl());
             }
