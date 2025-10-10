@@ -126,6 +126,12 @@
 			<version>8.5.10</version>
 		</dependency>
 
+		<!-- Spring WebFlux WebClient for HTTP calls -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>
