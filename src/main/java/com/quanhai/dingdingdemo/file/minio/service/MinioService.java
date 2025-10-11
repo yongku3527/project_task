@@ -1,6 +1,7 @@
 package com.quanhai.dingdingdemo.file.minio.service;
 
 import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.file.utils.FileNameFormatter;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultEnum;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
@@ -138,18 +139,66 @@ public class MinioService {
                     .contentType(file.getContentType())
                     .build());
 
-            log.info("文件上传成功: {}/{}", bucketName, objectName);
+            log.info("文件上传成功: {}/{}，原始文件名: {}", bucketName, objectName, file.getOriginalFilename());
             Map<String, Object> data = new HashMap<>();
             data.put("bucketName", bucketName);
             data.put("objectName", objectName);
             data.put("size", file.getSize());
             data.put("contentType", file.getContentType());
+            data.put("originalName", file.getOriginalFilename());
             
             return ResultUtil.success(data);
             
         } catch (Exception e) {
-            log.error("文件上传失败: {}/{}", bucketName, objectName, e);
+            log.error("文件上传失败: {}/{}，原始文件名: {}", bucketName, objectName, file.getOriginalFilename(), e);
             return ResultUtil.defineFail(ResultEnum.FAIL.code, "文件上传失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 上传文件到指定存储桶，使用格式化文件名（编号-名称-日期-时间戳）
+     * 
+     * @param bucketName 存储桶名称
+     * @param number 编号
+     * @param name 名称
+     * @param file 文件
+     * @return Result结果
+     */
+    public Result<Map<String, Object>> uploadFileWithFormattedName(String bucketName, String number, String name, MultipartFile file) {
+        try {
+            // 生成格式化文件名
+            String formattedFileName = FileNameFormatter.generateFormattedFileName(number, name, file.getOriginalFilename());
+            log.info("生成格式化文件名: {}，原始文件名: {}", formattedFileName, file.getOriginalFilename());
+            
+            // 使用格式化文件名上传
+            return uploadFile(bucketName, formattedFileName, file);
+            
+        } catch (Exception e) {
+            log.error("格式化文件名上传失败: {}，编号: {}，名称: {}，原始文件名: {}", bucketName, number, name, file.getOriginalFilename(), e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "格式化文件名上传失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 上传文件到指定存储桶，使用时间戳格式化文件名
+     * 
+     * @param bucketName 存储桶名称
+     * @param name 名称
+     * @param file 文件
+     * @return Result结果
+     */
+    public Result<Map<String, Object>> uploadFileWithTimeBasedName(String bucketName, String name, MultipartFile file) {
+        try {
+            // 生成时间戳格式化文件名
+            String formattedFileName = FileNameFormatter.generateTimeBasedFileName(name, file.getOriginalFilename());
+            log.info("生成时间戳文件名: {}，原始文件名: {}", formattedFileName, file.getOriginalFilename());
+            
+            // 使用格式化文件名上传
+            return uploadFile(bucketName, formattedFileName, file);
+            
+        } catch (Exception e) {
+            log.error("时间戳文件名上传失败: {}，名称: {}，原始文件名: {}", bucketName, name, file.getOriginalFilename(), e);
+            return ResultUtil.defineFail(ResultEnum.FAIL.code, "时间戳文件名上传失败: " + e.getMessage());
         }
     }
 

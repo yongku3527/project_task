@@ -97,6 +97,46 @@ public class MinioController {
     }
 
     /**
+     * 上传文件到指定存储桶，使用格式化文件名（编号-名称-日期-时间戳）
+     * 
+     * @param bucketName 存储桶名称
+     * @param number 编号
+     * @param name 名称
+     * @param file 文件
+     * @return Result结果
+     */
+    @PostMapping("/buckets/{bucketName}/files/upload-formatted")
+    public Result<Map<String, Object>> uploadFileWithFormattedName(
+            @PathVariable String bucketName,
+            @RequestParam("number") String number,
+            @RequestParam("name") String name,
+            @RequestParam("file") MultipartFile file) {
+        
+        log.info("格式化文件名上传文件到存储桶: {}，编号: {}，名称: {}，文件名: {}", 
+                bucketName, number, name, file.getOriginalFilename());
+        return minioService.uploadFileWithFormattedName(bucketName, number, name, file);
+    }
+
+    /**
+     * 上传文件到指定存储桶，使用时间戳格式化文件名
+     * 
+     * @param bucketName 存储桶名称
+     * @param name 名称
+     * @param file 文件
+     * @return Result结果
+     */
+    @PostMapping("/buckets/{bucketName}/files/upload-timestamp")
+    public Result<Map<String, Object>> uploadFileWithTimeBasedName(
+            @PathVariable String bucketName,
+            @RequestParam("name") String name,
+            @RequestParam("file") MultipartFile file) {
+        
+        log.info("时间戳文件名上传文件到存储桶: {}，名称: {}，文件名: {}", 
+                bucketName, name, file.getOriginalFilename());
+        return minioService.uploadFileWithTimeBasedName(bucketName, name, file);
+    }
+
+    /**
      * 下载文件
      * 
      * @param bucketName 存储桶名称

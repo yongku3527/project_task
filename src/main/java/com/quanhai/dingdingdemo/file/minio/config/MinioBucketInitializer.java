@@ -21,7 +21,7 @@ public class MinioBucketInitializer implements ApplicationRunner {
     // 定义需要自动创建的存储桶
     private static final String[] BUCKETS = {
         "circuit-boards",      // 线路板文件存储桶
-        "semi-products",       // 半成品文件存储桶
+        // "semi-products",       // 半成品文件存储桶
         "schematic-files",     // 原理图文件专用存储桶
         "smt-files",          // SMT文件专用存储桶
         "led-board-plugins"   // 灯板插件文件存储桶
