@@ -1053,7 +1053,7 @@ const handleLedBoardPluginUploadRemove = (file, fileList) => {
   ledBoardPluginDialog.form.fileId = null
 }
 
-// 客户端直传文件处理 - 原理图
+// 预上传文件处理 - 原理图
 const handleSchematicUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
@@ -1062,35 +1062,30 @@ const handleSchematicUpload = async (options) => {
     const semiProductCode = semiProductDialog.form.semiProductCode || 'UNKNOWN'
     const semiProductName = semiProductDialog.form.semiProductName || '原理图'
     
-    // 使用格式化文件名上传
-    const uploadFormData = new FormData()
-    uploadFormData.append('number', semiProductCode)
-    uploadFormData.append('name', semiProductName)
-    uploadFormData.append('file', file)
-    
-    // 调用新的格式化文件名上传接口
-    const uploadResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${schematicBucket.value}/files/upload-formatted`,
-      uploadFormData,
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${schematicBucket.value}/files/formatted-presigned-upload`,
+      null,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress({ percent: percentCompleted })
+        params: {
+          code: semiProductCode,
+          name: semiProductName,
+          originalFileName: file.name,
+          fileSize: file.size
         }
       }
     )
     
-    if (uploadResponse.data.code !== 200) {
-      throw new Error(uploadResponse.data.msg || '文件上传失败')
+    if (presignResponse.data.code !== 200) {
+      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
     }
     
-    const uploadData = uploadResponse.data.data
-    const formattedFileName = uploadData.objectName
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
     
-    // 保存文件信息到数据库
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 第三步：保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${schematicBucket.value}/files/save-info`, {
       bucketName: schematicBucket.value,
       objectName: formattedFileName,
@@ -1127,7 +1122,35 @@ const handleSchematicUpload = async (options) => {
   }
 }
 
-// 客户端直传文件处理 - SMT
+// 使用预签名URL上传文件
+const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    
+    // 监听上传进度
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentCompleted = Math.round((event.loaded * 100) / event.total)
+        onProgress({ percent: percentCompleted })
+      }
+    }
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        resolve()
+      } else {
+        reject(new Error(`上传失败: ${xhr.status} ${xhr.statusText}`))
+      }
+    }
+    
+    xhr.onerror = () => reject(new Error('网络错误'))
+    
+    xhr.open('PUT', presignedUrl, true)
+    xhr.send(file)
+  })
+}
+
+// 预上传文件处理 - SMT
 const handleSmtUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
@@ -1136,33 +1159,28 @@ const handleSmtUpload = async (options) => {
     const semiProductCode = semiProductDialog.form.semiProductCode || 'UNKNOWN'
     const semiProductName = semiProductDialog.form.semiProductName || 'SMT文件'
     
-    // 使用格式化文件名上传
-    const uploadFormData = new FormData()
-    uploadFormData.append('number', semiProductCode)
-    uploadFormData.append('name', semiProductName)
-    uploadFormData.append('file', file)
-    
-    // 调用新的格式化文件名上传接口
-    const uploadResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${smtBucket.value}/files/upload-formatted`,
-      uploadFormData,
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${smtBucket.value}/files/formatted-presigned-upload`,
+      null,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress({ percent: percentCompleted })
+        params: {
+          code: semiProductCode,
+          name: semiProductName,
+          originalFileName: file.name,
+          fileSize: file.size
         }
       }
     )
     
-    if (uploadResponse.data.code !== 200) {
-      throw new Error(uploadResponse.data.msg || '文件上传失败')
+    if (presignResponse.data.code !== 200) {
+      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
     }
     
-    const uploadData = uploadResponse.data.data
-    const formattedFileName = uploadData.objectName
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${smtBucket.value}/files/save-info`, {
@@ -1201,7 +1219,7 @@ const handleSmtUpload = async (options) => {
   }
 }
 
-// 客户端直传文件处理 - 灯板插件
+// 预上传文件处理 - 灯板插件
 const handleLedBoardPluginUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
@@ -1210,33 +1228,28 @@ const handleLedBoardPluginUpload = async (options) => {
     const ledBoardPluginCode = ledBoardPluginDialog.form.ledBoardPluginCode || 'UNKNOWN'
     const ledBoardPluginName = ledBoardPluginDialog.form.ledBoardPluginName || '灯板插件'
     
-    // 使用格式化文件名上传
-    const uploadFormData = new FormData()
-    uploadFormData.append('number', ledBoardPluginCode)
-    uploadFormData.append('name', ledBoardPluginName)
-    uploadFormData.append('file', file)
-    
-    // 调用新的格式化文件名上传接口
-    const uploadResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/upload-formatted`,
-      uploadFormData,
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/formatted-presigned-upload`,
+      null,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress({ percent: percentCompleted })
+        params: {
+          code: ledBoardPluginCode,
+          name: ledBoardPluginName,
+          originalFileName: file.name,
+          fileSize: file.size
         }
       }
     )
     
-    if (uploadResponse.data.code !== 200) {
-      throw new Error(uploadResponse.data.msg || '文件上传失败')
+    if (presignResponse.data.code !== 200) {
+      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
     }
     
-    const uploadData = uploadResponse.data.data
-    const formattedFileName = uploadData.objectName
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/save-info`, {
@@ -1275,7 +1288,7 @@ const handleLedBoardPluginUpload = async (options) => {
   }
 }
 
-// 客户端直传文件处理
+// 预上传文件处理
 const beforeBoardUpload = (file) => {
   // 文件大小限制 (50MB)
   const maxSize = 50 * 1024 * 1024
@@ -1294,33 +1307,28 @@ const handleBoardUpload = async (options) => {
     const boardCode = boardDialog.form.boardCode || 'UNKNOWN'
     const boardName = boardDialog.form.boardName || '线路板文件'
     
-    // 使用格式化文件名上传
-    const uploadFormData = new FormData()
-    uploadFormData.append('number', boardCode)
-    uploadFormData.append('name', boardName)
-    uploadFormData.append('file', file)
-    
-    // 调用新的格式化文件名上传接口
-    const uploadResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/upload-formatted`,
-      uploadFormData,
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/formatted-presigned-upload`,
+      null,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress({ percent: percentCompleted })
+        params: {
+          code: boardCode,
+          name: boardName,
+          originalFileName: file.name,
+          fileSize: file.size
         }
       }
     )
     
-    if (uploadResponse.data.code !== 200) {
-      throw new Error(uploadResponse.data.msg || '文件上传失败')
+    if (presignResponse.data.code !== 200) {
+      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
     }
     
-    const uploadData = uploadResponse.data.data
-    const formattedFileName = uploadData.objectName
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/save-info`, {
