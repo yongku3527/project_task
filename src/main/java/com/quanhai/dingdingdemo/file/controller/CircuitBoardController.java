@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 线路板Controller
@@ -170,7 +172,7 @@ public class CircuitBoardController {
     }
 
     /**
-     * 分页查询线路板列表
+     * 分页查询线路板列表（包含完整的嵌套数据）
      */
     @GetMapping("/list")
     public Result getCircuitBoardList(
@@ -182,7 +184,8 @@ public class CircuitBoardController {
         try {
             Page<CircuitBoard> pageParam = new Page<>(page, size);
             LambdaQueryWrapper<CircuitBoard> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(CircuitBoard::getDeleted, 0);
+//             暂时移除删除条件进行测试
+//             queryWrapper.eq(CircuitBoard::getDeleted, 0);
             
             if (boardCode != null && !boardCode.trim().isEmpty()) {
                 queryWrapper.like(CircuitBoard::getBoardCode, boardCode);
@@ -197,12 +200,24 @@ public class CircuitBoardController {
             queryWrapper.orderByDesc(CircuitBoard::getCreateTime);
             Page<CircuitBoard> pageResult = circuitBoardService.page(pageParam, queryWrapper);
             
+            // 获取完整的嵌套数据，而不是只包含基本信息
             List<CircuitBoardDTO> dtoList = new ArrayList<>();
             for (CircuitBoard circuitBoard : pageResult.getRecords()) {
-                dtoList.add(convertToDTO(circuitBoard));
+                // 使用getCircuitBoardWithDetails获取包含半成品和灯板插件的完整数据
+                CircuitBoardDTO fullDto = circuitBoardService.getCircuitBoardWithDetails(circuitBoard.getId());
+                if (fullDto != null) {
+                    dtoList.add(fullDto);
+                }
             }
             
-            return ResultUtil.success(dtoList);
+            // 返回分页信息，包括列表数据和总记录数
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", dtoList);
+            result.put("total", pageResult.getTotal());
+            result.put("page", page);
+            result.put("size", size);
+            
+            return ResultUtil.success(result);
         } catch (Exception e) {
             return ResultUtil.fail("查询失败：" + e.getMessage());
         }
