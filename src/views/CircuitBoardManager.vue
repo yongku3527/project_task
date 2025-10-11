@@ -1496,9 +1496,9 @@ const handleBoardCodeInput = () => {
       // 如果当前输入值与之前相同，则进行查询
       if (boardDialog.form.boardCode?.trim() === boardCode) {
         const itemInfo = await getItemInfoFromMES(boardCode)
-        if (itemInfo && itemInfo.itemName) {
-          boardDialog.form.boardName = itemInfo.itemName
-          ElMessage.success(`已从MES系统获取物料名称: ${itemInfo.itemName}`)
+        if (itemInfo && itemInfo.itemSpec) {
+          boardDialog.form.boardName = itemInfo.itemSpec
+          ElMessage.success(`已从MES系统获取物料规格: ${itemInfo.itemSpec}`)
         }
       }
       inputTimers.boardCode = null
@@ -1519,9 +1519,9 @@ const handleSemiProductCodeInput = () => {
     inputTimers.semiProductCode = setTimeout(async () => {
       if (semiProductDialog.form.semiProductCode?.trim() === semiProductCode) {
         const itemInfo = await getItemInfoFromMES(semiProductCode)
-        if (itemInfo && itemInfo.itemName) {
-          semiProductDialog.form.semiProductName = itemInfo.itemName
-          ElMessage.success(`已从MES系统获取物料名称: ${itemInfo.itemName}`)
+        if (itemInfo && itemInfo.itemSpec) {
+          semiProductDialog.form.semiProductName = itemInfo.itemSpec
+          ElMessage.success(`已从MES系统获取物料规格: ${itemInfo.itemSpec}`)
         }
       }
       inputTimers.semiProductCode = null
@@ -1542,9 +1542,9 @@ const handleLedBoardPluginCodeInput = () => {
     inputTimers.ledBoardPluginCode = setTimeout(async () => {
       if (ledBoardPluginDialog.form.ledBoardPluginCode?.trim() === ledBoardPluginCode) {
         const itemInfo = await getItemInfoFromMES(ledBoardPluginCode)
-        if (itemInfo && itemInfo.itemName) {
-          ledBoardPluginDialog.form.ledBoardPluginName = itemInfo.itemName
-          ElMessage.success(`已从MES系统获取物料名称: ${itemInfo.itemName}`)
+        if (itemInfo && itemInfo.itemSpec) {
+          ledBoardPluginDialog.form.ledBoardPluginName = itemInfo.itemSpec
+          ElMessage.success(`已从MES系统获取物料规格: ${itemInfo.itemSpec}`)
         }
       }
       inputTimers.ledBoardPluginCode = null
