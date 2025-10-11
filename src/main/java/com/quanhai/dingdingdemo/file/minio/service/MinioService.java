@@ -412,5 +412,31 @@ public class MinioService {
         }
     }
 
+    /**
+     * 创建格式化文件名的预上传任务
+     * 
+     * @param bucketName 存储桶名称
+     * @param number 编号
+     * @param name 名称
+     * @param originalFilename 原始文件名
+     * @param fileSize 文件大小
+     * @return Result结果，包含上传任务信息
+     */
+    public Result<Map<String, Object>> createFormattedPresignedUploadTask(String bucketName, String number, 
+            String name, String originalFilename, long fileSize) {
+        try {
+            // 生成格式化文件名
+            String formattedObjectName = FileNameFormatter.generateFormattedFileName(number, name, originalFilename);
+            
+            // 创建预上传任务
+            return createPresignedUploadTask(bucketName, formattedObjectName, fileSize);
+            
+        } catch (Exception e) {
+            log.error("创建格式化文件名预上传任务失败: {}/{}/{}，文件大小: {}字节", 
+                    bucketName, number, name, fileSize, e);
+            return ResultUtil.fail("创建格式化文件名预上传任务失败: " + e.getMessage());
+        }
+    }
+
 
 }
