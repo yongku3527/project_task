@@ -547,12 +547,33 @@ onUnmounted(() => {
 const loadData = async () => {
   loading.value = true
   try {
-    const response = await axios.get(`${baseUrl}/circuit-board/all-with-details`)
-    if (response.data.code === 200) {
-      tableData.value = response.data.data
-      total.value = response.data.data.length
+    // 如果有搜索条件，使用分页查询接口，否则使用获取所有数据的接口
+    if (searchForm.boardCode || searchForm.boardName) {
+      // 使用分页查询接口，支持搜索
+      const params = {
+        page: currentPage.value,
+        size: pageSize.value,
+        boardCode: searchForm.boardCode || undefined,
+        boardName: searchForm.boardName || undefined
+      }
+      const response = await axios.get(`${baseUrl}/circuit-board/list`, { params })
+      if (response.data.code === 200) {
+        // 分页查询接口返回的是分页数据对象
+        const pageData = response.data.data
+        tableData.value = pageData.list
+        total.value = pageData.total
+      } else {
+        ElMessage.error('加载数据失败: ' + response.data.msg)
+      }
     } else {
-      ElMessage.error('加载数据失败: ' + response.data.msg)
+      // 使用获取所有数据的接口（包含嵌套数据）
+      const response = await axios.get(`${baseUrl}/circuit-board/all-with-details`)
+      if (response.data.code === 200) {
+        tableData.value = response.data.data
+        total.value = response.data.data.length
+      } else {
+        ElMessage.error('加载数据失败: ' + response.data.msg)
+      }
     }
   } catch (error) {
     ElMessage.error('加载数据失败: ' + error.message)
@@ -1291,9 +1312,9 @@ const handleLedBoardPluginUpload = async (options) => {
 // 预上传文件处理
 const beforeBoardUpload = (file) => {
   // 文件大小限制 (50MB)
-  const maxSize = 50 * 1024 * 1024
+  const maxSize = 200 * 1024 * 1024
   if (file.size > maxSize) {
-    ElMessage.error('文件大小不能超过50MB')
+    ElMessage.error('文件大小不能超过200MB')
     return false
   }
   return true
