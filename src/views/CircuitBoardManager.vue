@@ -1058,38 +1058,42 @@ const handleSchematicUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
   try {
-    const timestamp = new Date().getTime()
-    const objectName = `schematic_${timestamp}_${file.name}`
+    // 获取当前半成品信息用于生成格式化文件名
+    const semiProductCode = semiProductDialog.form.semiProductCode || 'UNKNOWN'
+    const semiProductName = semiProductDialog.form.semiProductName || '原理图'
     
-    // 1. 获取预上传链接
-    const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${schematicBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+    // 使用格式化文件名上传
+    const uploadFormData = new FormData()
+    uploadFormData.append('number', semiProductCode)
+    uploadFormData.append('name', semiProductName)
+    uploadFormData.append('file', file)
+    
+    // 调用新的格式化文件名上传接口
+    const uploadResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${schematicBucket.value}/files/upload-formatted`,
+      uploadFormData,
       {
-        params: { expiry: 60 }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress({ percent: percentCompleted })
+        }
       }
     )
     
-    if (presignedResponse.data.code !== 200) {
-      throw new Error('获取预上传链接失败')
+    if (uploadResponse.data.code !== 200) {
+      throw new Error(uploadResponse.data.msg || '文件上传失败')
     }
     
-    const presignedUrl = presignedResponse.data.data
+    const uploadData = uploadResponse.data.data
+    const formattedFileName = uploadData.objectName
     
-    // 2. 使用预签名URL上传文件到MinIO
-    await axios.put(presignedUrl, file, {
-      headers: {
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-        onProgress({ percent: percentCompleted })
-      }
-    })
-    
-    // 3. 上传成功后，保存文件信息到数据库
+    // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${schematicBucket.value}/files/save-info`, {
       bucketName: schematicBucket.value,
-      objectName: objectName,
+      objectName: formattedFileName,
       originalName: file.name,
       fileSize: file.size,
       contentType: file.type || 'application/octet-stream'
@@ -1099,8 +1103,8 @@ const handleSchematicUpload = async (options) => {
       throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
-    // 4. 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${schematicBucket.value}/files/${encodeURIComponent(objectName)}`
+    // 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${schematicBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
@@ -1111,11 +1115,11 @@ const handleSchematicUpload = async (options) => {
       }
     }
     
-    // 5. 调用原成功处理函数
+    // 调用原成功处理函数
     handleSchematicUploadSuccess(mockResponse, file, [file])
     onSuccess(mockResponse)
     
-    ElMessage.success('原理图文件上传成功')
+    ElMessage.success(`原理图文件上传成功，文件名: ${formattedFileName}`)
     
   } catch (error) {
     onError(error)
@@ -1128,38 +1132,42 @@ const handleSmtUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
   try {
-    const timestamp = new Date().getTime()
-    const objectName = `smt_${timestamp}_${file.name}`
+    // 获取当前半成品信息用于生成格式化文件名
+    const semiProductCode = semiProductDialog.form.semiProductCode || 'UNKNOWN'
+    const semiProductName = semiProductDialog.form.semiProductName || 'SMT文件'
     
-    // 1. 获取预上传链接
-    const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${smtBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+    // 使用格式化文件名上传
+    const uploadFormData = new FormData()
+    uploadFormData.append('number', semiProductCode)
+    uploadFormData.append('name', semiProductName)
+    uploadFormData.append('file', file)
+    
+    // 调用新的格式化文件名上传接口
+    const uploadResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${smtBucket.value}/files/upload-formatted`,
+      uploadFormData,
       {
-        params: { expiry: 60 }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress({ percent: percentCompleted })
+        }
       }
     )
     
-    if (presignedResponse.data.code !== 200) {
-      throw new Error('获取预上传链接失败')
+    if (uploadResponse.data.code !== 200) {
+      throw new Error(uploadResponse.data.msg || '文件上传失败')
     }
     
-    const presignedUrl = presignedResponse.data.data
+    const uploadData = uploadResponse.data.data
+    const formattedFileName = uploadData.objectName
     
-    // 2. 使用预签名URL上传文件到MinIO
-    await axios.put(presignedUrl, file, {
-      headers: {
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-        onProgress({ percent: percentCompleted })
-      }
-    })
-    
-    // 3. 上传成功后，保存文件信息到数据库
+    // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${smtBucket.value}/files/save-info`, {
       bucketName: smtBucket.value,
-      objectName: objectName,
+      objectName: formattedFileName,
       originalName: file.name,
       fileSize: file.size,
       contentType: file.type || 'application/octet-stream'
@@ -1169,8 +1177,8 @@ const handleSmtUpload = async (options) => {
       throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
-    // 4. 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${smtBucket.value}/files/${encodeURIComponent(objectName)}`
+    // 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${smtBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
@@ -1181,11 +1189,11 @@ const handleSmtUpload = async (options) => {
       }
     }
     
-    // 5. 调用原成功处理函数
+    // 调用原成功处理函数
     handleSmtUploadSuccess(mockResponse, file, [file])
     onSuccess(mockResponse)
     
-    ElMessage.success('SMT文件上传成功')
+    ElMessage.success(`SMT文件上传成功，文件名: ${formattedFileName}`)
     
   } catch (error) {
     onError(error)
@@ -1198,38 +1206,42 @@ const handleLedBoardPluginUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
   try {
-    const timestamp = new Date().getTime()
-    const objectName = `led_board_plugin_${timestamp}_${file.name}`
+    // 获取当前灯板插件信息用于生成格式化文件名
+    const ledBoardPluginCode = ledBoardPluginDialog.form.ledBoardPluginCode || 'UNKNOWN'
+    const ledBoardPluginName = ledBoardPluginDialog.form.ledBoardPluginName || '灯板插件'
     
-    // 1. 获取预上传链接
-    const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+    // 使用格式化文件名上传
+    const uploadFormData = new FormData()
+    uploadFormData.append('number', ledBoardPluginCode)
+    uploadFormData.append('name', ledBoardPluginName)
+    uploadFormData.append('file', file)
+    
+    // 调用新的格式化文件名上传接口
+    const uploadResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/upload-formatted`,
+      uploadFormData,
       {
-        params: { expiry: 60 }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress({ percent: percentCompleted })
+        }
       }
     )
     
-    if (presignedResponse.data.code !== 200) {
-      throw new Error('获取预上传链接失败')
+    if (uploadResponse.data.code !== 200) {
+      throw new Error(uploadResponse.data.msg || '文件上传失败')
     }
     
-    const presignedUrl = presignedResponse.data.data
+    const uploadData = uploadResponse.data.data
+    const formattedFileName = uploadData.objectName
     
-    // 2. 使用预签名URL上传文件到MinIO
-    await axios.put(presignedUrl, file, {
-      headers: {
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-        onProgress({ percent: percentCompleted })
-      }
-    })
-    
-    // 3. 上传成功后，保存文件信息到数据库
+    // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/save-info`, {
       bucketName: ledBoardPluginBucket.value,
-      objectName: objectName,
+      objectName: formattedFileName,
       originalName: file.name,
       fileSize: file.size,
       contentType: file.type || 'application/octet-stream'
@@ -1239,8 +1251,8 @@ const handleLedBoardPluginUpload = async (options) => {
       throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
-    // 4. 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(objectName)}`
+    // 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
@@ -1251,11 +1263,11 @@ const handleLedBoardPluginUpload = async (options) => {
       }
     }
     
-    // 5. 调用原成功处理函数
+    // 调用原成功处理函数
     handleLedBoardPluginUploadSuccess(mockResponse, file, [file])
     onSuccess(mockResponse)
     
-    ElMessage.success('灯板插件文件上传成功')
+    ElMessage.success(`灯板插件文件上传成功，文件名: ${formattedFileName}`)
     
   } catch (error) {
     onError(error)
@@ -1278,39 +1290,42 @@ const handleBoardUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
   try {
-    // 生成唯一的对象名称
-    const timestamp = new Date().getTime()
-    const objectName = `${timestamp}_${file.name}`
+    // 获取当前线路板信息用于生成格式化文件名
+    const boardCode = boardDialog.form.boardCode || 'UNKNOWN'
+    const boardName = boardDialog.form.boardName || '线路板文件'
     
-    // 1. 获取预上传链接
-    const presignedResponse = await axios.get(
-      `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload`,
+    // 使用格式化文件名上传
+    const uploadFormData = new FormData()
+    uploadFormData.append('number', boardCode)
+    uploadFormData.append('name', boardName)
+    uploadFormData.append('file', file)
+    
+    // 调用新的格式化文件名上传接口
+    const uploadResponse = await axios.post(
+      `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/upload-formatted`,
+      uploadFormData,
       {
-        params: { expiry: 60 }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress({ percent: percentCompleted })
+        }
       }
     )
     
-    if (presignedResponse.data.code !== 200) {
-      throw new Error('获取预上传链接失败: ' + presignedResponse.data.msg)
+    if (uploadResponse.data.code !== 200) {
+      throw new Error(uploadResponse.data.msg || '文件上传失败')
     }
     
-    const presignedUrl = presignedResponse.data.data
+    const uploadData = uploadResponse.data.data
+    const formattedFileName = uploadData.objectName
     
-    // 2. 使用预签名URL上传文件到MinIO
-    const uploadResponse = await axios.put(presignedUrl, file, {
-      headers: {
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-        onProgress({ percent: percentCompleted })
-      }
-    })
-    
-    // 3. 上传成功后，保存文件信息到数据库
+    // 保存文件信息到数据库
     const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/save-info`, {
       bucketName: circuitBoardBucket.value,
-      objectName: objectName,
+      objectName: formattedFileName,
       originalName: file.name,
       fileSize: file.size,
       contentType: file.type || 'application/octet-stream'
@@ -1320,22 +1335,23 @@ const handleBoardUpload = async (options) => {
       throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
     }
     
-    // 4. 模拟原上传成功回调格式
+    // 模拟原上传成功回调格式
+    const fileUrl = `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
-        fileUrl: `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(objectName)}`,
+        fileUrl: fileUrl,
         fileName: file.name,
         fileId: saveFileResponse.data.data?.fileId || null
       }
     }
     
-    // 5. 调用原成功处理函数
+    // 调用原成功处理函数
     handleBoardUploadSuccess(mockResponse, file, [file])
     onSuccess(mockResponse)
     
-    ElMessage.success('文件上传成功')
+    ElMessage.success(`文件上传成功，文件名: ${formattedFileName}`)
     
   } catch (error) {
     ElMessage.error('文件上传失败: ' + error.message)
