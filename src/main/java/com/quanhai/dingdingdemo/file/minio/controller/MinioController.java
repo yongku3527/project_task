@@ -270,6 +270,7 @@ public class MinioController {
 
     /**
      * 创建格式化文件名预上传任务
+     * 上传文件方法TODO
      * 
      * @param bucketName 存储桶名称
      * @param code 编号
