@@ -91,9 +91,8 @@ public class FileNameFormatter {
         if (fileName == null || fileName.trim().isEmpty()) {
             return "unknown";
         }
-        // 替换或移除文件名中的特殊字符
-        return fileName.replaceAll("[^a-zA-Z0-9\\u4e00-\\u9fa5\\-_]", "_")
-                      .replaceAll("_{2,}", "_")
+        // 替换路径分隔符、通配符和URL敏感字符
+        return fileName.replaceAll("[/\\\\* #%&+]", "_")
                       .trim();
     }
     
