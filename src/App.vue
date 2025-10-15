@@ -13,27 +13,27 @@
       <!-- 项目管理类 -->
       <el-sub-menu index="project-management">
         <template #title>
-          <MenuIcon />
+          <Files style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>项目管理</span>
         </template>
         <el-menu-item index="/">
-          <MenuIcon />
+          <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>任务信息</span>
         </el-menu-item>
         <el-menu-item index="/wbs">
-          <Grid />
+          <Grid style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" /> 
           <span>WBS视图</span>
         </el-menu-item>
         <el-menu-item index="/new-feature">
-          <Grid />
+          <Clock style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>任务时间轴</span>
         </el-menu-item>
         <el-menu-item index="/meeting-minutes">
-          <Grid />
+          <Calendar style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>会议纪要</span>
         </el-menu-item>
         <el-menu-item index="/member-gantt">
-          <Grid />
+          <User style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>资源管理</span>
         </el-menu-item>
       </el-sub-menu>
@@ -41,15 +41,15 @@
       <!-- 开发材料类 -->
       <el-sub-menu index="development-materials">
         <template #title>
-          <Folder />
+          <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>开发材料</span>
         </template>
         <el-menu-item index="/file-manager">
-          <Folder />
+          <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>文件管理</span>
         </el-menu-item>
         <el-menu-item index="/circuit-board">
-          <Cpu />
+          <Cpu style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>线路板管理</span>
         </el-menu-item>
       </el-sub-menu>
@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { onMounted, onUnmounted, ref } from 'vue';
-import { House, Menu as MenuIcon, Grid, Folder, Cpu } from '@element-plus/icons-vue';
+import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const isFullScreen = ref(false);
@@ -103,4 +103,6 @@ onUnmounted(() => {
 .el-menu-item {
   margin: 0 10px;
 }
+
+
 </style>
