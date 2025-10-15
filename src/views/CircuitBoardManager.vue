@@ -1614,20 +1614,66 @@ const handleLedBoardPluginCodeInput = () => {
     align-items: center;
     width: 100%;
     gap: 20px;
+    padding: 10px 0;
   }
 
   .search-bar-inline {
     flex: 1;
+    display: flex;
+    align-items: center;
   }
 
   .search-bar-inline .el-form {
     margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .search-bar-inline .el-form-item {
+    margin-bottom: 0;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-bar-inline .el-form-item__label {
+    height: 32px;
+    line-height: 32px;
+    padding-right: 8px;
+    margin-bottom: 0;
+  }
+
+  .search-bar-inline .el-input {
+    height: 32px;
+    line-height: 32px;
+  }
+
+  .search-bar-inline .el-input__inner {
+    height: 32px;
+    line-height: 32px;
+  }
+
+  .search-bar-inline .el-button {
+    height: 32px;
+    padding: 8px 15px;
+    line-height: 1;
   }
 
   .header-buttons {
     display: flex;
     gap: 10px;
     flex-shrink: 0;
+    align-items: center;
+  }
+
+  .header-buttons .el-button {
+    height: 32px;
+    padding: 8px 15px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .search-bar {
