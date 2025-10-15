@@ -156,6 +156,10 @@
                         </el-link>
                         <span v-else>-</span>
                       </div>
+                      <div class="info-row">
+                        <span class="label">创建日期:</span>
+                        <span class="value">{{ formatDate(semi.createTime) }}</span>
+                      </div>
 
                     </div>
                     <div class="semi-product-actions">
@@ -226,6 +230,10 @@
                                 {{ led.fileName }}
                               </el-link>
                               <span v-else>-</span>
+                            </div>
+                            <div class="info-row">
+                              <span class="label">创建日期:</span>
+                              <span class="value">{{ formatDate(led.createTime) }}</span>
                             </div>
 
                           </div>
