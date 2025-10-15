@@ -149,10 +149,12 @@
                       <el-button type="danger" size="small" link @click="handleDeleteSemiProduct(semi)">
                         <el-icon><Delete /></el-icon>删除
                       </el-button>
-                      <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
+                      <!-- 添加灯板插件按钮已隐藏 -->
+                      <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
                         <el-icon><Plus /></el-icon>添加灯板插件
-                      </el-button>
-                      <el-button 
+                      </el-button> -->
+                      <!-- 灯板插件数量按钮已隐藏 -->
+                      <!-- <el-button 
                         v-if="semi.ledBoardPluginSemiProductDTOList && semi.ledBoardPluginSemiProductDTOList.length > 0"
                         type="primary" 
                         size="small" 
@@ -161,7 +163,7 @@
                       >
                         <el-icon><ArrowDown v-if="!semi.showLedBoardPlugin" /><ArrowUp v-else /></el-icon>
                         灯板插件({{ semi.ledBoardPluginSemiProductDTOList.length }})
-                      </el-button>
+                      </el-button> -->
                     </div>
                     
                     <!-- 灯板插件半成品信息 -->
