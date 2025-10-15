@@ -68,8 +68,11 @@
                 </div>
                 <div class="info-item">
                   <span class="label">状态:</span>
-                  <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-                    {{ row.status === 1 ? '启用' : '禁用' }}
+                  <el-tag 
+                    :type="row.status === 1 ? 'success' : row.status === 2 ? 'warning' : 'danger'" 
+                    size="small"
+                  >
+                    {{ row.status === 1 ? '启用' : row.status === 2 ? '已消耗' : '禁用' }}
                   </el-tag>
                 </div>
                 <div class="info-item">
@@ -83,6 +86,23 @@
                 </el-button>
                 <el-button type="danger" size="small" link @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>删除
+                </el-button>
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  link 
+                  @click="handleConsumeCircuitBoard(row)"
+                  :disabled="row.status === 2"
+                >
+                  <el-icon><Minus /></el-icon>消耗
+                </el-button>
+                <el-button 
+                  :type="row.status === 1 ? 'danger' : 'success'" 
+                  size="small" 
+                  link 
+                  @click="handleToggleCircuitBoardStatus(row)"
+                >
+                  <el-icon><Switch /></el-icon>{{ row.status === 1 ? '停用' : '启用' }}
                 </el-button>
                 <el-button type="success" size="small" link @click="handleAddSemiProduct(row)">
                   <el-icon><Plus /></el-icon>添加半成品
@@ -137,8 +157,11 @@
                       </div>
                       <div class="info-row">
                         <span class="label">状态:</span>
-                        <el-tag :type="semi.status === 1 ? 'success' : 'danger'" size="small">
-                          {{ semi.status === 1 ? '启用' : '禁用' }}
+                        <el-tag 
+                          :type="semi.status === 1 ? 'success' : semi.status === 2 ? 'warning' : 'danger'" 
+                          size="small"
+                        >
+                          {{ semi.status === 1 ? '启用' : semi.status === 2 ? '消耗中' : '禁用' }}
                         </el-tag>
                       </div>
                     </div>
@@ -148,6 +171,23 @@
                       </el-button>
                       <el-button type="danger" size="small" link @click="handleDeleteSemiProduct(semi)">
                         <el-icon><Delete /></el-icon>删除
+                      </el-button>
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        link 
+                        @click="handleConsumeSemiProduct(semi)"
+                        :disabled="semi.status === 2"
+                      >
+                        <el-icon><Minus /></el-icon>消耗
+                      </el-button>
+                      <el-button 
+                        :type="semi.status === 1 ? 'danger' : 'success'" 
+                        size="small" 
+                        link 
+                        @click="handleToggleSemiProductStatus(semi)"
+                      >
+                        <el-icon><Switch /></el-icon>{{ semi.status === 1 ? '停用' : '启用' }}
                       </el-button>
                       <!-- 添加灯板插件按钮已隐藏 -->
                       <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
@@ -419,7 +459,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const baseUrl = 'http://192.168.100.125:8083'
@@ -1021,6 +1061,79 @@ const handleDeleteLedBoardPlugin = async (led) => {
   }
 }
 
+// 消耗半成品
+const handleConsumeSemiProduct = async (semi) => {
+  try {
+    await ElMessageBox.confirm('确认消耗该半成品吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 使用现有的更新接口，将状态设置为已消耗（假设状态值为2表示已消耗）
+    const consumeData = {
+      id: semi.id,
+      circuitBoardId: semi.circuitBoardId,
+      semiProductCode: semi.semiProductCode,
+      semiProductName: semi.semiProductName,
+      schematicFileId: semi.schematicFileId || 999999999999,
+      smtFileId: semi.smtFileId || 999999999999,
+      status: 2 // 2表示已消耗状态
+    }
+    
+    const response = await axios.put(`${baseUrl}/semi-product/update`, consumeData)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('消耗成功')
+      loadData()
+    } else {
+      ElMessage.error('消耗失败: ' + response.data.msg)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('消耗失败: ' + error.message)
+    }
+  }
+}
+
+// 切换半成品状态
+const handleToggleSemiProductStatus = async (semi) => {
+  try {
+    const newStatus = semi.status === 1 ? 0 : 1
+    const statusText = newStatus === 1 ? '启用' : '停用'
+    
+    await ElMessageBox.confirm(`确认${statusText}该半成品吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 使用现有的更新接口来切换状态
+    const statusData = {
+      id: semi.id,
+      circuitBoardId: semi.circuitBoardId,
+      semiProductCode: semi.semiProductCode,
+      semiProductName: semi.semiProductName,
+      schematicFileId: semi.schematicFileId || 999999999999,
+      smtFileId: semi.smtFileId || 999999999999,
+      status: newStatus
+    }
+    
+    const response = await axios.put(`${baseUrl}/semi-product/update`, statusData)
+    
+    if (response.data.code === 200) {
+      ElMessage.success(`${statusText}成功`)
+      loadData()
+    } else {
+      ElMessage.error(`${statusText}失败: ` + response.data.msg)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('状态切换失败: ' + error.message)
+    }
+  }
+}
+
 // 文件上传处理
 const handleBoardUploadSuccess = (response, file, fileList) => {
   if (response.code === 200) {
@@ -1598,6 +1711,75 @@ const handleLedBoardPluginCodeInput = () => {
       }
       inputTimers.ledBoardPluginCode = null
     }, 1000)
+  }
+}
+
+// 消耗线路板
+const handleConsumeCircuitBoard = async (row) => {
+  try {
+    await ElMessageBox.confirm('确认消耗该线路板吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 使用现有的更新接口来消耗线路板，将状态改为2（已消耗）
+    const consumeData = {
+      id: row.id,
+      boardCode: row.boardCode,
+      boardName: row.boardName,
+      fileId: row.fileId || 999999999999,
+      status: 2
+    }
+    
+    const response = await axios.put(`${baseUrl}/circuit-board/update`, consumeData)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('消耗成功')
+      loadData()
+    } else {
+      ElMessage.error('消耗失败: ' + response.data.msg)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('消耗失败: ' + error.message)
+    }
+  }
+}
+
+// 切换线路板状态
+const handleToggleCircuitBoardStatus = async (row) => {
+  try {
+    const newStatus = row.status === 1 ? 0 : 1
+    const statusText = newStatus === 1 ? '启用' : '停用'
+    
+    await ElMessageBox.confirm(`确认${statusText}该线路板吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 使用现有的更新接口来切换状态
+    const statusData = {
+      id: row.id,
+      boardCode: row.boardCode,
+      boardName: row.boardName,
+      fileId: row.fileId || 999999999999,
+      status: newStatus
+    }
+    
+    const response = await axios.put(`${baseUrl}/circuit-board/update`, statusData)
+    
+    if (response.data.code === 200) {
+      ElMessage.success(`${statusText}成功`)
+      loadData()
+    } else {
+      ElMessage.error(`${statusText}失败: ` + response.data.msg)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('状态切换失败: ' + error.message)
+    }
   }
 }
 </script>
