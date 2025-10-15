@@ -10,38 +10,49 @@
       active-text-color="#409EFF"
       router
     >
-      <!-- <el-menu-item index="/">
-        <House />
-        <span>首页</span>
-      </el-menu-item> -->
-      <el-menu-item index="/">
-        <MenuIcon />
-        <span>任务信息</span>
-      </el-menu-item>
-      <el-menu-item index="/wbs">
-        <Grid />
-        <span>WBS视图</span>
-      </el-menu-item>
-      <el-menu-item index="/new-feature">
-        <Grid />
-        <span>任务时间轴</span>
-      </el-menu-item>
-      <el-menu-item index="/meeting-minutes">
-        <Grid />
-        <span>会议纪要</span>
-      </el-menu-item>
-      <el-menu-item index="/member-gantt">
-        <Grid />
-        <span>资源管理</span>
-      </el-menu-item>
-      <el-menu-item index="/file-manager">
-        <Folder />
-        <span>文件管理</span>
-      </el-menu-item>
-      <el-menu-item index="/circuit-board">
-        <Cpu />
-        <span>线路板管理</span>
-      </el-menu-item>
+      <!-- 项目管理类 -->
+      <el-sub-menu index="project-management">
+        <template #title>
+          <MenuIcon />
+          <span>项目管理</span>
+        </template>
+        <el-menu-item index="/">
+          <MenuIcon />
+          <span>任务信息</span>
+        </el-menu-item>
+        <el-menu-item index="/wbs">
+          <Grid />
+          <span>WBS视图</span>
+        </el-menu-item>
+        <el-menu-item index="/new-feature">
+          <Grid />
+          <span>任务时间轴</span>
+        </el-menu-item>
+        <el-menu-item index="/meeting-minutes">
+          <Grid />
+          <span>会议纪要</span>
+        </el-menu-item>
+        <el-menu-item index="/member-gantt">
+          <Grid />
+          <span>资源管理</span>
+        </el-menu-item>
+      </el-sub-menu>
+
+      <!-- 开发材料类 -->
+      <el-sub-menu index="development-materials">
+        <template #title>
+          <Folder />
+          <span>开发材料</span>
+        </template>
+        <el-menu-item index="/file-manager">
+          <Folder />
+          <span>文件管理</span>
+        </el-menu-item>
+        <el-menu-item index="/circuit-board">
+          <Cpu />
+          <span>线路板管理</span>
+        </el-menu-item>
+      </el-sub-menu>
     </el-menu>
     
     <router-view />
