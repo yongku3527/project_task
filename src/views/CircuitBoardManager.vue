@@ -70,15 +70,7 @@
                     <span v-else>-</span>
                   </span>
                 </div>
-                <div class="info-item">
-                  <span class="label">状态:</span>
-                  <el-tag 
-                    :type="row.status === 1 ? 'success' : row.status === 2 ? 'warning' : 'danger'" 
-                    size="small"
-                  >
-                    {{ row.status === 1 ? '启用' : row.status === 2 ? '消耗中' : '停用' }}
-                  </el-tag>
-                </div>
+
                 <div class="info-item">
                   <span class="label">创建时间:</span>
                   <span class="value">{{ formatDate(row.createTime) }}</span>
@@ -164,15 +156,7 @@
                         </el-link>
                         <span v-else>-</span>
                       </div>
-                      <div class="info-row">
-                        <span class="label">状态:</span>
-                        <el-tag 
-                          :type="semi.status === 1 ? 'success' : semi.status === 2 ? 'warning' : 'danger'" 
-                          size="small"
-                        >
-                          {{ semi.status === 1 ? '启用' : semi.status === 2 ? '消耗中' : '停用' }}
-                        </el-tag>
-                      </div>
+
                     </div>
                     <div class="semi-product-actions">
                       <el-button type="warning" size="small" link @click="handleEditSemiProduct(semi)">
@@ -243,12 +227,7 @@
                               </el-link>
                               <span v-else>-</span>
                             </div>
-                            <div class="info-row">
-                              <span class="label">状态:</span>
-                              <el-tag :type="led.status === 1 ? 'success' : 'danger'" size="small">
-                                {{ led.status === 1 ? '启用' : '禁用' }}
-                              </el-tag>
-                            </div>
+
                           </div>
                           <div class="led-actions">
                             <el-button type="warning" size="small" link @click="handleEditLedBoardPlugin(led)">
