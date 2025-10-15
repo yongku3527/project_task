@@ -98,7 +98,7 @@
                   link 
                   @click="handleToggleCircuitBoardStatus(row)"
                 >
-                  <el-icon><Switch /></el-icon>{{ row.status === 1 ? '停用' : '启用' }}
+                  <el-icon><CircleClose v-if="row.status === 1" /><CircleCheck v-else /></el-icon>{{ row.status === 1 ? '停用' : '启用' }}
                 </el-button>
                 <el-button type="success" size="small" link @click="handleAddSemiProduct(row)">
                   <el-icon><Plus /></el-icon>添加半成品
@@ -172,7 +172,7 @@
                         @click="handleConsumeSemiProduct(semi)"
                         :disabled="semi.status === 2"
                       >
-                        <el-icon><Minus /></el-icon>消耗
+                        <el-icon><Remove /></el-icon>消耗
                       </el-button>
                       <el-button 
                         :type="semi.status === 1 ? 'danger' : 'success'" 
@@ -180,7 +180,7 @@
                         link 
                         @click="handleToggleSemiProductStatus(semi)"
                       >
-                        <el-icon><Switch /></el-icon>{{ semi.status === 1 ? '停用' : '启用' }}
+                        <el-icon><CircleClose v-if="semi.status === 1" /><CircleCheck v-else /></el-icon>{{ semi.status === 1 ? '停用' : '启用' }}
                       </el-button>
                       <!-- 添加灯板插件按钮已隐藏 -->
                       <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
@@ -447,7 +447,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch } from '@element-plus/icons-vue'
+import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const baseUrl = 'http://192.168.100.125:8083'
