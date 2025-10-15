@@ -46,15 +46,15 @@
             <template #default="{ row }">
               <div class="board-info">
                 <div class="info-item">
-                  <span class="label">编码:</span>
+                  <span class="label">线路板编号:</span>
                   <span class="value">{{ row.boardCode }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="label">名称:</span>
+                  <span class="label">线路板名称:</span>
                   <span class="value">{{ row.boardName }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="label">文件:</span>
+                  <span class="label">PCB文件:</span>
                   <span class="value">
                     <el-link 
                       v-if="row.fileUrl" 
@@ -106,11 +106,11 @@
                   >
                     <div class="semi-product-info">
                       <div class="info-row">
-                        <span class="label">编码:</span>
+                        <span class="label">半成品编号:</span>
                         <span class="value">{{ semi.semiProductCode }}</span>
                       </div>
                       <div class="info-row">
-                        <span class="label">名称:</span>
+                        <span class="label">半成品名称:</span>
                         <span class="value">{{ semi.semiProductName }}</span>
                       </div>
                       <div class="info-row">
@@ -125,7 +125,7 @@
                         <span v-else>-</span>
                       </div>
                       <div class="info-row">
-                        <span class="label">SMT文件:</span>
+                        <span class="label">贴片图:</span>
                         <el-link 
                           v-if="semi.smtFileUrl" 
                           type="primary" 
@@ -174,7 +174,7 @@
                         >
                           <div class="led-info">
                             <div class="info-row">
-                              <span class="label">插件编码:</span>
+                              <span class="label">插件编号:</span>
                               <span class="value">{{ led.ledBoardPluginCode }}</span>
                             </div>
                             <div class="info-row">
@@ -1688,30 +1688,39 @@ const handleLedBoardPluginCodeInput = () => {
   }
 
   .board-info {
-    padding: 10px;
+    padding: 12px;
     background-color: #f0f9ff;
-    border-radius: 4px;
-    margin-bottom: 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border: 1px solid #d9ecff;
 
     .info-item {
-      display: flex;
+      display: inline-flex;
+      margin-right: 20px;
       margin-bottom: 8px;
       align-items: center;
+      flex-wrap: nowrap;
+      padding: 4px 0;
 
       &:last-child {
-        margin-bottom: 0;
+        margin-right: 0;
       }
 
       .label {
-        font-weight: bold;
+        font-weight: 600;
         color: #606266;
-        width: 70px;
+        width: auto;
+        min-width: 40px;
         flex-shrink: 0;
+        margin-right: 8px;
+        font-size: 13px;
       }
 
       .value {
-        flex: 1;
         color: #303133;
+        flex-shrink: 0;
+        font-size: 13px;
+        font-weight: 500;
       }
     }
   }
@@ -1745,27 +1754,33 @@ const handleLedBoardPluginCodeInput = () => {
   }
 
   .semi-product-info {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 5px 0;
 
     .info-row {
-      display: flex;
-      margin-bottom: 6px;
+      display: inline-flex;
       align-items: center;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
+      flex-shrink: 0;
+      padding: 3px 0;
 
       .label {
-        font-weight: bold;
+        font-weight: 600;
         color: #606266;
-        width: 80px;
+        width: auto;
+        min-width: 85px;
         flex-shrink: 0;
+        margin-right: 8px;
+        font-size: 13px;
       }
 
       .value {
-        flex: 1;
         color: #303133;
+        flex-shrink: 0;
+        font-size: 13px;
+        font-weight: 500;
       }
     }
   }
@@ -1774,7 +1789,7 @@ const handleLedBoardPluginCodeInput = () => {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
-    padding-top: 10px;
+    padding-top: 5px;
     border-top: 1px dashed #dcdfe6;
   }
 
@@ -1800,27 +1815,33 @@ const handleLedBoardPluginCodeInput = () => {
   }
 
   .led-info {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 0;
 
     .info-row {
-      display: flex;
-      margin-bottom: 4px;
+      display: inline-flex;
       align-items: center;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
+      flex-shrink: 0;
+      padding: 2px 0;
 
       .label {
-        font-weight: bold;
+        font-weight: 600;
         color: #606266;
-        width: 90px;
+        width: auto;
+        min-width: 90px;
         flex-shrink: 0;
+        margin-right: 8px;
+        font-size: 13px;
       }
 
       .value {
-        flex: 1;
         color: #303133;
+        flex-shrink: 0;
+        font-size: 13px;
+        font-weight: 500;
       }
     }
   }
