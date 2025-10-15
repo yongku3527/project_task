@@ -1976,8 +1976,8 @@ const handleToggleCircuitBoardStatus = async (row) => {
   }
 
   .board-info-enabled {
-    background-color: #f6ffed;
-    border-color: #b7eb8f;
+    background-color: #ffffff;
+    border-color: #e9ecef;
   }
 
   .board-info-disabled {
@@ -2051,8 +2051,8 @@ const handleToggleCircuitBoardStatus = async (row) => {
   }
 
   .semi-product-enabled {
-    background-color: #f6ffed;
-    border-color: #b7eb8f;
+    background-color: #ffffff;
+    border-color: #e9ecef;
   }
 
   .semi-product-disabled {
