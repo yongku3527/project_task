@@ -1965,14 +1965,14 @@ const handleToggleCircuitBoardStatus = async (row) => {
     background-color: #ffffff;
     border-radius: 8px;
     margin-bottom: 12px;
-    border: 1px solid #e9ecef;
+    border: 1px solid #efe9e9;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
   }
 
   .board-info-enabled {
     background-color: #ffffff;
-    border-color: #e9ecef;
+    border-color: #e2e0df;
   }
 
   .board-info-disabled {
