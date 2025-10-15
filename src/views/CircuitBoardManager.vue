@@ -1987,11 +1987,11 @@ const handleToggleCircuitBoardStatus = async (row) => {
 
   .info-item {
     display: inline-flex;
-    margin-right: 20px;
-    margin-bottom: 8px;
+    margin-right: 15px;
+    margin-bottom: 6px;
     align-items: center;
     flex-wrap: nowrap;
-    padding: 4px 0;
+    padding: 2px 0;
   }
 
   .info-item:last-child {
@@ -2002,9 +2002,9 @@ const handleToggleCircuitBoardStatus = async (row) => {
     font-weight: 600;
     color: #606266;
     width: auto;
-    min-width: 40px;
+    min-width: 30px;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: 6px;
     font-size: 13px;
   }
 
@@ -2064,24 +2064,25 @@ const handleToggleCircuitBoardStatus = async (row) => {
     margin-bottom: 6px;
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
-    padding: 5px 0;
+    gap: 10px;
+    padding: 3px 0;
   }
 
   .semi-product-info .info-row {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
-    padding: 3px 0;
+    padding: 2px 0;
   }
 
   .semi-product-info .info-row .label {
     font-weight: 600;
     color: #606266;
     width: auto;
-    min-width: 85px;
+    min-width: 35px;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-left: 12px;
+    margin-right: 6px;
     font-size: 13px;
   }
 
@@ -2122,27 +2123,27 @@ const handleToggleCircuitBoardStatus = async (row) => {
   }
 
   .led-info {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    padding: 8px 0;
+    gap: 8px;
+    padding: 5px 0;
   }
 
   .led-info .info-row {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
-    padding: 2px 0;
+    padding: 1px 0;
   }
 
   .led-info .info-row .label {
     font-weight: 600;
     color: #606266;
     width: auto;
-    min-width: 90px;
+    min-width: 75px;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: 6px;
     font-size: 13px;
   }
 
