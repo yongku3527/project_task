@@ -2021,27 +2021,27 @@ const handleToggleCircuitBoardStatus = async (row) => {
   }
 
   .semi-product-item {
-    border: 1px solid #e9ecef;
+    border: 1px solid #d0d7e5;
     border-radius: 8px;
     padding: 15px;
-    background-color: #ffffff;
+    background-color: #fafbfc;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
   }
 
   .semi-product-enabled {
-    background-color: #ffffff;
-    border-color: #e9ecef;
+    background-color: #fafbfc;
+    border-color: #d0d7e5;
   }
 
   .semi-product-disabled {
-    background-color: #fff1f0;
-    border-color: #ffa39e;
+    background-color: #fef0f0;
+    border-color: #fab8b8;
   }
 
   .semi-product-consumed {
-    background-color: #fffbe6;
-    border-color: #ffe58f;
+    background-color: #fef9e7;
+    border-color: #fadb14;
   }
 
   .semi-product-info {
