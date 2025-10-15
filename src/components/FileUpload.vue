@@ -134,7 +134,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled, Delete } from '@element-plus/icons-vue'
 import axios from 'axios'
 
-const baseUrl = 'http://192.168.90.64:8083'
+const baseUrl = 'http://192.168.100.125:8083'
 
 // 响应式数据
 const uploadRef = ref()

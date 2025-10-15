@@ -189,7 +189,7 @@ import { Document, Folder, Download, Delete, Plus, Refresh, Upload, Search } fro
 import FileUpload from '../components/FileUpload.vue'
 import axios from 'axios'
 
-const baseUrl = 'http://192.168.90.64:8083'
+const baseUrl = 'http://192.168.100.125:8083'
 
 // 响应式数据
 const files = ref([])

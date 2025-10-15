@@ -3,34 +3,34 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>线路板管理系统</span>
           <div class="header-actions">
-            <el-button type="primary" size="small" @click="handleAdd">
-              <el-icon><Plus /></el-icon>
-              新增线路板
-            </el-button>
-            <el-button type="success" size="small" @click="loadData">
-              <el-icon><Refresh /></el-icon>
-              刷新
-            </el-button>
+            <div class="search-bar-inline">
+              <el-form :inline="true" size="small">
+                <el-form-item label="线路板编码:">
+                  <el-input v-model="searchForm.boardCode" placeholder="请输入线路板编码" clearable />
+                </el-form-item>
+                <el-form-item label="线路板名称:">
+                  <el-input v-model="searchForm.boardName" placeholder="请输入线路板名称" clearable />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="handleSearch">查询</el-button>
+                  <el-button @click="handleReset">重置</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div class="header-buttons">
+              <el-button type="primary" size="small" @click="handleAdd">
+                <el-icon><Plus /></el-icon>
+                新增线路板
+              </el-button>
+              <el-button type="success" size="small" @click="loadData">
+                <el-icon><Refresh /></el-icon>
+                刷新
+              </el-button>
+            </div>
           </div>
         </div>
       </template>
-
-      <div class="search-bar">
-        <el-form :inline="true" size="small">
-          <el-form-item label="线路板编码:">
-            <el-input v-model="searchForm.boardCode" placeholder="请输入线路板编码" clearable />
-          </el-form-item>
-          <el-form-item label="线路板名称:">
-            <el-input v-model="searchForm.boardName" placeholder="请输入线路板名称" clearable />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
 
       <div class="table-container">
         <el-table 
@@ -420,7 +420,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import axios from 'axios'
 
-const baseUrl = 'http://192.168.90.64:8083'
+const baseUrl = 'http://192.168.100.125:8083'
 
 // 响应式数据
 const loading = ref(false)
@@ -1605,14 +1605,29 @@ const handleLedBoardPluginCodeInput = () => {
   padding: 20px;
 
   .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 0;
   }
 
   .header-actions {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 20px;
+  }
+
+  .search-bar-inline {
+    flex: 1;
+  }
+
+  .search-bar-inline .el-form {
+    margin-bottom: 0;
+  }
+
+  .header-buttons {
+    display: flex;
     gap: 10px;
+    flex-shrink: 0;
   }
 
   .search-bar {
