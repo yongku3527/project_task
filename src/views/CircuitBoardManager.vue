@@ -590,7 +590,11 @@ const loadData = async () => {
       if (response.data.code === 200) {
         // 分页查询接口返回的是分页数据对象
         const pageData = response.data.data
-        tableData.value = pageData.list
+        // 按创建时间降序排序，最新的数据排在前面
+        const sortedList = pageData.list.sort((a, b) => {
+          return new Date(b.createTime) - new Date(a.createTime)
+        })
+        tableData.value = sortedList
         total.value = pageData.total
       } else {
         ElMessage.error('加载数据失败: ' + response.data.msg)
@@ -599,8 +603,12 @@ const loadData = async () => {
       // 使用获取所有数据的接口（包含嵌套数据）
       const response = await axios.get(`${baseUrl}/circuit-board/all-with-details`)
       if (response.data.code === 200) {
-        tableData.value = response.data.data
-        total.value = response.data.data.length
+        // 按创建时间降序排序，最新的数据排在前面
+        const sortedData = response.data.data.sort((a, b) => {
+          return new Date(b.createTime) - new Date(a.createTime)
+        })
+        tableData.value = sortedData
+        total.value = sortedData.length
       } else {
         ElMessage.error('加载数据失败: ' + response.data.msg)
       }
