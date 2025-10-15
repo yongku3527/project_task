@@ -1869,6 +1869,8 @@ const handleToggleCircuitBoardStatus = async (row) => {
 <style scoped>
 .circuit-board-manager {
   padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
 
   .card-header {
     padding: 0;
@@ -1945,8 +1947,9 @@ const handleToggleCircuitBoardStatus = async (row) => {
   .search-bar {
     margin-bottom: 20px;
     padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 4px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .table-container {
@@ -1955,10 +1958,11 @@ const handleToggleCircuitBoardStatus = async (row) => {
 
   .board-info {
     padding: 12px;
-    background-color: #f0f9ff;
-    border-radius: 6px;
+    background-color: #ffffff;
+    border-radius: 8px;
     margin-bottom: 12px;
-    border: 1px solid #d9ecff;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
     .info-item {
       display: inline-flex;
@@ -2013,10 +2017,11 @@ const handleToggleCircuitBoardStatus = async (row) => {
   }
 
   .semi-product-item {
-    border: 1px solid #e4e7ed;
-    border-radius: 4px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
     padding: 15px;
-    background-color: #fafafa;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .semi-product-info {
@@ -2062,8 +2067,8 @@ const handleToggleCircuitBoardStatus = async (row) => {
   .led-board-plugin-container {
     margin-top: 15px;
     padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 4px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
     border-left: 4px solid #409eff;
   }
 
