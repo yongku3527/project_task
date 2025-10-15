@@ -44,7 +44,11 @@
           <!-- 线路板信息列 -->
           <el-table-column label="线路板信息" width="350" fixed="left">
             <template #default="{ row }">
-              <div class="board-info">
+              <div class="board-info" :class="{
+                'board-info-enabled': row.status === 1,
+                'board-info-disabled': row.status === 0,
+                'board-info-consumed': row.status === 2
+              }">
                 <div class="info-item">
                   <span class="label">线路板编号:</span>
                   <span class="value">{{ row.boardCode }}</span>
@@ -123,6 +127,11 @@
                     v-for="semi in row.semiProductDTOList" 
                     :key="semi.id"
                     class="semi-product-item"
+                    :class="{
+                      'semi-product-enabled': semi.status === 1,
+                      'semi-product-disabled': semi.status === 0,
+                      'semi-product-consumed': semi.status === 2
+                    }"
                   >
                     <div class="semi-product-info">
                       <div class="info-row">
@@ -1963,36 +1972,52 @@ const handleToggleCircuitBoardStatus = async (row) => {
     margin-bottom: 12px;
     border: 1px solid #e9ecef;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
 
-    .info-item {
-      display: inline-flex;
-      margin-right: 20px;
-      margin-bottom: 8px;
-      align-items: center;
-      flex-wrap: nowrap;
-      padding: 4px 0;
+  .board-info-enabled {
+    background-color: #f6ffed;
+    border-color: #b7eb8f;
+  }
 
-      &:last-child {
-        margin-right: 0;
-      }
+  .board-info-disabled {
+    background-color: #fff1f0;
+    border-color: #ffa39e;
+  }
 
-      .label {
-        font-weight: 600;
-        color: #606266;
-        width: auto;
-        min-width: 40px;
-        flex-shrink: 0;
-        margin-right: 8px;
-        font-size: 13px;
-      }
+  .board-info-consumed {
+    background-color: #fffbe6;
+    border-color: #ffe58f;
+  }
 
-      .value {
-        color: #303133;
-        flex-shrink: 0;
-        font-size: 13px;
-        font-weight: 500;
-      }
-    }
+  .info-item {
+    display: inline-flex;
+    margin-right: 20px;
+    margin-bottom: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding: 4px 0;
+  }
+
+  .info-item:last-child {
+    margin-right: 0;
+  }
+
+  .info-item .label {
+    font-weight: 600;
+    color: #606266;
+    width: auto;
+    min-width: 40px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    font-size: 13px;
+  }
+
+  .info-item .value {
+    color: #303133;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 500;
   }
 
   .board-actions {
@@ -2022,6 +2047,22 @@ const handleToggleCircuitBoardStatus = async (row) => {
     padding: 15px;
     background-color: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .semi-product-enabled {
+    background-color: #f6ffed;
+    border-color: #b7eb8f;
+  }
+
+  .semi-product-disabled {
+    background-color: #fff1f0;
+    border-color: #ffa39e;
+  }
+
+  .semi-product-consumed {
+    background-color: #fffbe6;
+    border-color: #ffe58f;
   }
 
   .semi-product-info {
@@ -2030,30 +2071,30 @@ const handleToggleCircuitBoardStatus = async (row) => {
     flex-wrap: wrap;
     gap: 15px;
     padding: 5px 0;
+  }
 
-    .info-row {
-      display: inline-flex;
-      align-items: center;
-      flex-shrink: 0;
-      padding: 3px 0;
+  .semi-product-info .info-row {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 3px 0;
+  }
 
-      .label {
-        font-weight: 600;
-        color: #606266;
-        width: auto;
-        min-width: 85px;
-        flex-shrink: 0;
-        margin-right: 8px;
-        font-size: 13px;
-      }
+  .semi-product-info .info-row .label {
+    font-weight: 600;
+    color: #606266;
+    width: auto;
+    min-width: 85px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    font-size: 13px;
+  }
 
-      .value {
-        color: #303133;
-        flex-shrink: 0;
-        font-size: 13px;
-        font-weight: 500;
-      }
-    }
+  .semi-product-info .info-row .value {
+    color: #303133;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 500;
   }
 
   .semi-product-actions {
@@ -2091,30 +2132,30 @@ const handleToggleCircuitBoardStatus = async (row) => {
     flex-wrap: wrap;
     gap: 12px;
     padding: 8px 0;
+  }
 
-    .info-row {
-      display: inline-flex;
-      align-items: center;
-      flex-shrink: 0;
-      padding: 2px 0;
+  .led-info .info-row {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 2px 0;
+  }
 
-      .label {
-        font-weight: 600;
-        color: #606266;
-        width: auto;
-        min-width: 90px;
-        flex-shrink: 0;
-        margin-right: 8px;
-        font-size: 13px;
-      }
+  .led-info .info-row .label {
+    font-weight: 600;
+    color: #606266;
+    width: auto;
+    min-width: 90px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    font-size: 13px;
+  }
 
-      .value {
-        color: #303133;
-        flex-shrink: 0;
-        font-size: 13px;
-        font-weight: 500;
-      }
-    }
+  .led-info .info-row .value {
+    color: #303133;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 500;
   }
 
   .led-actions {
