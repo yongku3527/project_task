@@ -42,7 +42,7 @@
           stripe
         >
           <!-- 线路板信息列 -->
-          <el-table-column label="线路板信息" width="300" fixed="left">
+          <el-table-column label="线路板信息" width="350" fixed="left">
             <template #default="{ row }">
               <div class="board-info">
                 <div class="info-item">
@@ -72,7 +72,7 @@
                     :type="row.status === 1 ? 'success' : row.status === 2 ? 'warning' : 'danger'" 
                     size="small"
                   >
-                    {{ row.status === 1 ? '启用' : row.status === 2 ? '已消耗' : '禁用' }}
+                    {{ row.status === 1 ? '启用' : row.status === 2 ? '消耗中' : '停用' }}
                   </el-tag>
                 </div>
                 <div class="info-item">
@@ -161,7 +161,7 @@
                           :type="semi.status === 1 ? 'success' : semi.status === 2 ? 'warning' : 'danger'" 
                           size="small"
                         >
-                          {{ semi.status === 1 ? '启用' : semi.status === 2 ? '消耗中' : '禁用' }}
+                          {{ semi.status === 1 ? '启用' : semi.status === 2 ? '消耗中' : '停用' }}
                         </el-tag>
                       </div>
                     </div>
@@ -1717,7 +1717,7 @@ const handleLedBoardPluginCodeInput = () => {
 // 消耗线路板
 const handleConsumeCircuitBoard = async (row) => {
   try {
-    await ElMessageBox.confirm('确认消耗该线路板吗？', '提示', {
+    await ElMessageBox.confirm('确认消耗该线路板吗？此操作将同时消耗该线路板下的所有半成品。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -1735,7 +1735,48 @@ const handleConsumeCircuitBoard = async (row) => {
     const response = await axios.put(`${baseUrl}/circuit-board/update`, consumeData)
     
     if (response.data.code === 200) {
-      ElMessage.success('消耗成功')
+      // 如果线路板消耗成功，同时消耗该线路板下的所有半成品
+      if (row.semiProductDTOList && row.semiProductDTOList.length > 0) {
+        let successCount = 0
+        let failCount = 0
+        
+        for (const semi of row.semiProductDTOList) {
+          // 只消耗状态为启用（1）的半成品
+          if (semi.status === 1) {
+            try {
+              const semiConsumeData = {
+                id: semi.id,
+                semiProductCode: semi.semiProductCode,
+                semiProductName: semi.semiProductName,
+                boardId: semi.boardId,
+                schematicFileId: semi.schematicFileId || 999999999999,
+                smtFileId: semi.smtFileId || 999999999999,
+                status: 2
+              }
+              
+              const semiResponse = await axios.put(`${baseUrl}/semi-product/update`, semiConsumeData)
+              if (semiResponse.data.code === 200) {
+                successCount++
+              } else {
+                failCount++
+              }
+            } catch (error) {
+              failCount++
+            }
+          }
+        }
+        
+        let message = '线路板消耗成功'
+        if (successCount > 0) {
+          message += `，同时成功消耗了 ${successCount} 个半成品`
+        }
+        if (failCount > 0) {
+          message += `，${failCount} 个半成品消耗失败`
+        }
+        ElMessage.success(message)
+      } else {
+        ElMessage.success('线路板消耗成功')
+      }
       loadData()
     } else {
       ElMessage.error('消耗失败: ' + response.data.msg)
@@ -1753,7 +1794,7 @@ const handleToggleCircuitBoardStatus = async (row) => {
     const newStatus = row.status === 1 ? 0 : 1
     const statusText = newStatus === 1 ? '启用' : '停用'
     
-    await ElMessageBox.confirm(`确认${statusText}该线路板吗？`, '提示', {
+    await ElMessageBox.confirm(`确认${statusText}该线路板吗？此操作将同时${statusText}该线路板下的所有半成品。`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -1771,7 +1812,48 @@ const handleToggleCircuitBoardStatus = async (row) => {
     const response = await axios.put(`${baseUrl}/circuit-board/update`, statusData)
     
     if (response.data.code === 200) {
-      ElMessage.success(`${statusText}成功`)
+      // 如果线路板状态切换成功，同时切换该线路板下的所有半成品状态
+      if (row.semiProductDTOList && row.semiProductDTOList.length > 0) {
+        let successCount = 0
+        let failCount = 0
+        
+        for (const semi of row.semiProductDTOList) {
+          // 只对状态不同的半成品进行切换
+          if (semi.status !== newStatus && semi.status !== 2) { // 不处理已消耗的半成品
+            try {
+              const semiStatusData = {
+                id: semi.id,
+                semiProductCode: semi.semiProductCode,
+                semiProductName: semi.semiProductName,
+                boardId: semi.boardId,
+                schematicFileId: semi.schematicFileId || 999999999999,
+                smtFileId: semi.smtFileId || 999999999999,
+                status: newStatus
+              }
+              
+              const semiResponse = await axios.put(`${baseUrl}/semi-product/update`, semiStatusData)
+              if (semiResponse.data.code === 200) {
+                successCount++
+              } else {
+                failCount++
+              }
+            } catch (error) {
+              failCount++
+            }
+          }
+        }
+        
+        let message = `${statusText}成功`
+        if (successCount > 0) {
+          message += `，同时成功${statusText}了 ${successCount} 个半成品`
+        }
+        if (failCount > 0) {
+          message += `，${failCount} 个半成品${statusText}失败`
+        }
+        ElMessage.success(message)
+      } else {
+        ElMessage.success(`${statusText}成功`)
+      }
       loadData()
     } else {
       ElMessage.error(`${statusText}失败: ` + response.data.msg)
