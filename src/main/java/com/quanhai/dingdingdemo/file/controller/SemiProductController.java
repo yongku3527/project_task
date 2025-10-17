@@ -66,6 +66,9 @@ public class SemiProductController {
             boolean result = semiProductService.save(semiProduct);
             return result ? ResultUtil.success("新增成功") : ResultUtil.fail("新增失败");
         } catch (Exception e) {
+            if (e.getMessage().contains("Duplicate entry")) {
+                return ResultUtil.fail("半成品编码已存在");
+            }
             return ResultUtil.fail("新增失败：" + e.getMessage());
         }
     }
@@ -123,6 +126,9 @@ public class SemiProductController {
             boolean result = semiProductService.updateById(semiProduct);
             return result ? ResultUtil.success("更新成功") : ResultUtil.fail("更新失败");
         } catch (Exception e) {
+            if (e.getMessage().contains("Duplicate entry")) {
+                return ResultUtil.fail("半成品编码已存在");
+            }
             return ResultUtil.fail("更新失败：" + e.getMessage());
         }
     }

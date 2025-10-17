@@ -71,7 +71,7 @@ public class CircuitBoardController {
             boolean result = circuitBoardService.save(circuitBoard);
             return result ? ResultUtil.success("新增成功") : ResultUtil.fail("新增失败");
         } catch (Exception e) {
-            if (e.getMessage().contains("Duplicate key")) {
+            if (e.getMessage().contains("Duplicate entry")) {
                 return ResultUtil.fail("线路板编码已存在");
             }
             return ResultUtil.fail("新增失败：" + e.getMessage());
@@ -152,6 +152,9 @@ public class CircuitBoardController {
             boolean result = circuitBoardService.updateById(circuitBoard);
             return result ? ResultUtil.success("更新成功") : ResultUtil.fail("更新失败");
         } catch (Exception e) {
+            if (e.getMessage().contains("Duplicate entry")) {
+                return ResultUtil.fail("线路板编码已存在");
+            }
             return ResultUtil.fail("更新失败：" + e.getMessage());
         }
     }
