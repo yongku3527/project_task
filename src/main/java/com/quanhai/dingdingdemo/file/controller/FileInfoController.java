@@ -101,7 +101,7 @@ public class FileInfoController {
     }
 
     /**
-     * 删除文件信息（软删除）
+     * 删除文件信息（物理删除）
      */
     @DeleteMapping("/{id}")
 
@@ -114,9 +114,8 @@ public class FileInfoController {
                 return ResultUtil.fail("文件不存在");
             }
             
-            // 软删除，将状态设置为禁用
-            fileInfo.setStatus(0);
-            boolean result = fileInfoService.updateById(fileInfo);
+            // 物理删除，直接从数据库中删除记录
+            boolean result = fileInfoService.removeById(id);
             
             if (result) {
                 log.info("删除文件信息成功 - ID: {}", id);
