@@ -1166,24 +1166,47 @@ const handleBoardUploadRemove = async (file, fileList) => {
         }
       )
       
-      // 从文件URL中提取桶名和对象名
-      const urlMatch = boardDialog.form.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
-      if (urlMatch) {
-        const bucketName = urlMatch[1]
-        const objectName = urlMatch[2]
+      // 获取文件信息以构建删除URL
+      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${boardDialog.form.fileId}`)
+      console.log('线路板文件信息接口返回数据:', fileInfoResponse.data)
+      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
+        const fileInfo = fileInfoResponse.data.data
+        console.log('线路板文件信息详情:', fileInfo)
         
-        try {
-          // 先删除MinIO文件
-          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
-        } catch (minioError) {
-          console.warn('删除MinIO文件失败:', minioError)
-          // MinIO删除失败也继续删除数据库记录
+        // 从fileUrl中提取桶名称和对象名称
+        let bucketName, objectName
+        if (fileInfo.fileUrl) {
+          const urlMatch = fileInfo.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+          if (urlMatch) {
+            bucketName = urlMatch[1]
+            objectName = urlMatch[2]
+          }
         }
         
-        // 再删除数据库记录
-        await axios.delete(`${baseUrl}/file-info/${boardDialog.form.fileId}`)
+        console.log('提取的线路板桶名称:', bucketName)
+        console.log('提取的线路板文件名称:', objectName)
         
-        ElMessage.success('文件删除成功')
+        if (!bucketName || !objectName) {
+          console.error('无法从线路板文件信息中提取桶名称或文件名称，可用字段:', Object.keys(fileInfo))
+          ElMessage.error('线路板文件信息格式错误，无法删除MinIO文件')
+        } else {
+        
+          try {
+            // 先删除MinIO文件
+            await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+          } catch (minioError) {
+            console.warn('删除MinIO文件失败:', minioError)
+            // MinIO删除失败也继续删除数据库记录
+          }
+          
+          // 再删除数据库记录
+          await axios.delete(`${baseUrl}/file-info/${boardDialog.form.fileId}`)
+          
+          ElMessage.success('线路板文件删除成功')
+        }
+      } else {
+        console.error('获取线路板文件信息失败:', fileInfoResponse.data)
+        ElMessage.error('获取线路板文件信息失败，无法删除文件')
       }
     } catch (error) {
       if (error !== 'cancel') {
@@ -1224,10 +1247,28 @@ const handleSchematicUploadRemove = async (file, fileList) => {
       
       // 获取文件信息以构建删除URL
       const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
+      console.log('原理图文件信息接口返回数据:', fileInfoResponse.data)
       if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
         const fileInfo = fileInfoResponse.data.data
-        const bucketName = fileInfo.bucketName
-        const objectName = fileInfo.objectName
+        console.log('原理图文件信息详情:', fileInfo)
+        
+        // 从fileUrl中提取桶名称和对象名称
+        let bucketName, objectName
+        if (fileInfo.fileUrl) {
+          const urlMatch = fileInfo.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+          if (urlMatch) {
+            bucketName = urlMatch[1]
+            objectName = urlMatch[2]
+          }
+        }
+        
+        console.log('提取的原理图桶名称:', bucketName)
+        console.log('提取的原理图文件名称:', objectName)
+        
+        if (!bucketName || !objectName) {
+          console.error('无法从原理图文件信息中提取桶名称或文件名称，可用字段:', Object.keys(fileInfo))
+          ElMessage.error('原理图文件信息格式错误，无法删除MinIO文件')
+        } else {
         
         try {
           // 先删除MinIO文件
@@ -1237,11 +1278,12 @@ const handleSchematicUploadRemove = async (file, fileList) => {
           // MinIO删除失败也继续删除数据库记录
         }
         
-        // 再删除数据库记录
-        await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
-        
-        ElMessage.success('原理图文件删除成功')
-      }
+          // 再删除数据库记录
+          await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
+          
+          ElMessage.success('原理图文件删除成功')
+        }
+        }
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除原理图文件失败: ' + (error.response?.data?.msg || error.message))
@@ -1278,10 +1320,27 @@ const handleSmtUploadRemove = async (file, fileList) => {
       
       // 获取文件信息以构建删除URL
       const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
+      console.log('SMT文件信息接口返回数据:', fileInfoResponse.data)
       if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
         const fileInfo = fileInfoResponse.data.data
-        const bucketName = fileInfo.bucketName
-        const objectName = fileInfo.objectName
+        console.log('SMT文件信息详情:', fileInfo)
+        
+        // 从fileUrl中提取桶名称和对象名称
+        let bucketName, objectName
+        if (fileInfo.fileUrl) {
+          const urlMatch = fileInfo.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+          if (urlMatch) {
+            bucketName = urlMatch[1]
+            objectName = urlMatch[2]
+          }
+        }
+        console.log('提取的SMT桶名称:', bucketName)
+        console.log('提取的SMT文件名称:', objectName)
+        
+        if (!bucketName || !objectName) {
+          console.error('无法从SMT文件信息中提取桶名称或文件名称，可用字段:', Object.keys(fileInfo))
+          ElMessage.error('SMT文件信息格式错误，无法删除MinIO文件')
+        } else {
         
         try {
           // 先删除MinIO文件
@@ -1291,11 +1350,12 @@ const handleSmtUploadRemove = async (file, fileList) => {
           // MinIO删除失败也继续删除数据库记录
         }
         
-        // 再删除数据库记录
-        await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
-        
-        ElMessage.success('SMT文件删除成功')
-      }
+          // 再删除数据库记录
+          await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
+          
+          ElMessage.success('SMT文件删除成功')
+        }
+        }
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除SMT文件失败: ' + (error.response?.data?.msg || error.message))
@@ -1333,10 +1393,27 @@ const handleLedBoardPluginUploadRemove = async (file, fileList) => {
       
       // 获取文件信息以构建删除URL
       const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
+      console.log('灯板插件文件信息接口返回数据:', fileInfoResponse.data)
       if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
         const fileInfo = fileInfoResponse.data.data
-        const bucketName = fileInfo.bucketName
-        const objectName = fileInfo.objectName
+        console.log('灯板插件文件信息详情:', fileInfo)
+        
+        // 从fileUrl中提取桶名称和对象名称
+        let bucketName, objectName
+        if (fileInfo.fileUrl) {
+          const urlMatch = fileInfo.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+          if (urlMatch) {
+            bucketName = urlMatch[1]
+            objectName = urlMatch[2]
+          }
+        }
+        console.log('提取的灯板插件桶名称:', bucketName)
+        console.log('提取的灯板插件文件名称:', objectName)
+        
+        if (!bucketName || !objectName) {
+          console.error('无法从灯板插件文件信息中提取桶名称或文件名称，可用字段:', Object.keys(fileInfo))
+          ElMessage.error('灯板插件文件信息格式错误，无法删除MinIO文件')
+        } else {
         
         try {
           // 先删除MinIO文件
@@ -1346,11 +1423,12 @@ const handleLedBoardPluginUploadRemove = async (file, fileList) => {
           // MinIO删除失败也继续删除数据库记录
         }
         
-        // 再删除数据库记录
-        await axios.delete(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
-        
-        ElMessage.success('灯板插件文件删除成功')
-      }
+          // 再删除数据库记录
+          await axios.delete(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
+          
+          ElMessage.success('灯板插件文件删除成功')
+        }
+        }
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除灯板插件文件失败: ' + (error.response?.data?.msg || error.message))
