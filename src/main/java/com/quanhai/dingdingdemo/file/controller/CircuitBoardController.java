@@ -71,6 +71,9 @@ public class CircuitBoardController {
             boolean result = circuitBoardService.save(circuitBoard);
             return result ? ResultUtil.success("新增成功") : ResultUtil.fail("新增失败");
         } catch (Exception e) {
+            if (e.getMessage().contains("Duplicate key")) {
+                return ResultUtil.fail("线路板编码已存在");
+            }
             return ResultUtil.fail("新增失败：" + e.getMessage());
         }
     }

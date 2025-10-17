@@ -70,7 +70,7 @@ public class FileInfoController {
             data.put("pageSize", pageSize);
             data.put("pages", pageResult.getPages());
             
-            log.info("获取文件列表成功，总数: {}", pageResult.getTotal());
+
             return ResultUtil.success(data);
             
         } catch (Exception e) {
@@ -163,7 +163,7 @@ public class FileInfoController {
             data.put("todayFiles", todayFiles);
             data.put("typeStatistics", typeStatistics);
             
-            log.info("获取文件统计信息成功 - 总数: {}, 今日新增: {}", totalFiles, todayFiles);
+
             return ResultUtil.success(data);
             
         } catch (Exception e) {

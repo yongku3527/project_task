@@ -43,8 +43,8 @@ public class MesController {
     public Result<Map<String, Object>> getItemInfo(
             @PathVariable("itemCode") String itemCode) {
         
-        log.info("收到MES物料信息查询请求，物料编号: {}", itemCode);
-        
+
+
         // 检查接口是否启用
         if (!mesApiEnabled) {
             log.warn("MES接口已禁用");

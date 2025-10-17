@@ -311,7 +311,7 @@ public class MinioController {
             String originalName = (String) fileInfo.get("originalName");
             String objectName = (String) fileInfo.get("objectName");
             
-            file.setFileName(originalName);
+            file.setFileName(objectName);
             file.setOriginalName(originalName);
             long fileSize = Long.parseLong(fileInfo.get("fileSize").toString());
             file.setFileSize(fileSize);
