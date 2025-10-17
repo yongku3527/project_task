@@ -184,7 +184,7 @@
                         link 
                         @click="handleToggleSemiProductStatus(semi)"
                       >
-                        <el-icon><CircleClose v-if="semi.status === 1" /><CircleCheck v-else /></el-icon>{{ semi.status === 1 ? '停用' : '启用' }}
+                        <el-icon><CircleClose v-if="semi.status === 1" /><CircleCheck v-else /></el-icon>{{ semi.status === 1 ? '停用' : (semi.status === 2 ? '启用' : '启用') }}
                       </el-button>
                       <!-- 添加灯板插件按钮已隐藏 -->
                       <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
@@ -1103,7 +1103,10 @@ const handleConsumeSemiProduct = async (semi) => {
 // 切换半成品状态
 const handleToggleSemiProductStatus = async (semi) => {
   try {
-    const newStatus = semi.status === 1 ? 0 : 1
+    // 如果当前是消耗状态（2），则切换到启用状态（1）
+    // 如果当前是启用状态（1），则切换到停用状态（0）
+    // 如果当前是停用状态（0），则切换到启用状态（1）
+    const newStatus = semi.status === 2 ? 1 : (semi.status === 1 ? 0 : 1)
     const statusText = newStatus === 1 ? '启用' : '停用'
     
     await ElMessageBox.confirm(`确认${statusText}该半成品吗？`, '提示', {
@@ -1745,8 +1748,8 @@ const handleConsumeCircuitBoard = async (row) => {
         let failCount = 0
         
         for (const semi of row.semiProductDTOList) {
-          // 只消耗状态为启用（1）的半成品
-          if (semi.status === 1) {
+          // 消耗所有非消耗状态的半成品（状态不为2的）
+          if (semi.status !== 2) {
             try {
               const semiConsumeData = {
                 id: semi.id,
@@ -1822,8 +1825,8 @@ const handleToggleCircuitBoardStatus = async (row) => {
         let failCount = 0
         
         for (const semi of row.semiProductDTOList) {
-          // 只对状态不同的半成品进行切换
-          if (semi.status !== newStatus && semi.status !== 2) { // 不处理已消耗的半成品
+          // 只对状态不同的半成品进行切换，包括消耗状态的半成品
+          if (semi.status !== newStatus) {
             try {
               const semiStatusData = {
                 id: semi.id,
