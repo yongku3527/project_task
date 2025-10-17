@@ -458,7 +458,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck } from '@element-plus/icons-vue'
 import axios from 'axios'
 
-const baseUrl = 'http://192.168.100.125:8083'
+const baseUrl = 'http://192.168.90.64:8083'
 
 // 响应式数据
 const loading = ref(false)
@@ -1152,7 +1152,48 @@ const handleBoardUploadSuccess = (response, file, fileList) => {
   }
 }
 
-const handleBoardUploadRemove = (file, fileList) => {
+const handleBoardUploadRemove = async (file, fileList) => {
+  // 如果存在文件ID，需要物理删除数据库记录和MinIO文件
+  if (boardDialog.form.fileId) {
+    try {
+      await ElMessageBox.confirm(
+        '确定要删除该文件吗？此操作将同时删除数据库记录和MinIO文件。',
+        '确认删除',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      
+      // 从文件URL中提取桶名和对象名
+      const urlMatch = boardDialog.form.fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+      if (urlMatch) {
+        const bucketName = urlMatch[1]
+        const objectName = urlMatch[2]
+        
+        try {
+          // 先删除MinIO文件
+          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+        } catch (minioError) {
+          console.warn('删除MinIO文件失败:', minioError)
+          // MinIO删除失败也继续删除数据库记录
+        }
+        
+        // 再删除数据库记录
+        await axios.delete(`${baseUrl}/file-info/${boardDialog.form.fileId}`)
+        
+        ElMessage.success('文件删除成功')
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error('删除文件失败: ' + (error.response?.data?.msg || error.message))
+        return // 如果用户取消或删除失败，不清空表单
+      }
+    }
+  }
+  
+  // 清空表单字段
   boardDialog.form.fileUrl = ''
   boardDialog.form.fileName = ''
   boardDialog.form.fileId = null
@@ -1167,7 +1208,49 @@ const handleSchematicUploadSuccess = (response, file, fileList) => {
   }
 }
 
-const handleSchematicUploadRemove = (file, fileList) => {
+const handleSchematicUploadRemove = async (file, fileList) => {
+  // 如果存在原理图文件ID，需要物理删除数据库记录和MinIO文件
+  if (semiProductDialog.form.schematicFileId) {
+    try {
+      await ElMessageBox.confirm(
+        '确定要删除原理图文件吗？此操作将同时删除数据库记录和MinIO文件。',
+        '确认删除',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      
+      // 获取文件信息以构建删除URL
+      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
+      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
+        const fileInfo = fileInfoResponse.data.data
+        const bucketName = fileInfo.bucketName
+        const objectName = fileInfo.objectName
+        
+        try {
+          // 先删除MinIO文件
+          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+        } catch (minioError) {
+          console.warn('删除MinIO文件失败:', minioError)
+          // MinIO删除失败也继续删除数据库记录
+        }
+        
+        // 再删除数据库记录
+        await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
+        
+        ElMessage.success('原理图文件删除成功')
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error('删除原理图文件失败: ' + (error.response?.data?.msg || error.message))
+        return // 如果用户取消或删除失败，不清空表单
+      }
+    }
+  }
+  
+  // 清空表单字段
   semiProductDialog.form.schematicFileId = null
 }
 
@@ -1179,7 +1262,49 @@ const handleSmtUploadSuccess = (response, file, fileList) => {
   }
 }
 
-const handleSmtUploadRemove = (file, fileList) => {
+const handleSmtUploadRemove = async (file, fileList) => {
+  // 如果存在SMT文件ID，需要物理删除数据库记录和MinIO文件
+  if (semiProductDialog.form.smtFileId) {
+    try {
+      await ElMessageBox.confirm(
+        '确定要删除SMT文件吗？此操作将同时删除数据库记录和MinIO文件。',
+        '确认删除',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      
+      // 获取文件信息以构建删除URL
+      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
+      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
+        const fileInfo = fileInfoResponse.data.data
+        const bucketName = fileInfo.bucketName
+        const objectName = fileInfo.objectName
+        
+        try {
+          // 先删除MinIO文件
+          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+        } catch (minioError) {
+          console.warn('删除MinIO文件失败:', minioError)
+          // MinIO删除失败也继续删除数据库记录
+        }
+        
+        // 再删除数据库记录
+        await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
+        
+        ElMessage.success('SMT文件删除成功')
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error('删除SMT文件失败: ' + (error.response?.data?.msg || error.message))
+        return // 如果用户取消或删除失败，不清空表单
+      }
+    }
+  }
+  
+  // 清空表单字段
   semiProductDialog.form.smtFileId = null
 }
 
@@ -1192,7 +1317,49 @@ const handleLedBoardPluginUploadSuccess = (response, file, fileList) => {
   }
 }
 
-const handleLedBoardPluginUploadRemove = (file, fileList) => {
+const handleLedBoardPluginUploadRemove = async (file, fileList) => {
+  // 如果存在灯板插件文件ID，需要物理删除数据库记录和MinIO文件
+  if (ledBoardPluginDialog.form.fileId) {
+    try {
+      await ElMessageBox.confirm(
+        '确定要删除灯板插件文件吗？此操作将同时删除数据库记录和MinIO文件。',
+        '确认删除',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      
+      // 获取文件信息以构建删除URL
+      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
+      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
+        const fileInfo = fileInfoResponse.data.data
+        const bucketName = fileInfo.bucketName
+        const objectName = fileInfo.objectName
+        
+        try {
+          // 先删除MinIO文件
+          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+        } catch (minioError) {
+          console.warn('删除MinIO文件失败:', minioError)
+          // MinIO删除失败也继续删除数据库记录
+        }
+        
+        // 再删除数据库记录
+        await axios.delete(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
+        
+        ElMessage.success('灯板插件文件删除成功')
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error('删除灯板插件文件失败: ' + (error.response?.data?.msg || error.message))
+        return // 如果用户取消或删除失败，不清空表单
+      }
+    }
+  }
+  
+  // 清空表单字段
   ledBoardPluginDialog.form.fileId = null
 }
 
