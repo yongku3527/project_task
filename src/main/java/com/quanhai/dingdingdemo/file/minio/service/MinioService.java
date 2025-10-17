@@ -56,7 +56,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("创建存储桶失败: {}", bucketName, e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "创建存储桶失败: " + e.getMessage());
+            return ResultUtil.fail("创建存储桶失败: " + e.getMessage());
         }
     }
 
@@ -91,7 +91,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("删除存储桶失败: {}", bucketName, e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "删除存储桶失败: " + e.getMessage());
+            return ResultUtil.fail("删除存储桶失败: " + e.getMessage());
         }
     }
 
@@ -108,7 +108,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("获取存储桶列表失败", e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "获取存储桶列表失败: " + e.getMessage());
+            return ResultUtil.fail("获取存储桶列表失败: " + e.getMessage());
         }
     }
 
@@ -151,7 +151,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("文件上传失败: {}/{}，原始文件名: {}", bucketName, objectName, file.getOriginalFilename(), e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "文件上传失败: " + e.getMessage());
+            return ResultUtil.fail("文件上传失败: " + e.getMessage());
         }
     }
 
@@ -175,7 +175,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("格式化文件名上传失败: {}，编号: {}，名称: {}，原始文件名: {}", bucketName, number, name, file.getOriginalFilename(), e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "格式化文件名上传失败: " + e.getMessage());
+            return ResultUtil.fail( "格式化文件名上传失败: " + e.getMessage());
         }
     }
 
@@ -198,7 +198,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("时间戳文件名上传失败: {}，名称: {}，原始文件名: {}", bucketName, name, file.getOriginalFilename(), e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "时间戳文件名上传失败: " + e.getMessage());
+            return ResultUtil.fail( "时间戳文件名上传失败: " + e.getMessage());
         }
     }
 
@@ -264,7 +264,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("获取文件信息失败: {}/{}", bucketName, objectName, e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "获取文件信息失败: " + e.getMessage());
+            return ResultUtil.fail( "获取文件信息失败: " + e.getMessage());
         }
     }
 
@@ -293,7 +293,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("文件删除失败: {}/{}", bucketName, objectName, e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "文件删除失败: " + e.getMessage());
+            return ResultUtil.fail("文件删除失败: " + e.getMessage());
         }
     }
 
@@ -337,7 +337,7 @@ public class MinioService {
             
         } catch (Exception e) {
             log.error("获取文件列表失败: {}", bucketName, e);
-            return ResultUtil.defineFail(ResultEnum.FAIL.code, "获取文件列表失败: " + e.getMessage());
+            return ResultUtil.fail("获取文件列表失败: " + e.getMessage());
         }
     }
 
