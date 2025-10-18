@@ -825,19 +825,14 @@ const toggleLedBoardPlugin = (semi) => {
   semi.showLedBoardPlugin = !semi.showLedBoardPlugin
 }
 
-// 文件下载 - 使用预签名链接
+// 文件下载/预览 - 使用预签名链接
 const downloadFile = async (url, fileName) => {
   try {
     // 提取存储桶名称和对象名称
     const urlMatch = url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
     if (!urlMatch) {
-      // 如果不是MinIO URL，直接下载
-      const link = document.createElement('a')
-      link.href = url
-      link.download = fileName || 'download'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      // 如果不是MinIO URL，直接在新窗口中打开
+      window.open(url, '_blank')
       return
     }
     
@@ -852,20 +847,15 @@ const downloadFile = async (url, fileName) => {
     if (response.data.code === 200) {
       const downloadUrl = response.data.data
       
-      // 创建下载链接
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = fileName || 'download'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      // 在新窗口中打开文件内容，而不是下载
+      window.open(downloadUrl, '_blank')
       
-      ElMessage.success('文件下载开始')
+      ElMessage.success('文件已在新窗口中打开')
     } else {
       ElMessage.error('获取下载链接失败')
     }
   } catch (error) {
-    ElMessage.error('下载文件失败: ' + error.message)
+    ElMessage.error('打开文件失败: ' + error.message)
   }
 }
 
