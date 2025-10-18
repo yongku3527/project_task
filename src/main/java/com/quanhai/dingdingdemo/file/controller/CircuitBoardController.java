@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO;
 import com.quanhai.dingdingdemo.file.model.CircuitBoard;
 import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.file.model.SemiProduct;
 import com.quanhai.dingdingdemo.file.service.CircuitBoardService;
 import com.quanhai.dingdingdemo.file.service.FileInfoService;
+import com.quanhai.dingdingdemo.file.service.SemiProductService;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import org.springframework.beans.BeanUtils;
@@ -17,8 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 线路板Controller
@@ -32,6 +36,9 @@ public class CircuitBoardController {
 
     @Autowired
     private FileInfoService fileInfoService;
+
+    @Autowired
+    private SemiProductService semiProductService;
 
     /**
      * 新增线路板
@@ -186,8 +193,43 @@ public class CircuitBoardController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String boardCode,
             @RequestParam(required = false) String boardName,
+            @RequestParam(required = false) String semiProductCode,
+            @RequestParam(required = false) String semiProductName,
             @RequestParam(required = false) Integer status) {
         try {
+            // 如果搜索半成品，需要先找到对应的线路板ID列表
+            Set<Long> circuitBoardIds = null;
+            if ((semiProductCode != null && !semiProductCode.trim().isEmpty()) || 
+                (semiProductName != null && !semiProductName.trim().isEmpty())) {
+                
+                // 查询符合条件的半成品
+                LambdaQueryWrapper<SemiProduct> semiQueryWrapper = new LambdaQueryWrapper<>();
+                if (semiProductCode != null && !semiProductCode.trim().isEmpty()) {
+                    semiQueryWrapper.like(SemiProduct::getSemiProductCode, semiProductCode);
+                }
+                if (semiProductName != null && !semiProductName.trim().isEmpty()) {
+                    semiQueryWrapper.like(SemiProduct::getSemiProductName, semiProductName);
+                }
+                
+                List<SemiProduct> semiProducts = semiProductService.list(semiQueryWrapper);
+                
+                if (semiProducts.isEmpty()) {
+                    // 如果没有符合条件的半成品，直接返回空结果
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("list", new ArrayList<>());
+                    result.put("total", 0);
+                    result.put("page", page);
+                    result.put("size", size);
+                    return ResultUtil.success(result);
+                }
+                
+                // 获取这些半成品对应的线路板ID
+                circuitBoardIds = new HashSet<>();
+                for (SemiProduct semiProduct : semiProducts) {
+                    circuitBoardIds.add(semiProduct.getCircuitBoardId());
+                }
+            }
+            
             Page<CircuitBoard> pageParam = new Page<>(page, size);
             LambdaQueryWrapper<CircuitBoard> queryWrapper = new LambdaQueryWrapper<>();
 //             暂时移除删除条件进行测试
@@ -201,6 +243,11 @@ public class CircuitBoardController {
             }
             if (status != null) {
                 queryWrapper.eq(CircuitBoard::getStatus, status);
+            }
+            
+            // 如果搜索了半成品，只查询这些线路板
+            if (circuitBoardIds != null && !circuitBoardIds.isEmpty()) {
+                queryWrapper.in(CircuitBoard::getId, circuitBoardIds);
             }
             
             queryWrapper.orderByDesc(CircuitBoard::getCreateTime);
