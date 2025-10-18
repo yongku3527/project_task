@@ -1043,16 +1043,27 @@ const handleEditSemiProduct = async (semi) => {
 // 删除半成品
 const handleDeleteSemiProduct = async (semi) => {
   try {
-    await ElMessageBox.confirm('确认删除该半成品吗？', '提示', {
+    await ElMessageBox.confirm('确认删除该半成品吗？此操作将同时删除关联的文件。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
+    // 首先删除半成品的原理图文件
+    if (semi.schematicFileId && semi.schematicFileUrl) {
+      await deleteFileFromMinIO(semi.schematicFileUrl, 'schematic', semi.schematicFileId)
+    }
+    
+    // 删除半成品的SMT文件
+    if (semi.smtFileId && semi.smtFileUrl) {
+      await deleteFileFromMinIO(semi.smtFileUrl, 'smt', semi.smtFileId)
+    }
+    
+    // 删除半成品记录
     const response = await axios.delete(`${baseUrl}/semi-product/delete/${semi.id}`)
     
     if (response.data.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功，已同时删除关联的文件')
       loadData()
     } else {
       ElMessage.error('删除失败: ' + response.data.msg)
@@ -1120,16 +1131,22 @@ const handleEditLedBoardPlugin = async (led) => {
 // 删除灯板插件
 const handleDeleteLedBoardPlugin = async (led) => {
   try {
-    await ElMessageBox.confirm('确认删除该灯板插件吗？', '提示', {
+    await ElMessageBox.confirm('确认删除该灯板插件吗？此操作将同时删除关联的文件。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
+    // 首先删除灯板插件的文件
+    if (led.fileId && led.fileUrl) {
+      await deleteFileFromMinIO(led.fileUrl, 'led-board-plugin', led.fileId)
+    }
+    
+    // 删除灯板插件记录
     const response = await axios.delete(`${baseUrl}/led-board-plugin-semi-product/delete/${led.id}`)
     
     if (response.data.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功，已同时删除关联的文件')
       loadData()
     } else {
       ElMessage.error('删除失败: ' + response.data.msg)
