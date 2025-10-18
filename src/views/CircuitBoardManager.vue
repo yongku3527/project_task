@@ -71,10 +71,7 @@
                   </span>
                 </div>
 
-                <div class="info-item">
-                  <span class="label">创建时间:</span>
-                  <span class="value">{{ formatDate(row.createTime) }}</span>
-                </div>
+
               </div>
               <div class="board-actions">
                 <el-button type="primary" size="small" link @click="handleEdit(row)">
@@ -156,10 +153,7 @@
                         </el-link>
                         <span v-else>-</span>
                       </div>
-                      <div class="info-row">
-                        <span class="label">创建日期:</span>
-                        <span class="value">{{ formatDate(semi.createTime) }}</span>
-                      </div>
+
 
                     </div>
                     <div class="semi-product-actions">
@@ -231,10 +225,7 @@
                               </el-link>
                               <span v-else>-</span>
                             </div>
-                            <div class="info-row">
-                              <span class="label">创建日期:</span>
-                              <span class="value">{{ formatDate(led.createTime) }}</span>
-                            </div>
+
 
                           </div>
                           <div class="led-actions">
