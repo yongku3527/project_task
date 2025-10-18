@@ -483,7 +483,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck, Lock } from '@element-plus/icons-vue'
 import axios from 'axios'
 
-const baseUrl = 'http://192.168.90.64:8083'
+const baseUrl = 'http://localhost:8083'
 
 // 响应式数据
 const loading = ref(false)
@@ -920,16 +920,50 @@ const handleEdit = (row) => {
 // 删除线路板
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('确认删除该线路板吗？', '提示', {
+    await ElMessageBox.confirm('确认删除该线路板吗？此操作将同时删除关联的半成品信息及文件。', '警告', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
+    // 首先删除关联的半成品及其文件
+    if (row.semiProductDTOList && row.semiProductDTOList.length > 0) {
+      for (const semi of row.semiProductDTOList) {
+        // 删除半成品的原理图文件
+        if (semi.schematicFileId && semi.schematicFileUrl) {
+          await deleteFileFromMinIO(semi.schematicFileUrl, 'schematic', semi.schematicFileId)
+        }
+        // 删除半成品的SMT文件
+        if (semi.smtFileId && semi.smtFileUrl) {
+          await deleteFileFromMinIO(semi.smtFileUrl, 'smt', semi.smtFileId)
+        }
+        
+        // 删除灯板插件及其文件
+        if (semi.ledBoardPluginSemiProductDTOList && semi.ledBoardPluginSemiProductDTOList.length > 0) {
+          for (const led of semi.ledBoardPluginSemiProductDTOList) {
+            if (led.fileId && led.fileUrl) {
+              await deleteFileFromMinIO(led.fileUrl, 'led-board-plugin', led.fileId)
+            }
+            // 删除灯板插件记录
+            await axios.delete(`${baseUrl}/led-board-plugin-semi-product/delete/${led.id}`)
+          }
+        }
+        
+        // 删除半成品记录
+        await axios.delete(`${baseUrl}/semi-product/delete/${semi.id}`)
+      }
+    }
+    
+    // 删除线路板的PCB文件
+    if (row.fileId && row.fileUrl) {
+      await deleteFileFromMinIO(row.fileUrl, 'circuit-board', row.fileId)
+    }
+    
+    // 最后删除线路板记录
     const response = await axios.delete(`${baseUrl}/circuit-board/delete/${row.id}`)
     
     if (response.data.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功，已同时删除关联的半成品信息及文件')
       loadData()
     } else {
       ElMessage.error('删除失败: ' + response.data.msg)
@@ -2079,6 +2113,51 @@ const handleConsumeCircuitBoard = async (row) => {
     if (error !== 'cancel') {
       ElMessage.error('消耗失败: ' + error.message)
     }
+  }
+}
+
+// 通用文件删除方法（从MinIO和数据库删除文件）
+const deleteFileFromMinIO = async (fileUrl, fileType, fileId = null) => {
+  if (!fileUrl) {
+    console.warn(`文件URL为空，跳过${fileType}文件删除`)
+    return
+  }
+  
+  try {
+    // 从fileUrl中提取桶名称和对象名称
+    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      console.error(`无法从${fileType}文件URL中提取桶名称和文件名称:`, fileUrl)
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    console.log(`提取的${fileType}桶名称:`, bucketName)
+    console.log(`提取的${fileType}文件名称:`, objectName)
+    
+    // 先删除MinIO文件
+    try {
+      await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+      console.log(`${fileType}文件从MinIO删除成功`)
+    } catch (minioError) {
+      console.warn(`删除${fileType}MinIO文件失败:`, minioError)
+      // MinIO删除失败也继续，不抛出错误
+    }
+    
+    // 如果提供了fileId，也删除数据库记录
+    if (fileId) {
+      try {
+        await axios.delete(`${baseUrl}/file-info/${fileId}`)
+        console.log(`${fileType}文件数据库记录删除成功`)
+      } catch (dbError) {
+        console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
+        // 数据库删除失败也继续，不抛出错误
+      }
+    }
+  } catch (error) {
+    console.error(`删除${fileType}文件时出错:`, error)
   }
 }
 
