@@ -12,6 +12,12 @@
                 <el-form-item label="线路板名称:">
                   <el-input v-model="searchForm.boardName" placeholder="请输入线路板名称" clearable />
                 </el-form-item>
+                <el-form-item label="半成品编号:">
+                  <el-input v-model="searchForm.semiProductCode" placeholder="请输入半成品编号" clearable />
+                </el-form-item>
+                <el-form-item label="半成品名称:">
+                  <el-input v-model="searchForm.semiProductName" placeholder="请输入半成品名称" clearable />
+                </el-form-item>
                 <el-form-item>
                   <el-button type="primary" @click="handleSearch">查询</el-button>
                   <el-button @click="handleReset">重置</el-button>
@@ -483,7 +489,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck, Lock } from '@element-plus/icons-vue'
 import axios from 'axios'
 
-const baseUrl = 'http://localhost:8083'
+const baseUrl = 'http://192.168.100.125:8083'
 
 // 响应式数据
 const loading = ref(false)
@@ -512,7 +518,9 @@ const semiProductOptions = ref([])
 // 搜索表单
 const searchForm = reactive({
   boardCode: '',
-  boardName: ''
+  boardName: '',
+  semiProductCode: '',
+  semiProductName: ''
 })
 
 // 线路板对话框
@@ -615,13 +623,15 @@ const loadData = async () => {
   loading.value = true
   try {
     // 如果有搜索条件，使用分页查询接口，否则使用获取所有数据的接口
-    if (searchForm.boardCode || searchForm.boardName) {
+    if (searchForm.boardCode || searchForm.boardName || searchForm.semiProductCode || searchForm.semiProductName) {
       // 使用分页查询接口，支持搜索
       const params = {
         page: currentPage.value,
         size: pageSize.value,
         boardCode: searchForm.boardCode || undefined,
-        boardName: searchForm.boardName || undefined
+        boardName: searchForm.boardName || undefined,
+        semiProductCode: searchForm.semiProductCode || undefined,
+        semiProductName: searchForm.semiProductName || undefined
       }
       const response = await axios.get(`${baseUrl}/circuit-board/list`, { params })
       if (response.data.code === 200) {
@@ -794,6 +804,8 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.boardCode = ''
   searchForm.boardName = ''
+  searchForm.semiProductCode = ''
+  searchForm.semiProductName = ''
   handleSearch()
 }
 
