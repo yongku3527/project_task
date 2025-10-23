@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class MyExceptionHandler {
 
-    @ExceptionHandler(value = Exception.class)
-    private Result exceptionHandler(Exception e){
-        return ResultUtil.fail("未知系统异常"+e.getMessage());
-    }
+//    @ExceptionHandler(value = Exception.class)
+//    private Result exceptionHandler(Exception e){
+//        return ResultUtil.fail("未知系统异常"+e.getMessage());
+//    }
 
     @ExceptionHandler(value = MyExcption.class)
     private Result customHandler(MyExcption e){

@@ -1,9 +1,12 @@
 package com.quanhai.dingdingdemo.satoken.config;
 
+import cn.dev33.satoken.dao.SaTokenDao;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -28,6 +31,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     //临时排除权限接口
                     .notMatch("/auth/permission")
                     .notMatch("/auth/role")
+                    //测试登录接口
+                    .notMatch("/tokenTest/login")
 
                     .notMatch("/error")
                     .notMatch("/swagger-ui/**")
@@ -42,4 +47,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     .check(r -> StpUtil.checkLogin());        // 要执行的校验动作，可以写完整的 lambda 表达式
         })).addPathPatterns("/**");
     }
+
+
 }

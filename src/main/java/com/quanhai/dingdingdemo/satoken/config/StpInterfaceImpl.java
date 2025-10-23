@@ -39,6 +39,4 @@ public class StpInterfaceImpl implements StpInterface {
         }
         return roleListByUserId;
     }
-    
-
 }
