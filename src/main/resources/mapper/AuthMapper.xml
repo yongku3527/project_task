@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.quanhai.dingdingdemo.satoken.mapper.AuthMapper" >
+
+
+
+    <!-- 直接获取用户权限list -->
+    <select id="getPermissionList" resultType="java.lang.String" >
+        select sys_permission.perm_code
+        from sys_user_role
+            left join sys_role_permission on sys_user_role.role_id = sys_role_permission.role_id
+            left join sys_permission on sys_role_permission.permission_id = sys_permission.id
+        where sys_user_role.user_id = #{userId}
+    </select>
+    <select id="getRoleList" resultType="java.lang.String">
+        select role_key
+        from sys_user_role role_user
+                 left join sys_user user on role_user.user_id = user.id
+                 left join sys_role role on role_user.role_id = role.id
+        where role_user.user_id = #{userId}
+    </select>
+
+
+</mapper>

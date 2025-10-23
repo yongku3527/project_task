@@ -41,7 +41,7 @@ public class FileInfoController {
  @RequestParam(value = "keyword", required = false) String keyword,
  @RequestParam(value = "suffix", required = false) String suffix) {
         
-        log.info("获取文件列表（数据库）- 页码: {}, 每页条数: {}, 关键字: {}, 后缀: {}", page, pageSize, keyword, suffix);
+
         
         try {
             // 构建查询条件
@@ -84,7 +84,7 @@ public class FileInfoController {
      */
     @GetMapping("/{id}")
     public Result<FileInfo> getFileInfoById(@PathVariable Long id) {
-        log.info("获取文件信息 - ID: {}", id);
+
         
         try {
             FileInfo fileInfo = fileInfoService.getById(id);
@@ -136,7 +136,7 @@ public class FileInfoController {
     @GetMapping("/statistics")
 
     public Result<Map<String, Object>> getFileStatistics() {
-        log.info("获取文件统计信息");
+
         
         try {
             // 总文件数
