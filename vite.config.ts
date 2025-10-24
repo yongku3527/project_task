@@ -17,7 +17,7 @@ export default defineConfig({
     host: '0.0.0.0', // 允许局域网访问
     proxy: {
       '/api': {
-        target: 'http://192.168.100.125:8083',
+        target: 'http://192.168.90.64:8083',
         changeOrigin: true,
         secure: false,
         credentials: true,
