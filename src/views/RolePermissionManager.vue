@@ -520,6 +520,8 @@ const handleDeletePermission = async (row: Permission) => {
 
 const handleRolePermission = async (row: Role) => {
   currentRoleId.value = row.id
+  // 先清空之前的权限选择，避免显示上一个角色的权限
+  checkedPermissionIds.value = []
   rolePermissionDialogVisible.value = true
   await loadRolePermissions()
 }
@@ -548,10 +550,15 @@ const loadRolePermissions = async () => {
     if (rolePermResponse.code === 200) {
       const permissionIds = rolePermResponse.data.map((rp: any) => rp.permissionId)
       checkedPermissionIds.value = permissionIds
+    } else {
+      // 如果获取角色权限失败，清空权限选择
+      checkedPermissionIds.value = []
     }
   } catch (error) {
     ElMessage.error('加载权限数据失败')
     console.error('Load role permissions error:', error)
+    // 发生错误时也清空权限选择
+    checkedPermissionIds.value = []
   }
 }
 
@@ -666,6 +673,8 @@ const handleAssignRolePermissions = async () => {
     if (response.code === 200) {
       ElMessage.success('分配权限成功')
       rolePermissionDialogVisible.value = false
+      // 重新加载权限数据，确保权限分配表及时更新
+      await loadRolePermissions()
     } else {
       ElMessage.error(response.msg || '分配权限失败')
     }
