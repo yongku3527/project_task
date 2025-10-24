@@ -3,9 +3,10 @@ package com.quanhai.dingdingdemo.satoken.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.satoken.model.SysUser;
 import com.quanhai.dingdingdemo.satoken.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,25 +28,26 @@ public class SysUserController {
      * 获取用户列表
      */
     @GetMapping("/list")
-    @SaCheckLogin
-    public IPage<SysUser> list(@RequestParam(defaultValue = "1") Integer current,
-                               @RequestParam(defaultValue = "10") Integer size,
-                               @RequestParam(required = false) String username) {
+    @SaCheckPermission("user:view")
+    public Result<Page<SysUser>> list(@RequestParam(defaultValue = "1") Integer current,
+                                      @RequestParam(defaultValue = "10") Integer size,
+                                      @RequestParam(required = false) String username) {
         Page<SysUser> page = new Page<>(current, size);
         QueryWrapper<SysUser> queryWrapper = new QueryWrapper<>();
         if (username != null && !username.trim().isEmpty()) {
             queryWrapper.like("username", username);
         }
-        return sysUserService.page(page, queryWrapper);
+        Page<SysUser> page1 = sysUserService.page(page, queryWrapper);
+        return ResultUtil.success(page1);
     }
 
     /**
      * 根据ID获取用户信息
      */
     @GetMapping("/{id}")
-    @SaCheckLogin
-    public SysUser getById(@PathVariable Long id) {
-        return sysUserService.getById(id);
+    @SaCheckPermission("user:view")
+    public Result<SysUser> getById(@PathVariable Long id) {
+        return ResultUtil.success(sysUserService.getById(id));
     }
 
     /**
@@ -53,8 +55,8 @@ public class SysUserController {
      */
     @PostMapping
     @SaCheckPermission("user:add")
-    public boolean add(@RequestBody SysUser sysUser) {
-        return sysUserService.save(sysUser);
+    public Result<Boolean> add(@RequestBody SysUser sysUser) {
+        return ResultUtil.success(sysUserService.save(sysUser));
     }
 
     /**
@@ -62,8 +64,8 @@ public class SysUserController {
      */
     @PutMapping
     @SaCheckPermission("user:update")
-    public boolean update(@RequestBody SysUser sysUser) {
-        return sysUserService.updateById(sysUser);
+    public Result<Boolean> update(@RequestBody SysUser sysUser) {
+        return ResultUtil.success(sysUserService.updateById(sysUser));
     }
 
     /**
@@ -71,8 +73,8 @@ public class SysUserController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission("user:delete")
-    public boolean delete(@PathVariable Long id) {
-        return sysUserService.removeById(id);
+    public Result<Boolean> delete(@PathVariable Long id) {
+        return ResultUtil.success(sysUserService.removeById(id));
     }
 
     /**
@@ -80,7 +82,7 @@ public class SysUserController {
      */
     @DeleteMapping("/batch")
     @SaCheckPermission("user:delete")
-    public boolean deleteBatch(@RequestBody List<Long> ids) {
-        return sysUserService.removeByIds(ids);
+    public Result<Boolean> deleteBatch(@RequestBody List<Long> ids) {
+        return ResultUtil.success(sysUserService.removeByIds(ids));
     }
 }

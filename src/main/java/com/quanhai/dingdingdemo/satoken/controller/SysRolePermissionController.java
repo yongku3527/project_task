@@ -4,6 +4,8 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.satoken.model.SysRolePermission;
 import com.quanhai.dingdingdemo.satoken.service.SysRolePermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,22 +27,22 @@ public class SysRolePermissionController {
      * 获取角色的权限列表
      */
     @GetMapping("/role/{roleId}")
-    @SaCheckLogin
-    public List<SysRolePermission> getByRoleId(@PathVariable Long roleId) {
+    @SaCheckPermission("role:permission")
+    public Result<List<SysRolePermission>> getByRoleId(@PathVariable Long roleId) {
         QueryWrapper<SysRolePermission> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_id", roleId);
-        return sysRolePermissionService.list(queryWrapper);
+        return ResultUtil.success(sysRolePermissionService.list(queryWrapper));
     }
 
     /**
      * 获取权限的角色列表
      */
     @GetMapping("/permission/{permissionId}")
-    @SaCheckLogin
-    public List<SysRolePermission> getByPermissionId(@PathVariable Long permissionId) {
+    @SaCheckPermission("role:permission")
+    public Result<List<SysRolePermission>> getByPermissionId(@PathVariable Long permissionId) {
         QueryWrapper<SysRolePermission> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("permission_id", permissionId);
-        return sysRolePermissionService.list(queryWrapper);
+        return ResultUtil.success(sysRolePermissionService.list(queryWrapper));
     }
 
     /**
@@ -48,14 +50,14 @@ public class SysRolePermissionController {
      */
     @PostMapping
     @SaCheckPermission("role:permission")
-    public boolean assign(@RequestBody SysRolePermission sysRolePermission) {
+    public Result<Boolean> assign(@RequestBody SysRolePermission sysRolePermission) {
         // 先删除角色原有权限
         QueryWrapper<SysRolePermission> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_id", sysRolePermission.getRoleId());
         sysRolePermissionService.remove(queryWrapper);
         
         // 添加新权限
-        return sysRolePermissionService.save(sysRolePermission);
+        return ResultUtil.success(sysRolePermissionService.save(sysRolePermission));
     }
 
     /**
@@ -63,9 +65,9 @@ public class SysRolePermissionController {
      */
     @PostMapping("/batch")
     @SaCheckPermission("role:permission")
-    public boolean assignBatch(@RequestBody List<SysRolePermission> rolePermissions) {
+    public Result<Boolean> assignBatch(@RequestBody List<SysRolePermission> rolePermissions) {
         if (rolePermissions.isEmpty()) {
-            return true;
+            return ResultUtil.success(true);
         }
         
         Long roleId = rolePermissions.get(0).getRoleId();
@@ -76,7 +78,7 @@ public class SysRolePermissionController {
         sysRolePermissionService.remove(queryWrapper);
         
         // 批量添加新权限
-        return sysRolePermissionService.saveBatch(rolePermissions);
+        return ResultUtil.success(sysRolePermissionService.saveBatch(rolePermissions));
     }
 
     /**
@@ -84,9 +86,9 @@ public class SysRolePermissionController {
      */
     @DeleteMapping("/role/{roleId}/permission/{permissionId}")
     @SaCheckPermission("role:permission")
-    public boolean cancel(@PathVariable Long roleId, @PathVariable Long permissionId) {
+    public Result<Boolean> cancel(@PathVariable Long roleId, @PathVariable Long permissionId) {
         QueryWrapper<SysRolePermission> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_id", roleId).eq("permission_id", permissionId);
-        return sysRolePermissionService.remove(queryWrapper);
+        return ResultUtil.success(sysRolePermissionService.remove(queryWrapper));
     }
 }

@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.satoken.model.SysPermission;
 import com.quanhai.dingdingdemo.satoken.service.SysPermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,36 +29,36 @@ public class SysPermissionController {
      * 获取权限列表
      */
     @GetMapping("/list")
-    @SaCheckLogin
-    public IPage<SysPermission> list(@RequestParam(defaultValue = "1") Integer current,
-                                     @RequestParam(defaultValue = "10") Integer size,
-                                     @RequestParam(required = false) String permName) {
+    @SaCheckPermission("permission:view")
+    public Result<IPage<SysPermission>> list(@RequestParam(defaultValue = "1") Integer current,
+                                             @RequestParam(defaultValue = "10") Integer size,
+                                             @RequestParam(required = false) String permName) {
         Page<SysPermission> page = new Page<>(current, size);
         QueryWrapper<SysPermission> queryWrapper = new QueryWrapper<>();
         if (permName != null && !permName.trim().isEmpty()) {
             queryWrapper.like("perm_name", permName);
         }
-        return sysPermissionService.page(page, queryWrapper);
+        return ResultUtil.success(sysPermissionService.page(page, queryWrapper));
     }
 
     /**
      * 获取权限树形结构
      */
     @GetMapping("/tree")
-    @SaCheckLogin
-    public List<SysPermission> tree() {
+    @SaCheckPermission("permission:view")
+    public Result<List<SysPermission>> tree() {
         QueryWrapper<SysPermission> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByAsc("parent_id", "id");
-        return sysPermissionService.list(queryWrapper);
+        return ResultUtil.success(sysPermissionService.list(queryWrapper));
     }
 
     /**
      * 根据ID获取权限信息
      */
     @GetMapping("/{id}")
-    @SaCheckLogin
-    public SysPermission getById(@PathVariable Long id) {
-        return sysPermissionService.getById(id);
+    @SaCheckPermission("permission:view")
+    public Result<SysPermission> getById(@PathVariable Long id) {
+        return ResultUtil.success(sysPermissionService.getById(id));
     }
 
     /**
@@ -64,8 +66,8 @@ public class SysPermissionController {
      */
     @PostMapping
     @SaCheckPermission("permission:add")
-    public boolean add(@RequestBody SysPermission sysPermission) {
-        return sysPermissionService.save(sysPermission);
+    public Result<Boolean> add(@RequestBody SysPermission sysPermission) {
+        return ResultUtil.success(sysPermissionService.save(sysPermission));
     }
 
     /**
@@ -73,8 +75,8 @@ public class SysPermissionController {
      */
     @PutMapping
     @SaCheckPermission("permission:update")
-    public boolean update(@RequestBody SysPermission sysPermission) {
-        return sysPermissionService.updateById(sysPermission);
+    public Result<Boolean> update(@RequestBody SysPermission sysPermission) {
+        return ResultUtil.success(sysPermissionService.updateById(sysPermission));
     }
 
     /**
@@ -82,8 +84,8 @@ public class SysPermissionController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission("permission:delete")
-    public boolean delete(@PathVariable Long id) {
-        return sysPermissionService.removeById(id);
+    public Result<Boolean> delete(@PathVariable Long id) {
+        return ResultUtil.success(sysPermissionService.removeById(id));
     }
 
     /**
@@ -91,7 +93,7 @@ public class SysPermissionController {
      */
     @DeleteMapping("/batch")
     @SaCheckPermission("permission:delete")
-    public boolean deleteBatch(@RequestBody List<Long> ids) {
-        return sysPermissionService.removeByIds(ids);
+    public Result<Boolean> deleteBatch(@RequestBody List<Long> ids) {
+        return ResultUtil.success(sysPermissionService.removeByIds(ids));
     }
 }

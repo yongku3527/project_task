@@ -4,6 +4,8 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.satoken.model.SysUserRole;
 import com.quanhai.dingdingdemo.satoken.service.SysUserRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,22 +27,22 @@ public class SysUserRoleController {
      * 获取用户的角色列表
      */
     @GetMapping("/user/{userId}")
-    @SaCheckLogin
-    public List<SysUserRole> getByUserId(@PathVariable Long userId) {
+    @SaCheckPermission("user:role")
+    public Result<List<SysUserRole>> getByUserId(@PathVariable Long userId) {
         QueryWrapper<SysUserRole> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
-        return sysUserRoleService.list(queryWrapper);
+        return ResultUtil.success(sysUserRoleService.list(queryWrapper));
     }
 
     /**
      * 获取角色的用户列表
      */
     @GetMapping("/role/{roleId}")
-    @SaCheckLogin
-    public List<SysUserRole> getByRoleId(@PathVariable Long roleId) {
+    @SaCheckPermission("user:role")
+    public Result<List<SysUserRole>> getByRoleId(@PathVariable Long roleId) {
         QueryWrapper<SysUserRole> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_id", roleId);
-        return sysUserRoleService.list(queryWrapper);
+        return ResultUtil.success(sysUserRoleService.list(queryWrapper));
     }
 
     /**
@@ -48,14 +50,14 @@ public class SysUserRoleController {
      */
     @PostMapping
     @SaCheckPermission("user:role")
-    public boolean assign(@RequestBody SysUserRole sysUserRole) {
+    public Result<Boolean> assign(@RequestBody SysUserRole sysUserRole) {
         // 先删除用户原有角色
         QueryWrapper<SysUserRole> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", sysUserRole.getUserId());
         sysUserRoleService.remove(queryWrapper);
         
         // 添加新角色
-        return sysUserRoleService.save(sysUserRole);
+        return ResultUtil.success(sysUserRoleService.save(sysUserRole));
     }
 
     /**
@@ -63,9 +65,9 @@ public class SysUserRoleController {
      */
     @PostMapping("/batch")
     @SaCheckPermission("user:role")
-    public boolean assignBatch(@RequestBody List<SysUserRole> userRoles) {
+    public Result<Boolean> assignBatch(@RequestBody List<SysUserRole> userRoles) {
         if (userRoles.isEmpty()) {
-            return true;
+            return ResultUtil.success(true);
         }
         
         Long userId = userRoles.get(0).getUserId();
@@ -76,7 +78,7 @@ public class SysUserRoleController {
         sysUserRoleService.remove(queryWrapper);
         
         // 批量添加新角色
-        return sysUserRoleService.saveBatch(userRoles);
+        return ResultUtil.success(sysUserRoleService.saveBatch(userRoles));
     }
 
     /**
@@ -84,9 +86,9 @@ public class SysUserRoleController {
      */
     @DeleteMapping("/user/{userId}/role/{roleId}")
     @SaCheckPermission("user:role")
-    public boolean cancel(@PathVariable Long userId, @PathVariable Long roleId) {
+    public Result<Boolean> cancel(@PathVariable Long userId, @PathVariable Long roleId) {
         QueryWrapper<SysUserRole> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("role_id", roleId);
-        return sysUserRoleService.remove(queryWrapper);
+        return ResultUtil.success(sysUserRoleService.remove(queryWrapper));
     }
 }
