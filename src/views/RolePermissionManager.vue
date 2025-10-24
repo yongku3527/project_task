@@ -345,11 +345,11 @@ const permissionForm = reactive({
 const permissionRules: FormRules = {
   permName: [
     { required: true, message: '请输入权限名称', trigger: 'blur' },
-    { min: 2, max: 20, message: '权限名称长度在 2 到 20 个字符', trigger: 'blur' }
+    { min: 1, max: 20, message: '权限名称长度在 1 到 20 个字符', trigger: 'blur' }
   ],
   permCode: [
     { required: true, message: '请输入权限编码', trigger: 'blur' },
-    { min: 3, max: 50, message: '权限编码长度在 3 到 50 个字符', trigger: 'blur' }
+    // { min: 3, max: 50, message: '权限编码长度在 3 到 50 个字符', trigger: 'blur' }
   ],
   permType: [
     { required: true, message: '请选择权限类型', trigger: 'change' }
