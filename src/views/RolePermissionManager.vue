@@ -24,17 +24,17 @@
             @row-click="handleRoleRowClick"
             highlight-current-row
           >
-            <el-table-column prop="id" label="ID" width="60" />
-            <el-table-column prop="roleName" label="角色名称" width="120" />
-            <el-table-column prop="roleKey" label="角色标识" width="120" />
-            <el-table-column prop="status" label="状态" width="80">
+            <el-table-column prop="id" label="ID" width="80" fixed="left" />
+            <el-table-column prop="roleName" label="角色名称" width="150" />
+            <el-table-column prop="roleKey" label="角色标识" width="150" />
+            <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.status === 1 ? 'success' : 'danger'">
                   {{ row.status === 1 ? '启用' : '禁用' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
+            <el-table-column label="操作" min-width="200" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" size="small" link @click.stop="handleEditRole(row)">
                   <el-icon><Edit /></el-icon>编辑
@@ -49,7 +49,7 @@
             </el-table-column>
           </el-table>
 
-          <div class="pagination-container">
+          <!-- <div class="pagination-container">
             <el-pagination
               v-model:current-page="rolePagination.current"
               v-model:page-size="rolePagination.size"
@@ -59,7 +59,7 @@
               @size-change="handleRoleSizeChange"
               @current-change="handleRoleCurrentChange"
             />
-          </div>
+          </div> -->
         </el-card>
       </el-col>
 
@@ -84,24 +84,24 @@
             border
             stripe
           >
-            <el-table-column prop="id" label="ID" width="60" />
-            <el-table-column prop="permName" label="权限名称" width="120" />
-            <el-table-column prop="permCode" label="权限编码" width="120" />
-            <el-table-column prop="permType" label="类型" width="80">
+            <el-table-column prop="id" label="ID" width="80" fixed="left" />
+            <el-table-column prop="permName" label="权限名称" width="150" />
+            <el-table-column prop="permCode" label="权限编码" width="150" />
+            <el-table-column prop="permType" label="类型" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.permType === 1 ? 'primary' : 'info'">
                   {{ row.permType === 1 ? '菜单' : '按钮' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="状态" width="80">
+            <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.status === 1 ? 'success' : 'danger'">
                   {{ row.status === 1 ? '启用' : '禁用' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
+            <el-table-column label="操作" min-width="150" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" size="small" link @click="handleEditPermission(row)">
                   <el-icon><Edit /></el-icon>编辑
@@ -113,7 +113,7 @@
             </el-table-column>
           </el-table>
 
-          <div class="pagination-container">
+          <!-- <div class="pagination-container">
             <el-pagination
               v-model:current-page="permissionPagination.current"
               v-model:page-size="permissionPagination.size"
@@ -123,7 +123,7 @@
               @size-change="handlePermissionSizeChange"
               @current-change="handlePermissionCurrentChange"
             />
-          </div>
+          </div> -->
         </el-card>
       </el-col>
     </el-row>
@@ -762,6 +762,12 @@ onMounted(() => {
   border-radius: 5px;
   max-height: 400px;
   overflow-y: auto;
+}
+
+/* 修复表格在最大化时表头与内容错位的问题 */
+:deep(.el-table) {
+  table-layout: fixed;
+  width: 100%;
 }
 
 @media (max-width: 1200px) {

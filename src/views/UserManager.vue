@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>用户管理</span>
+          <span></span>
           <div class="header-actions">
             <el-form :inline="true" size="small">
               <el-form-item label="用户名:">
@@ -37,10 +37,10 @@
           border
           stripe
         >
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="username" label="用户名" width="120" />
-          <el-table-column prop="nickname" label="昵称" width="120" />
-          <el-table-column prop="status" label="状态" width="80">
+          <el-table-column prop="id" label="ID" width="80" fixed="left" />
+          <el-table-column prop="username" label="用户名" width="150" />
+          <el-table-column prop="nickname" label="昵称" width="150" />
+          <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="row.status === 1 ? 'success' : 'danger'">
                 {{ row.status === 1 ? '启用' : '禁用' }}
@@ -57,7 +57,7 @@
               {{ formatDate(row.updateTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="300" fixed="right">
+          <el-table-column label="操作" min-width="320" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" size="small" link @click="handleEdit(row)">
                 <el-icon><Edit /></el-icon>编辑
@@ -81,7 +81,7 @@
           </el-table-column>
         </el-table>
 
-        <div class="pagination-container">
+        <!-- <div class="pagination-container" >
           <el-pagination
             v-model:current-page="pagination.current"
             v-model:page-size="pagination.size"
@@ -91,7 +91,7 @@
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
           />
-        </div>
+        </div> -->
       </div>
     </el-card>
 
@@ -544,6 +544,14 @@ onMounted(() => {
 
 .table-container {
   margin-top: 20px;
+  margin-left: 12%;
+  width: 70%;
+}
+
+/* 修复表格在最大化时表头与内容错位的问题 */
+.table-container :deep(.el-table) {
+  table-layout: fixed;
+  width: 100%;
 }
 
 .pagination-container {
