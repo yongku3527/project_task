@@ -626,12 +626,12 @@ const loadData = async () => {
       const params = {
         page: currentPage.value,
         size: pageSize.value,
-        boardCode: searchForm.boardCode || undefined,
-        boardName: searchForm.boardName || undefined,
-        semiProductCode: searchForm.semiProductCode || undefined,
-        semiProductName: searchForm.semiProductName || undefined
+        boardCode: searchForm.boardCode,
+        boardName: searchForm.boardName,
+        semiProductCode: searchForm.semiProductCode,
+        semiProductName: searchForm.semiProductName
       }
-      const response = await request.get(`/circuit-board/list`, { params })
+      const response = await request.get(`/circuit-board/list`, params)
       if (response.code === 200) {
         // 分页查询接口返回的是分页数据对象
         const pageData = response.data
