@@ -95,11 +95,11 @@ const fetchPanelTasks = async () => {
     // 严格使用指定接口获取任务数据
     const response = await axios.get(`${baseUrl}/TimeLine/getTimeLineTask`);
 
-    if (response.data.code === 200) {
-      panelTasks.value = response.data.data || [];
+    if (response.data?.code === 200) {
+      panelTasks.value = response.data?.data || [];
       console.log('任务数据已从指定接口加载:', panelTasks.value);
     } else {
-      panelError.value = `获取任务失败: ${response.data.msg || '未知错误'}`;
+      panelError.value = `获取任务失败: ${response.data?.msg || '未知错误'}`;
       console.error('API返回错误:', response.data);
     }
   } catch (err) {
@@ -160,11 +160,11 @@ const deleteTask = async (taskId: string) => {
     panelLoading.value = true;
     const response = await axios.delete(baseUrl + '/TimeLine/removeTimeLineTask/' + taskId);
 
-    if (response.data.code === 200) {
+    if (response.data?.code === 200) {
       await fetchPanelTasks(); // 重新获取任务列表
       nextTick(() => initChart()); // 刷新时间轴
     } else {
-      panelError.value = '删除失败: ' + response.data.msg;
+      panelError.value = '删除失败: ' + response.data?.msg;
     }
   } catch (err) {
     panelError.value = '网络错误: 无法删除任务';
@@ -198,8 +198,8 @@ watch(panelTasks, updateTaskProjectGroups, { immediate: true });
 const fetchChartTasks = async () => {
   try {
     const response = await axios.get(baseUrl + '/dingTask/getTaskInfo');
-    if (response.data.code === 200) {
-      chartTasks.value = Array.isArray(response.data.data) ? response.data.data.sort((a, b) => {
+    if (response.data?.code === 200) {
+      chartTasks.value = Array.isArray(response.data?.data) ? response.data?.data.sort((a, b) => {
         // 先按项目名升序排序
         const projectCompare = a.projectName.localeCompare(b.projectName);
         if (projectCompare !== 0) return projectCompare;
@@ -208,7 +208,7 @@ const fetchChartTasks = async () => {
       }) : [];
 
     } else {
-      error.value = '获取数据失败: ' + response.data.msg;
+      error.value = '获取数据失败: ' + response.data?.msg;
     }
   } catch (err) {
     error.value = '网络错误: 无法连接到服务器';

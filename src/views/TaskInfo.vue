@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, getCurrentInstance, computed, watch } from
 // import { ElMessage, ElSpin } from 'element-plus';
 import { FullScreen, Filter } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import UserInfo from '../components/UserInfo.vue';
 
 
 
@@ -404,6 +405,7 @@ onUnmounted(() => {
 
 <template>
   <div class="app-container" style="max-width: 100vw; overflow-x: hidden;">
+    <UserInfo />
     <div class="button-group">
   <el-button @click="toggleFilters" class="filter-toggle-btn">
     <el-icon><Filter /></el-icon> 筛选

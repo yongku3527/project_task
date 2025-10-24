@@ -188,11 +188,11 @@ const startUpload = async (task) => {
       }
     )
     
-    if (response.data.code !== 200) {
-      throw new Error(response.data.msg || '创建上传任务失败')
+    if (response.data?.code !== 200) {
+      throw new Error(response.data?.msg || '创建上传任务失败')
     }
     
-    const uploadData = response.data.data
+    const uploadData = response.data?.data
     
     // 统一使用简单上传
     await uploadSimpleFile(task, uploadData.presignedUrl)
@@ -302,9 +302,9 @@ const completeMultipartUpload = async (task) => {
     }
   )
   
-  if (response.data.code !== 200) {
-    throw new Error(response.data.msg || '完成分片上传失败')
-  }
+  if (response.data?.code !== 200) {
+      throw new Error(response.data?.msg || '完成分片上传失败')
+    }
 }
 
 // 暂停上传

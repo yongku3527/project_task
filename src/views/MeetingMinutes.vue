@@ -565,18 +565,26 @@ const loadMeetingData = async () => {
     const response = await fetch(`${API_BASE_URL}/meeting/getAll`)
     const result = await response.json()
     
-    if (result.code === 200 && result.data) {
+    if (result.code === 200 && result.data && Array.isArray(result.data)) {
       // 转换接口数据为页面需要的格式
-          minutes.value = result.data.map(item => ({
-            id: item.id.toString(),
-            modelName: item.machineType || item.modelName || '',
-            supplier: item.factory || item.supplier || '',
-            salesPerson: item.salesPerson || '',
-            meetingNotes: item.meetingNotes || formatMeetingNotes(item.meetingInfoList),
-            createdAt: item.createdAt || item.meetingInfoList?.[0]?.date || new Date().toLocaleDateString(),
-            status: item.status,
-            rawData: item // 保留原始数据用于展示详情
-          }))
+      minutes.value = result.data.map(item => {
+        // 确保item存在且包含必要字段
+        if (!item) {
+          console.warn('发现空数据项，跳过处理')
+          return null
+        }
+        
+        return {
+          id: item.id?.toString() || '',
+          modelName: item.machineType || item.modelName || '',
+          supplier: item.factory || item.supplier || '',
+          salesPerson: item.salesPerson || '',
+          meetingNotes: item.meetingNotes || formatMeetingNotes(item.meetingInfoList),
+          createdAt: item.createdAt || item.meetingInfoList?.[0]?.date || new Date().toLocaleDateString(),
+          status: item.status ?? 1, // 默认状态为开发中
+          rawData: item // 保留原始数据用于展示详情
+        }
+      }).filter(Boolean) // 过滤掉null值
 
       // 提取历史数据选项
       const modelNames = new Set<string>()
@@ -584,22 +592,26 @@ const loadMeetingData = async () => {
       const salesPersons = new Set<string>()
 
       result.data.forEach(item => {
-        if (item.machineType || item.modelName) {
-          modelNames.add(item.machineType || item.modelName)
-        }
-        if (item.factory || item.supplier) {
-          suppliers.add(item.factory || item.supplier)
-        }
-        if (item.salesPerson) {
-          salesPersons.add(item.salesPerson)
+        if (item) {
+          const modelName = item.machineType || item.modelName
+          const supplier = item.factory || item.supplier
+          const salesPerson = item.salesPerson
+          
+          if (modelName) modelNames.add(modelName)
+          if (supplier) suppliers.add(supplier)
+          if (salesPerson) salesPersons.add(salesPerson)
         }
       })
 
-      modelNameOptions.value = Array.from(modelNames).sort()
-      supplierOptions.value = Array.from(suppliers).sort()
-      salesPersonOptions.value = Array.from(salesPersons).sort()
+      modelNameOptions.value = Array.from(modelNames).filter(Boolean).sort()
+      supplierOptions.value = Array.from(suppliers).filter(Boolean).sort()
+      salesPersonOptions.value = Array.from(salesPersons).filter(Boolean).sort()
     } else {
-      ElMessage.error('获取数据失败: ' + (result.msg || '未知错误'))
+      const errorMsg = result.msg || '未知错误'
+      console.error('获取数据失败:', result)
+      ElMessage.error('获取数据失败: ' + errorMsg)
+      // 清空现有数据，避免显示过期数据
+      minutes.value = []
     }
   } catch (error) {
     console.error('获取数据失败:', error)

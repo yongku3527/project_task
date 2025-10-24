@@ -299,7 +299,7 @@
         <el-form-item label="上传文件">
           <el-upload
             ref="boardUploadRef"
-            :action="`${baseUrl}/minio/upload/${circuitBoardBucket}`"
+            :action="`/minio/upload/${circuitBoardBucket}`"
             :limit="1"
             :on-success="handleBoardUploadSuccess"
             :on-remove="handleBoardUploadRemove"
@@ -357,7 +357,7 @@
         <el-form-item label="原理图文件">
           <el-upload
             ref="schematicUploadRef"
-            :action="`${baseUrl}/minio/upload/${schematicBucket}`"
+            :action="`/minio/upload/${schematicBucket}`"
             :limit="1"
             :on-success="handleSchematicUploadSuccess"
             :on-remove="handleSchematicUploadRemove"
@@ -373,7 +373,7 @@
         <el-form-item label="SMT文件">
           <el-upload
             ref="smtUploadRef"
-            :action="`${baseUrl}/minio/upload/${smtBucket}`"
+            :action="`/minio/upload/${smtBucket}`"
             :limit="1"
             :on-success="handleSmtUploadSuccess"
             :on-remove="handleSmtUploadRemove"
@@ -431,7 +431,7 @@
         <el-form-item label="上传文件">
           <el-upload
             ref="ledBoardPluginUploadRef"
-            :action="`${baseUrl}/minio/upload/${ledBoardPluginBucket}`"
+            :action="`/minio/upload/${ledBoardPluginBucket}`"
             :limit="1"
             :on-success="handleLedBoardPluginUploadSuccess"
             :on-remove="handleLedBoardPluginUploadRemove"
@@ -487,9 +487,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck, Lock } from '@element-plus/icons-vue'
-import axios from 'axios'
-
-const baseUrl = 'http://192.168.100.125:8083'
+import request from '@/utils/request'
 
 // 响应式数据
 const loading = ref(false)
@@ -633,10 +631,10 @@ const loadData = async () => {
         semiProductCode: searchForm.semiProductCode || undefined,
         semiProductName: searchForm.semiProductName || undefined
       }
-      const response = await axios.get(`${baseUrl}/circuit-board/list`, { params })
-      if (response.data.code === 200) {
+      const response = await request.get(`/circuit-board/list`, { params })
+      if (response.code === 200) {
         // 分页查询接口返回的是分页数据对象
-        const pageData = response.data.data
+        const pageData = response.data
         // 按创建时间降序排序，最新的数据排在前面
         const sortedList = pageData.list.sort((a, b) => {
           return new Date(b.createTime) - new Date(a.createTime)
@@ -644,20 +642,21 @@ const loadData = async () => {
         tableData.value = sortedList
         total.value = pageData.total
       } else {
-        ElMessage.error('加载数据失败: ' + response.data.msg)
+        ElMessage.error('加载数据失败: ' + response.msg)
       }
     } else {
       // 使用获取所有数据的接口（包含嵌套数据）
-      const response = await axios.get(`${baseUrl}/circuit-board/all-with-details`)
-      if (response.data.code === 200) {
+      const response = await request.get(`/circuit-board/all-with-details`)
+ 
+      if (response.code === 200) {
         // 按创建时间降序排序，最新的数据排在前面
-        const sortedData = response.data.data.sort((a, b) => {
+        const sortedData = response.data.sort((a, b) => {
           return new Date(b.createTime) - new Date(a.createTime)
         })
         tableData.value = sortedData
         total.value = sortedData.length
       } else {
-        ElMessage.error('加载数据失败: ' + response.data.msg)
+        ElMessage.error('加载数据失败: ' + response.msg)
       }
     }
   } catch (error) {
@@ -670,7 +669,7 @@ const loadData = async () => {
 // 生成模拟数据
 const generateMockData = async () => {
   // 实际使用时，这里应该调用后端接口获取数据
-  // 例如：const response = await axios.get(`${baseUrl}/circuit-board/list`, { params: searchForm })
+  // 例如：const response = await request.get(`/circuit-board/list`, { params: searchForm })
   
   const mockData = [
     {
@@ -840,12 +839,12 @@ const downloadFile = async (url, fileName) => {
     const objectName = urlMatch[2]
     
     // 获取预签名下载URL
-    const response = await axios.get(
-      `${baseUrl}/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
+    const response = await request.get(
+      `/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
     )
     
-    if (response.data.code === 200) {
-      const downloadUrl = response.data.data
+    if (response.code === 200) {
+      const downloadUrl = response.data
       
       // 在新窗口中打开文件内容，而不是下载
       window.open(downloadUrl, '_blank')
@@ -947,12 +946,12 @@ const handleDelete = async (row) => {
               await deleteFileFromMinIO(led.fileUrl, 'led-board-plugin', led.fileId)
             }
             // 删除灯板插件记录
-            await axios.delete(`${baseUrl}/led-board-plugin-semi-product/delete/${led.id}`)
+            await request.delete(`/led-board-plugin-semi-product/delete/${led.id}`)
           }
         }
         
         // 删除半成品记录
-        await axios.delete(`${baseUrl}/semi-product/delete/${semi.id}`)
+        await request.delete(`/semi-product/delete/${semi.id}`)
       }
     }
     
@@ -962,13 +961,13 @@ const handleDelete = async (row) => {
     }
     
     // 最后删除线路板记录
-    const response = await axios.delete(`${baseUrl}/circuit-board/delete/${row.id}`)
+    const response = await request.delete(`/circuit-board/delete/${row.id}`)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('删除成功，已同时删除关联的半成品信息及文件')
       loadData()
     } else {
-      ElMessage.error('删除失败: ' + response.data.msg)
+      ElMessage.error('删除失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -1062,13 +1061,13 @@ const handleDeleteSemiProduct = async (semi) => {
     }
     
     // 删除半成品记录
-    const response = await axios.delete(`${baseUrl}/semi-product/delete/${semi.id}`)
+    const response = await request.delete(`/semi-product/delete/${semi.id}`)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('删除成功，已同时删除关联的文件')
       loadData()
     } else {
-      ElMessage.error('删除失败: ' + response.data.msg)
+      ElMessage.error('删除失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -1145,13 +1144,13 @@ const handleDeleteLedBoardPlugin = async (led) => {
     }
     
     // 删除灯板插件记录
-    const response = await axios.delete(`${baseUrl}/led-board-plugin-semi-product/delete/${led.id}`)
+    const response = await request.delete(`/led-board-plugin-semi-product/delete/${led.id}`)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('删除成功，已同时删除关联的文件')
       loadData()
     } else {
-      ElMessage.error('删除失败: ' + response.data.msg)
+      ElMessage.error('删除失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -1180,13 +1179,13 @@ const handleConsumeSemiProduct = async (semi) => {
       status: 2 // 2表示已消耗状态
     }
     
-    const response = await axios.put(`${baseUrl}/semi-product/update`, consumeData)
+    const response = await request.put(`/semi-product/update`, consumeData)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('消耗成功')
       loadData()
     } else {
-      ElMessage.error('消耗失败: ' + response.data.msg)
+      ElMessage.error('消耗失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -1221,13 +1220,13 @@ const handleToggleSemiProductStatus = async (semi) => {
       status: newStatus
     }
     
-    const response = await axios.put(`${baseUrl}/semi-product/update`, statusData)
+    const response = await request.put(`/semi-product/update`, statusData)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success(`${statusText}成功`)
       loadData()
     } else {
-      ElMessage.error(`${statusText}失败: ` + response.data.msg)
+      ElMessage.error(`${statusText}失败: ` + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -1239,11 +1238,11 @@ const handleToggleSemiProductStatus = async (semi) => {
 // 文件上传处理
 const handleBoardUploadSuccess = (response, file, fileList) => {
   if (response.code === 200) {
-    boardDialog.form.fileUrl = response.data.fileUrl
-    boardDialog.form.fileName = response.data.fileName
-    boardDialog.form.fileId = response.data.fileId
+    boardDialog.form.fileUrl = response.data?.fileUrl
+    boardDialog.form.fileName = response.data?.fileName
+    boardDialog.form.fileId = response.data?.fileId
   } else {
-    ElMessage.error('文件上传失败: ' + response.message)
+    ElMessage.error('文件上传失败: ' + response.msg)
   }
 }
 
@@ -1262,10 +1261,10 @@ const handleBoardUploadRemove = async (file, fileList) => {
       )
       
       // 获取文件信息以构建删除URL
-      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${boardDialog.form.fileId}`)
+      const fileInfoResponse = await request.get(`/file-info/${boardDialog.form.fileId}`)
       console.log('线路板文件信息接口返回数据:', fileInfoResponse.data)
-      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
-        const fileInfo = fileInfoResponse.data.data
+      if (fileInfoResponse.code === 200 && fileInfoResponse.data) {
+        const fileInfo = fileInfoResponse.data
         console.log('线路板文件信息详情:', fileInfo)
         
         // 从fileUrl中提取桶名称和对象名称
@@ -1288,21 +1287,21 @@ const handleBoardUploadRemove = async (file, fileList) => {
         
           try {
             // 先删除MinIO文件
-            await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+            await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
           } catch (minioError) {
             console.warn('删除MinIO文件失败:', minioError)
             // MinIO删除失败也继续删除数据库记录
           }
           
           // 再删除数据库记录
-          await axios.delete(`${baseUrl}/file-info/${boardDialog.form.fileId}`)
+          await request.delete(`/file-info/${boardDialog.form.fileId}`)
           
           ElMessage.success('线路板文件删除成功')
         }
       } else {
-        console.error('获取线路板文件信息失败:', fileInfoResponse.data)
-        ElMessage.error('获取线路板文件信息失败，无法删除文件')
-      }
+          console.error('获取线路板文件信息失败:', fileInfoResponse)
+          ElMessage.error('获取线路板文件信息失败，无法删除文件')
+        }
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除文件失败: ' + (error.response?.data?.msg || error.message))
@@ -1320,9 +1319,9 @@ const handleBoardUploadRemove = async (file, fileList) => {
 // 半成品文件上传处理
 const handleSchematicUploadSuccess = (response, file, fileList) => {
   if (response.code === 200) {
-    semiProductDialog.form.schematicFileId = response.data.fileId
+    semiProductDialog.form.schematicFileId = response.data?.fileId
   } else {
-    ElMessage.error('原理图文件上传失败: ' + response.message)
+    ElMessage.error('原理图文件上传失败: ' + response.msg)
   }
 }
 
@@ -1341,10 +1340,10 @@ const handleSchematicUploadRemove = async (file, fileList) => {
       )
       
       // 获取文件信息以构建删除URL
-      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
+      const fileInfoResponse = await request.get(`/file-info/${semiProductDialog.form.schematicFileId}`)
       console.log('原理图文件信息接口返回数据:', fileInfoResponse.data)
-      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
-        const fileInfo = fileInfoResponse.data.data
+      if (fileInfoResponse.code === 200 && fileInfoResponse.data) {
+        const fileInfo = fileInfoResponse.data
         console.log('原理图文件信息详情:', fileInfo)
         
         // 从fileUrl中提取桶名称和对象名称
@@ -1367,14 +1366,14 @@ const handleSchematicUploadRemove = async (file, fileList) => {
         
         try {
           // 先删除MinIO文件
-          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+          await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
         } catch (minioError) {
           console.warn('删除MinIO文件失败:', minioError)
           // MinIO删除失败也继续删除数据库记录
         }
         
           // 再删除数据库记录
-          await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.schematicFileId}`)
+          await request.delete(`/file-info/${semiProductDialog.form.schematicFileId}`)
           
           ElMessage.success('原理图文件删除成功')
         }
@@ -1393,7 +1392,7 @@ const handleSchematicUploadRemove = async (file, fileList) => {
 
 const handleSmtUploadSuccess = (response, file, fileList) => {
   if (response.code === 200) {
-    semiProductDialog.form.smtFileId = response.data.fileId
+    semiProductDialog.form.smtFileId = response.data?.fileId
   } else {
     ElMessage.error('SMT文件上传失败: ' + response.message)
   }
@@ -1414,10 +1413,10 @@ const handleSmtUploadRemove = async (file, fileList) => {
       )
       
       // 获取文件信息以构建删除URL
-      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
+      const fileInfoResponse = await request.get(`/file-info/${semiProductDialog.form.smtFileId}`)
       console.log('SMT文件信息接口返回数据:', fileInfoResponse.data)
-      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
-        const fileInfo = fileInfoResponse.data.data
+      if (fileInfoResponse.code === 200 && fileInfoResponse.data) {
+        const fileInfo = fileInfoResponse.data
         console.log('SMT文件信息详情:', fileInfo)
         
         // 从fileUrl中提取桶名称和对象名称
@@ -1439,14 +1438,14 @@ const handleSmtUploadRemove = async (file, fileList) => {
         
         try {
           // 先删除MinIO文件
-          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+          await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
         } catch (minioError) {
           console.warn('删除MinIO文件失败:', minioError)
           // MinIO删除失败也继续删除数据库记录
         }
         
           // 再删除数据库记录
-          await axios.delete(`${baseUrl}/file-info/${semiProductDialog.form.smtFileId}`)
+          await request.delete(`/file-info/${semiProductDialog.form.smtFileId}`)
           
           ElMessage.success('SMT文件删除成功')
         }
@@ -1466,7 +1465,7 @@ const handleSmtUploadRemove = async (file, fileList) => {
 // 灯板插件文件上传处理
 const handleLedBoardPluginUploadSuccess = (response, file, fileList) => {
   if (response.code === 200) {
-    ledBoardPluginDialog.form.fileId = response.data.fileId
+    ledBoardPluginDialog.form.fileId = response.data?.fileId
   } else {
     ElMessage.error('文件上传失败: ' + response.message)
   }
@@ -1487,10 +1486,10 @@ const handleLedBoardPluginUploadRemove = async (file, fileList) => {
       )
       
       // 获取文件信息以构建删除URL
-      const fileInfoResponse = await axios.get(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
+      const fileInfoResponse = await request.get(`/file-info/${ledBoardPluginDialog.form.fileId}`)
       console.log('灯板插件文件信息接口返回数据:', fileInfoResponse.data)
-      if (fileInfoResponse.data.code === 200 && fileInfoResponse.data.data) {
-        const fileInfo = fileInfoResponse.data.data
+      if (fileInfoResponse.code === 200 && fileInfoResponse.data) {
+        const fileInfo = fileInfoResponse.data
         console.log('灯板插件文件信息详情:', fileInfo)
         
         // 从fileUrl中提取桶名称和对象名称
@@ -1512,14 +1511,14 @@ const handleLedBoardPluginUploadRemove = async (file, fileList) => {
         
         try {
           // 先删除MinIO文件
-          await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+          await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
         } catch (minioError) {
           console.warn('删除MinIO文件失败:', minioError)
           // MinIO删除失败也继续删除数据库记录
         }
         
           // 再删除数据库记录
-          await axios.delete(`${baseUrl}/file-info/${ledBoardPluginDialog.form.fileId}`)
+          await request.delete(`/file-info/${ledBoardPluginDialog.form.fileId}`)
           
           ElMessage.success('灯板插件文件删除成功')
         }
@@ -1546,8 +1545,8 @@ const handleSchematicUpload = async (options) => {
     const semiProductName = semiProductDialog.form.semiProductName || '原理图'
     
     // 第一步：创建格式化文件名预上传任务
-    const presignResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${schematicBucket.value}/files/formatted-presigned-upload`,
+    const presignResponse = await request.post(
+      `/minio/buckets/${schematicBucket.value}/files/formatted-presigned-upload`,
       null,
       {
         params: {
@@ -1559,17 +1558,17 @@ const handleSchematicUpload = async (options) => {
       }
     )
     
-    if (presignResponse.data.code !== 200) {
-      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
     }
     
-    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
     
     // 第二步：使用预签名URL直接上传文件到MinIO
     await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 第三步：保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${schematicBucket.value}/files/save-info`, {
+    const saveFileResponse = await request.post(`/minio/buckets/${schematicBucket.value}/files/save-info`, {
       bucketName: schematicBucket.value,
       objectName: formattedFileName,
       originalName: file.name,
@@ -1577,19 +1576,19 @@ const handleSchematicUpload = async (options) => {
       contentType: file.type || 'application/octet-stream'
     })
     
-    if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
     }
     
     // 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${schematicBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const fileUrl = `/minio/buckets/${schematicBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
         fileUrl: fileUrl,
         fileName: file.name,
-        fileId: saveFileResponse.data.data?.fileId || null
+        fileId: saveFileResponse.data?.fileId || null
       }
     }
     
@@ -1643,8 +1642,8 @@ const handleSmtUpload = async (options) => {
     const semiProductName = semiProductDialog.form.semiProductName || 'SMT文件'
     
     // 第一步：创建格式化文件名预上传任务
-    const presignResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${smtBucket.value}/files/formatted-presigned-upload`,
+    const presignResponse = await request.post(
+      `/minio/buckets/${smtBucket.value}/files/formatted-presigned-upload`,
       null,
       {
         params: {
@@ -1656,17 +1655,17 @@ const handleSmtUpload = async (options) => {
       }
     )
     
-    if (presignResponse.data.code !== 200) {
-      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
     }
     
-    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
     
     // 第二步：使用预签名URL直接上传文件到MinIO
     await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${smtBucket.value}/files/save-info`, {
+    const saveFileResponse = await request.post(`/minio/buckets/${smtBucket.value}/files/save-info`, {
       bucketName: smtBucket.value,
       objectName: formattedFileName,
       originalName: file.name,
@@ -1674,19 +1673,19 @@ const handleSmtUpload = async (options) => {
       contentType: file.type || 'application/octet-stream'
     })
     
-    if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
     }
     
     // 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${smtBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const fileUrl = `/minio/buckets/${smtBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
         fileUrl: fileUrl,
         fileName: file.name,
-        fileId: saveFileResponse.data.data?.fileId || null
+        fileId: saveFileResponse.data?.fileId || null
       }
     }
     
@@ -1712,8 +1711,8 @@ const handleLedBoardPluginUpload = async (options) => {
     const ledBoardPluginName = ledBoardPluginDialog.form.ledBoardPluginName || '灯板插件'
     
     // 第一步：创建格式化文件名预上传任务
-    const presignResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/formatted-presigned-upload`,
+    const presignResponse = await request.post(
+      `/minio/buckets/${ledBoardPluginBucket.value}/files/formatted-presigned-upload`,
       null,
       {
         params: {
@@ -1725,17 +1724,17 @@ const handleLedBoardPluginUpload = async (options) => {
       }
     )
     
-    if (presignResponse.data.code !== 200) {
-      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
     }
     
-    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
     
     // 第二步：使用预签名URL直接上传文件到MinIO
     await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/save-info`, {
+    const saveFileResponse = await request.post(`/minio/buckets/${ledBoardPluginBucket.value}/files/save-info`, {
       bucketName: ledBoardPluginBucket.value,
       objectName: formattedFileName,
       originalName: file.name,
@@ -1743,19 +1742,19 @@ const handleLedBoardPluginUpload = async (options) => {
       contentType: file.type || 'application/octet-stream'
     })
     
-    if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
     }
     
     // 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const fileUrl = `/minio/buckets/${ledBoardPluginBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
         fileUrl: fileUrl,
         fileName: file.name,
-        fileId: saveFileResponse.data.data?.fileId || null
+        fileId: saveFileResponse.data?.fileId || null
       }
     }
     
@@ -1791,8 +1790,8 @@ const handleBoardUpload = async (options) => {
     const boardName = boardDialog.form.boardName || '线路板文件'
     
     // 第一步：创建格式化文件名预上传任务
-    const presignResponse = await axios.post(
-      `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/formatted-presigned-upload`,
+    const presignResponse = await request.post(
+      `/minio/buckets/${circuitBoardBucket.value}/files/formatted-presigned-upload`,
       null,
       {
         params: {
@@ -1804,17 +1803,17 @@ const handleBoardUpload = async (options) => {
       }
     )
     
-    if (presignResponse.data.code !== 200) {
-      throw new Error(presignResponse.data.msg || '创建预上传任务失败')
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
     }
     
-    const { presignedUrl, objectName: formattedFileName } = presignResponse.data.data
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
     
     // 第二步：使用预签名URL直接上传文件到MinIO
     await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
     
     // 保存文件信息到数据库
-    const saveFileResponse = await axios.post(`${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/save-info`, {
+    const saveFileResponse = await request.post(`/minio/buckets/${circuitBoardBucket.value}/files/save-info`, {
       bucketName: circuitBoardBucket.value,
       objectName: formattedFileName,
       originalName: file.name,
@@ -1822,19 +1821,19 @@ const handleBoardUpload = async (options) => {
       contentType: file.type || 'application/octet-stream'
     })
     
-    if (saveFileResponse.data.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.data.msg)
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
     }
     
     // 模拟原上传成功回调格式
-    const fileUrl = `${baseUrl}/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const fileUrl = `/minio/buckets/${circuitBoardBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
         fileUrl: fileUrl,
         fileName: file.name,
-        fileId: saveFileResponse.data.data?.fileId || null
+        fileId: saveFileResponse.data?.fileId || null
       }
     }
     
@@ -1856,18 +1855,18 @@ const saveBoard = async () => {
     await boardFormRef.value.validate()
     
     const url = boardDialog.form.id 
-      ? `${baseUrl}/circuit-board/update`
-      : `${baseUrl}/circuit-board/add`
+      ? `/circuit-board/update`
+      : `/circuit-board/add`
     const method = boardDialog.form.id ? 'put' : 'post'
     
-    const response = await axios[method](url, boardDialog.form)
+    const response = await request[method](url, boardDialog.form)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('保存成功')
       boardDialog.visible = false
       loadData()
     } else {
-      ElMessage.error('保存失败: ' + response.data.msg)
+      ElMessage.error('保存失败: ' + response.msg)
     }
   } catch (error) {
     ElMessage.error('保存失败: ' + error.message)
@@ -1886,18 +1885,18 @@ const saveSemiProduct = async () => {
     let response
     if (formData.id) {
       // 编辑
-      response = await axios.put(`${baseUrl}/semi-product/update`, formData)
+      response = await request.put(`/semi-product/update`, formData)
     } else {
       // 新增
-      response = await axios.post(`${baseUrl}/semi-product/add`, formData)
+      response = await request.post(`/semi-product/add`, formData)
     }
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('保存成功')
       semiProductDialog.visible = false
       loadData()
     } else {
-      ElMessage.error('保存失败: ' + response.data.msg)
+      ElMessage.error('保存失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== false) {
@@ -1918,18 +1917,18 @@ const saveLedBoardPlugin = async () => {
     let response
     if (formData.id) {
       // 编辑
-      response = await axios.put(`${baseUrl}/led-board-plugin-semi-product/update`, formData)
+      response = await request.put(`/led-board-plugin-semi-product/update`, formData)
     } else {
       // 新增
-      response = await axios.post(`${baseUrl}/led-board-plugin-semi-product/add`, formData)
+      response = await request.post(`/led-board-plugin-semi-product/add`, formData)
     }
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       ElMessage.success('保存成功')
       ledBoardPluginDialog.visible = false
       loadData()
     } else {
-      ElMessage.error('保存失败: ' + response.data.msg)
+      ElMessage.error('保存失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== false) {
@@ -1941,11 +1940,11 @@ const saveLedBoardPlugin = async () => {
 // 加载线路板选项
 const loadCircuitBoardOptions = async () => {
   try {
-    const response = await axios.get(`${baseUrl}/circuit-board/all`)
-    if (response.data.code === 200) {
-      circuitBoardOptions.value = response.data.data
+    const response = await request.get(`/circuit-board/all`)
+    if (response.code === 200) {
+      circuitBoardOptions.value = response.data
     } else {
-      ElMessage.error('加载线路板选项失败: ' + response.data.msg)
+      ElMessage.error('加载线路板选项失败: ' + response.msg)
     }
   } catch (error) {
     ElMessage.error('加载线路板选项失败: ' + error.message)
@@ -1955,11 +1954,11 @@ const loadCircuitBoardOptions = async () => {
 // 加载半成品选项
 const loadSemiProductOptions = async () => {
   try {
-    const response = await axios.get(`${baseUrl}/semi-product/all`)
-    if (response.data.code === 200) {
-      semiProductOptions.value = response.data.data
+    const response = await request.get(`/semi-product/all`)
+    if (response.code === 200) {
+      semiProductOptions.value = response.data
     } else {
-      ElMessage.error('加载半成品选项失败: ' + response.data.msg)
+      ElMessage.error('加载半成品选项失败: ' + response.msg)
     }
   } catch (error) {
     ElMessage.error('加载半成品选项失败: ' + error.message)
@@ -1969,12 +1968,12 @@ const loadSemiProductOptions = async () => {
 // MES接口调用 - 根据物料编号查询物料信息
 const getItemInfoFromMES = async (itemCode) => {
   try {
-    const response = await axios.get(`${baseUrl}/mes/item-info/${itemCode}`)
+    const response = await request.get(`/mes/item-info/${itemCode}`)
     
-    if (response.data.code === 200) {
-      return response.data.data
+    if (response.code === 200) {
+      return response.data
     } else {
-      console.warn('MES物料信息查询失败: ' + response.data.msg)
+      console.warn('MES物料信息查询失败: ' + response.msg)
       return null
     }
   } catch (error) {
@@ -2079,9 +2078,9 @@ const handleConsumeCircuitBoard = async (row) => {
       status: 2
     }
     
-    const response = await axios.put(`${baseUrl}/circuit-board/update`, consumeData)
+    const response = await request.put(`/circuit-board/update`, consumeData)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       // 如果线路板消耗成功，同时消耗该线路板下的所有半成品
       if (row.semiProductDTOList && row.semiProductDTOList.length > 0) {
         let successCount = 0
@@ -2101,8 +2100,8 @@ const handleConsumeCircuitBoard = async (row) => {
                 status: 2
               }
               
-              const semiResponse = await axios.put(`${baseUrl}/semi-product/update`, semiConsumeData)
-              if (semiResponse.data.code === 200) {
+              const semiResponse = await request.put(`/semi-product/update`, semiConsumeData)
+              if (semiResponse.code === 200) {
                 successCount++
               } else {
                 failCount++
@@ -2126,7 +2125,7 @@ const handleConsumeCircuitBoard = async (row) => {
       }
       loadData()
     } else {
-      ElMessage.error('消耗失败: ' + response.data.msg)
+      ElMessage.error('消耗失败: ' + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -2158,7 +2157,7 @@ const deleteFileFromMinIO = async (fileUrl, fileType, fileId = null) => {
     
     // 先删除MinIO文件
     try {
-      await axios.delete(`${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`)
+      await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
       console.log(`${fileType}文件从MinIO删除成功`)
     } catch (minioError) {
       console.warn(`删除${fileType}MinIO文件失败:`, minioError)
@@ -2168,7 +2167,7 @@ const deleteFileFromMinIO = async (fileUrl, fileType, fileId = null) => {
     // 如果提供了fileId，也删除数据库记录
     if (fileId) {
       try {
-        await axios.delete(`${baseUrl}/file-info/${fileId}`)
+        await request.delete(`/file-info/${fileId}`)
         console.log(`${fileType}文件数据库记录删除成功`)
       } catch (dbError) {
         console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
@@ -2201,9 +2200,9 @@ const handleToggleCircuitBoardStatus = async (row) => {
       status: newStatus
     }
     
-    const response = await axios.put(`${baseUrl}/circuit-board/update`, statusData)
+    const response = await request.put(`/circuit-board/update`, statusData)
     
-    if (response.data.code === 200) {
+    if (response.code === 200) {
       // 如果线路板状态切换成功，同时切换该线路板下的所有半成品状态
       if (row.semiProductDTOList && row.semiProductDTOList.length > 0) {
         let successCount = 0
@@ -2223,8 +2222,8 @@ const handleToggleCircuitBoardStatus = async (row) => {
                 status: newStatus
               }
               
-              const semiResponse = await axios.put(`${baseUrl}/semi-product/update`, semiStatusData)
-              if (semiResponse.data.code === 200) {
+              const semiResponse = await request.put(`/semi-product/update`, semiStatusData)
+              if (semiResponse.code === 200) {
                 successCount++
               } else {
                 failCount++
@@ -2248,7 +2247,7 @@ const handleToggleCircuitBoardStatus = async (row) => {
       }
       loadData()
     } else {
-      ElMessage.error(`${statusText}失败: ` + response.data.msg)
+      ElMessage.error(`${statusText}失败: ` + response.msg)
     }
   } catch (error) {
     if (error !== 'cancel') {

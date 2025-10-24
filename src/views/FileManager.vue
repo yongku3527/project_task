@@ -215,8 +215,8 @@ onMounted(() => {
 const loadStatistics = async () => {
   try {
     const response = await axios.get(`${baseUrl}/file-info/statistics`)
-    if (response.data.code === 200) {
-      const data = response.data.data
+    if (response.data?.code === 200) {
+      const data = response.data?.data
       
       // 计算总文件大小
       let totalBytes = 0
@@ -262,10 +262,10 @@ const loadFiles = async () => {
       }
     })
     
-    if (response.data.code === 200) {
-      const data = response.data.data
+    if (response.data?.code === 200) {
+      const data = response.data?.data
       // 将数据库的文件信息转换为文件列表格式
-      files.value = data.list.map(item => ({
+      files.value = data?.list?.map(item => ({
         ...item,
         objectName: item.fileName || item.originalName, // 使用文件名作为显示名称
         name: item.fileName || item.originalName,
@@ -320,8 +320,8 @@ const downloadFile = async (file) => {
         `${baseUrl}/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
       )
       
-      if (response.data.code === 200) {
-        const downloadUrl = response.data.data
+      if (response.data?.code === 200) {
+        const downloadUrl = response.data?.data
         
         // 创建下载链接
         const link = document.createElement('a')
@@ -361,11 +361,11 @@ const deleteFile = async (file) => {
       `${baseUrl}/file-info/${file.id}`
     )
     
-    if (response.data.code === 200) {
+    if (response.data?.code === 200) {
       ElMessage.success('文件删除成功')
       loadFiles()
     } else {
-      ElMessage.error('删除文件失败')
+      ElMessage.error(response.data?.msg || '删除文件失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
