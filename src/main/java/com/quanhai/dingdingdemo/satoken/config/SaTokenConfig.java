@@ -31,8 +31,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     //临时排除权限接口
                     .notMatch("/auth/permission")
                     .notMatch("/auth/role")
-                    //测试登录接口
-                    .notMatch("/tokenTest/login")
+                    .notMatch("/test/cookie")    // 排除cookie测试接口
 
                     .notMatch("/error")
                     .notMatch("/swagger-ui/**")
