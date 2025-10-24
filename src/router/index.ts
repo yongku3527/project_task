@@ -11,6 +11,8 @@ import CircuitBoardManager from '../views/CircuitBoardManager.vue';
 import Login from '../views/Login.vue';
 import TestLogin from '../views/TestLogin.vue';
 import CookieTest from '../views/CookieTest.vue';
+import UserManager from '../views/UserManager.vue';
+import RolePermissionManager from '../views/RolePermissionManager.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -67,6 +69,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/cookie-test',
     name: 'CookieTest',
     component: CookieTest
+  },
+  {
+    path: '/user-manager',
+    name: 'UserManager',
+    component: UserManager
+  },
+  {
+    path: '/role-permission',
+    name: 'RolePermissionManager',
+    component: RolePermissionManager
   }
 ];
 
@@ -90,6 +102,12 @@ router.beforeEach((to, from, next) => {
     next('/login');
     return;
   }
+// // 如果访问其他页面且没有token，跳转到登录页
+//   if (to.path !== '/login' && !token) {
+//     next('/login');
+//     return;
+//   }
+
   
   next();
 });

@@ -54,6 +54,22 @@
           <span>线路板管理</span>
         </el-menu-item>
       </el-sub-menu>
+
+      <!-- 系统管理 -->
+      <el-sub-menu index="system-management">
+        <template #title>
+          <Setting style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>系统管理</span>
+        </template>
+        <el-menu-item index="/user-manager">
+          <User style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>用户管理</span>
+        </el-menu-item>
+        <el-menu-item index="/role-permission">
+          <Key style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>角色权限</span>
+        </el-menu-item>
+      </el-sub-menu>
       
       <!-- 用户菜单 -->
       <div class="user-menu">
@@ -83,7 +99,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown } from '@element-plus/icons-vue';
+import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();

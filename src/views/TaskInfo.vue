@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, getCurrentInstance, computed, watch } from
 // import { ElMessage, ElSpin } from 'element-plus';
 import { FullScreen, Filter } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import UserInfo from '../components/UserInfo.vue';
+// import UserInfo from '../components/UserInfo.vue';
 
 
 
@@ -733,7 +733,7 @@ onUnmounted(() => {
 
 .filter-tabs { margin-bottom: 16px; }
 
-.filter-group { padding: 10px 0; }
+.filter-group { padding: 10px ; }
 
 .status-checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
 .status-placeholder { color: #909399; font-size: 0.9rem; padding: 8px 0; }
