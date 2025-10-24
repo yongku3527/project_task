@@ -73,7 +73,7 @@ class Request {
   }
 
   // POST请求
-  async post(url: string, data?: any) {
+  async post(url: string, data?: any, params?: any) {
     const config = {
       method: 'POST',
       headers: this.baseConfig.headers,
@@ -81,7 +81,13 @@ class Request {
       body: data ? JSON.stringify(data) : undefined
     }
 
-    const requestUrl = this.baseConfig.baseURL + url
+    let requestUrl = this.baseConfig.baseURL + url
+    
+    // 处理查询参数
+    if (params) {
+      const queryString = new URLSearchParams(params).toString()
+      requestUrl += `?${queryString}`
+    }
     
     const finalConfig = await this.interceptRequest(config)
     const response = await fetch(requestUrl, finalConfig)
@@ -89,7 +95,7 @@ class Request {
   }
 
   // PUT请求
-  async put(url: string, data?: any) {
+  async put(url: string, data?: any, params?: any) {
     const config = {
       method: 'PUT',
       headers: this.baseConfig.headers,
@@ -97,7 +103,13 @@ class Request {
       body: data ? JSON.stringify(data) : undefined
     }
 
-    const requestUrl = this.baseConfig.baseURL + url
+    let requestUrl = this.baseConfig.baseURL + url
+    
+    // 处理查询参数
+    if (params) {
+      const queryString = new URLSearchParams(params).toString()
+      requestUrl += `?${queryString}`
+    }
     
     const finalConfig = await this.interceptRequest(config)
     const response = await fetch(requestUrl, finalConfig)

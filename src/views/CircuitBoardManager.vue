@@ -1788,18 +1788,16 @@ const handleBoardUpload = async (options) => {
     // 获取当前线路板信息用于生成格式化文件名
     const boardCode = boardDialog.form.boardCode || 'UNKNOWN'
     const boardName = boardDialog.form.boardName || '线路板文件'
-    
+    // debugger;
     // 第一步：创建格式化文件名预上传任务
     const presignResponse = await request.post(
       `/minio/buckets/${circuitBoardBucket.value}/files/formatted-presigned-upload`,
       null,
       {
-        params: {
-          code: boardCode,
-          name: boardName,
-          originalFileName: file.name,
-          fileSize: file.size
-        }
+        code: boardCode,
+        name: boardName,
+        originalFileName: file.name,
+        fileSize: file.size
       }
     )
     
