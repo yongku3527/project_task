@@ -77,15 +77,17 @@
           </template>
 
           <el-table 
-            :data="permissionData" 
+            :data="permissionTreeData" 
             v-loading="permissionLoading"
             style="width: 100%"
             row-key="id"
             border
             stripe
+            :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+            ref="permissionTableRef"
+            :default-expand-all="false"
           >
-            <el-table-column prop="id" label="ID" width="80" fixed="left" />
-            <el-table-column prop="permName" label="权限名称" width="150" />
+            <el-table-column prop="permName" label="权限名称" width="200" />
             <el-table-column prop="permCode" label="权限编码" width="150" />
             <el-table-column prop="permType" label="类型" width="100">
               <template #default="{ row }">
@@ -231,6 +233,7 @@
           :default-checked-keys="checkedPermissionIds"
           :props="treeProps"
           default-expand-all
+          check-strictly
           style="max-height: 400px; overflow-y: auto;"
         />
       </div>
@@ -274,9 +277,12 @@ interface Permission {
 
 interface PermissionTreeNode {
   id: number
-  label: string
+  permName: string
   permCode: string
   permType: number
+  status: number
+  parentId: number | null
+  label: string
   children?: PermissionTreeNode[]
 }
 
@@ -291,6 +297,7 @@ const rolePagination = reactive({
 
 // 权限相关数据
 const permissionData = ref<Permission[]>([])
+const permissionTreeData = ref<PermissionTreeNode[]>([])
 const permissionLoading = ref(false)
 const permissionPagination = reactive({
   current: 1,
@@ -364,6 +371,7 @@ const rolePermissionDialogVisible = ref(false)
 const rolePermissionSubmitLoading = ref(false)
 const currentRoleId = ref(0)
 const permissionTreeRef = ref()
+const permissionTableRef = ref()
 
 const permissionTree = ref<PermissionTreeNode[]>([])
 const checkedPermissionIds = ref<number[]>([])
@@ -414,6 +422,25 @@ const loadPermissionData = async () => {
   } catch (error) {
     ElMessage.error('获取权限列表失败')
     console.error('Load permission data error:', error)
+  } finally {
+    permissionLoading.value = false
+  }
+}
+
+// 加载权限树数据
+const loadPermissionTreeData = async () => {
+  permissionLoading.value = true
+  try {
+    const response = await request.get('/sys/permission/tree')
+    if (response.code === 200) {
+      // 使用buildPermissionTree函数构建树形结构
+      permissionTreeData.value = buildPermissionTree(response.data)
+    } else {
+      ElMessage.error(response.msg || '获取权限树数据失败')
+    }
+  } catch (error) {
+    ElMessage.error('获取权限树数据失败')
+    console.error('Load permission tree data error:', error)
   } finally {
     permissionLoading.value = false
   }
@@ -506,7 +533,7 @@ const handleDeletePermission = async (row: Permission) => {
 
     if (response.code === 200) {
       ElMessage.success('删除成功')
-      loadPermissionData()
+      loadPermissionTreeData()
     } else {
       ElMessage.error(response.msg || '删除失败')
     }
@@ -570,9 +597,12 @@ const buildPermissionTree = (permissions: Permission[]): PermissionTreeNode[] =>
   permissions.forEach(perm => {
     map.set(perm.id, {
       id: perm.id,
-      label: perm.permName,
+      permName: perm.permName, // 保留原始属性名
       permCode: perm.permCode,
       permType: perm.permType,
+      status: perm.status,
+      parentId: perm.parentId,
+      label: perm.permName, // 添加label属性用于树形显示
       children: []
     })
   })
@@ -640,7 +670,7 @@ const handleSubmitPermission = async () => {
         if (response.code === 200) {
           ElMessage.success(permissionDialogType.value === 'add' ? '新增成功' : '编辑成功')
           permissionDialogVisible.value = false
-          loadPermissionData()
+          loadPermissionTreeData()
         } else {
           ElMessage.error(response.msg || '操作失败')
         }
@@ -657,18 +687,17 @@ const handleSubmitPermission = async () => {
 const handleAssignRolePermissions = async () => {
   rolePermissionSubmitLoading.value = true
   try {
-    // 获取选中的权限ID
+    // 获取选中的权限ID（不包含半选中的节点）
     const checkedKeys = permissionTreeRef.value.getCheckedKeys()
-    const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys()
-    const allCheckedKeys = [...checkedKeys, ...halfCheckedKeys]
-
+    
     // 构建角色权限关联数据
-    const rolePermissions = allCheckedKeys.map(permissionId => ({
+    const rolePermissions = checkedKeys.map(permissionId => ({
       roleId: currentRoleId.value,
       permissionId: permissionId
     }))
 
-    const response = await request.post('/sys/rolePermission/batch', rolePermissions)
+    // 修改API调用，添加角色ID参数
+    const response = await request.post(`/sys/rolePermission/batch/${currentRoleId.value}`, rolePermissions)
     
     if (response.code === 200) {
       ElMessage.success('分配权限成功')
@@ -732,10 +761,10 @@ const resetPermissionForm = () => {
   permissionForm.status = 1
 }
 
-// 生命周期
+// 初始化
 onMounted(() => {
   loadRoleData()
-  loadPermissionData()
+  loadPermissionTreeData()
 })
 </script>
 
