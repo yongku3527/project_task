@@ -106,6 +106,7 @@ router.beforeEach((to, from, next) => {
     return;
   }
   
+  // 首页不需要token验证，允许直接访问
   next();
 });
 

@@ -580,7 +580,14 @@ onUnmounted(() => {
   background-color: #e4e5e7;
 }
 
-.button-group { display: flex; gap: 12px; position: fixed; top: 20px; right: 20px; z-index: 1000; }
+.button-group { 
+  display: flex; 
+  gap: 12px; 
+  position: fixed; 
+  top: 80px; 
+  right: 20px; 
+  z-index: 1000; 
+}
 
 .pagination-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; }
 

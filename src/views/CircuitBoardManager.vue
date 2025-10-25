@@ -1508,12 +1508,12 @@ const handleSchematicUpload = async (options) => {
       `/minio/buckets/${schematicBucket.value}/files/formatted-presigned-upload`,
       null,
       {
-        params: {
+        
           code: semiProductCode,
           name: semiProductName,
           originalFileName: file.name,
           fileSize: file.size
-        }
+        
       }
     )
     
@@ -1605,12 +1605,10 @@ const handleSmtUpload = async (options) => {
       `/minio/buckets/${smtBucket.value}/files/formatted-presigned-upload`,
       null,
       {
-        params: {
-          code: semiProductCode,
-          name: semiProductName,
-          originalFileName: file.name,
-          fileSize: file.size
-        }
+        code: semiProductCode,
+        name: semiProductName,
+        originalFileName: file.name,
+        fileSize: file.size
       }
     )
     
@@ -1674,12 +1672,10 @@ const handleLedBoardPluginUpload = async (options) => {
       `/minio/buckets/${ledBoardPluginBucket.value}/files/formatted-presigned-upload`,
       null,
       {
-        params: {
-          code: ledBoardPluginCode,
-          name: ledBoardPluginName,
-          originalFileName: file.name,
-          fileSize: file.size
-        }
+        code: ledBoardPluginCode,
+        name: ledBoardPluginName,
+        originalFileName: file.name,
+        fileSize: file.size
       }
     )
     

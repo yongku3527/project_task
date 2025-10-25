@@ -143,11 +143,10 @@ const handleLogout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('username');
   // 清除权限和角色信息
-  PermissionManager.clearPermissions();
-  PermissionManager.clearRoles();
+  PermissionManager.clearAuth();
   isLoggedIn.value = false;
   username.value = '';
-  router.push('/login');
+  router.push('/');
 };
 
 // 跳转到登录页
@@ -165,6 +164,8 @@ onMounted(() => {
   // 监听路由变化，判断是否登录页面
   watch(() => route.path, (newPath) => {
     isLoginPage.value = newPath === '/login';
+    // 路由变化时重新检查登录状态
+    checkLoginStatus();
   }, { immediate: true });
 });
 
