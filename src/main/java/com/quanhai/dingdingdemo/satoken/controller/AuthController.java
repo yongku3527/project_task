@@ -1,5 +1,6 @@
 package com.quanhai.dingdingdemo.satoken.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
@@ -92,7 +93,9 @@ public class AuthController {
     }
 
     @GetMapping("/permission")
-    public Map<String, Object> getPermissionList(Long userId) {
+    @SaCheckLogin
+    public Map<String, Object> getPermissionList() {
+        Long userId = StpUtil.getLoginIdAsLong();
         List<String> permissionList = authService.getPermissionByUserId(userId);
         Map<String, Object> result = new HashMap<>();
         result.put("code", 200);
@@ -102,11 +105,13 @@ public class AuthController {
     }
 
     @GetMapping("/role")
-    public Map<String, Object> getRoleList(Long userId) {
+    @SaCheckLogin
+    public Map<String, Object> getRoleList() {
+        Long userId = StpUtil.getLoginIdAsLong();
         List<String> roleList = authService.getRoleListByUserId(userId);
         Map<String, Object> result = new HashMap<>();
         result.put("code", 200);
-        result.put("msg", "获取权限成功");
+        result.put("msg", "获取角色成功");
         result.put("data", roleList);
         return result;
     }
