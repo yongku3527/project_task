@@ -2,6 +2,7 @@ package com.quanhai.dingdingdemo.satoken.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import com.quanhai.dingdingdemo.model.Resp.Result;
@@ -29,8 +30,8 @@ public class SysRolePermissionController {
     @GetMapping("/role/{roleId}")
     @SaCheckPermission("role:permission")
     public Result<List<SysRolePermission>> getByRoleId(@PathVariable Long roleId) {
-        QueryWrapper<SysRolePermission> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("role_id", roleId);
+        LambdaQueryWrapper<SysRolePermission> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SysRolePermission::getRoleId, roleId);
         return ResultUtil.success(sysRolePermissionService.list(queryWrapper));
     }
 
@@ -63,18 +64,17 @@ public class SysRolePermissionController {
     /**
      * 批量分配角色权限
      */
-    @PostMapping("/batch")
+    @PostMapping("/batch/{roleId}")
     @SaCheckPermission("role:permission")
-    public Result<Boolean> assignBatch(@RequestBody List<SysRolePermission> rolePermissions) {
+    public Result<Boolean> assignBatch(@PathVariable Long roleId, @RequestBody List<SysRolePermission> rolePermissions) {
         if (rolePermissions.isEmpty()) {
-            return ResultUtil.success(true);
+
+            return ResultUtil.success(sysRolePermissionService.removeById(roleId));
         }
         
-        Long roleId = rolePermissions.get(0).getRoleId();
-        
         // 先删除角色原有权限
-        QueryWrapper<SysRolePermission> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("role_id", roleId);
+        LambdaQueryWrapper<SysRolePermission> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SysRolePermission::getRoleId, roleId);
         sysRolePermissionService.remove(queryWrapper);
         
         // 批量添加新权限
