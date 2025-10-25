@@ -25,15 +25,7 @@
               </el-form>
             </div>
             <div class="header-buttons">
-              <el-button 
-                :type="isAuthenticated ? 'success' : 'warning'" 
-                size="small" 
-                @click="showPasswordDialog = true"
-              >
-                <el-icon><Lock /></el-icon>
-                {{ isAuthenticated ? '已验证' : '管理员验证' }}
-              </el-button>
-              <el-button type="primary" size="small" @click="handleAdd" v-if="isAuthenticated">
+              <el-button type="primary" size="small" @click="handleAdd">
                 <el-icon><Plus /></el-icon>
                 新增线路板
               </el-button>
@@ -88,10 +80,10 @@
 
               </div>
               <div class="board-actions">
-                <el-button type="primary" size="small" link @click="handleEdit(row)" v-if="isAuthenticated">
+                <el-button type="primary" size="small" link @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button type="danger" size="small" link @click="handleDelete(row)" v-if="isAuthenticated">
+                <el-button type="danger" size="small" link @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
                 <el-button 
@@ -100,7 +92,6 @@
                   link 
                   @click="handleConsumeCircuitBoard(row)"
                   :disabled="row.status === 2"
-                  v-if="isAuthenticated"
                 >
                   <el-icon><Minus /></el-icon>消耗
                 </el-button>
@@ -109,11 +100,10 @@
                   size="small" 
                   link 
                   @click="handleToggleCircuitBoardStatus(row)"
-                  v-if="isAuthenticated"
                 >
                   <el-icon><CircleClose v-if="row.status === 1" /><CircleCheck v-else /></el-icon>{{ row.status === 1 ? '停用' : '启用' }}
                 </el-button>
-                <el-button type="success" size="small" link @click="handleAddSemiProduct(row)" v-if="isAuthenticated">
+                <el-button type="success" size="small" link @click="handleAddSemiProduct(row)">
                   <el-icon><Plus /></el-icon>添加半成品
                 </el-button>
               </div>
@@ -173,10 +163,10 @@
 
                     </div>
                     <div class="semi-product-actions">
-                      <el-button type="warning" size="small" link @click="handleEditSemiProduct(semi)" v-if="isAuthenticated">
+                      <el-button type="warning" size="small" link @click="handleEditSemiProduct(semi)">
                         <el-icon><Edit /></el-icon>编辑
                       </el-button>
-                      <el-button type="danger" size="small" link @click="handleDeleteSemiProduct(semi)" v-if="isAuthenticated">
+                      <el-button type="danger" size="small" link @click="handleDeleteSemiProduct(semi)">
                         <el-icon><Delete /></el-icon>删除
                       </el-button>
                       <el-button 
@@ -185,7 +175,6 @@
                         link 
                         @click="handleConsumeSemiProduct(semi)"
                         :disabled="semi.status === 2"
-                        v-if="isAuthenticated"
                       >
                         <el-icon><Remove /></el-icon>消耗
                       </el-button>
@@ -194,12 +183,11 @@
                         size="small" 
                         link 
                         @click="handleToggleSemiProductStatus(semi)"
-                        v-if="isAuthenticated"
                       >
                         <el-icon><CircleClose v-if="semi.status === 1" /><CircleCheck v-else /></el-icon>{{ semi.status === 1 ? '停用' : (semi.status === 2 ? '启用' : '启用') }}
                       </el-button>
                       <!-- 添加灯板插件按钮已隐藏 -->
-                      <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)" v-if="isAuthenticated">
+                      <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
                         <el-icon><Plus /></el-icon>添加灯板插件
                       </el-button> -->
                       <!-- 灯板插件数量按钮已隐藏 -->
@@ -247,10 +235,10 @@
 
                           </div>
                           <div class="led-actions">
-                            <el-button type="warning" size="small" link @click="handleEditLedBoardPlugin(led)" v-if="isAuthenticated">
+                            <el-button type="warning" size="small" link @click="handleEditLedBoardPlugin(led)">
                               <el-icon><Edit /></el-icon>编辑
                             </el-button>
-                            <el-button type="danger" size="small" link @click="handleDeleteLedBoardPlugin(led)" v-if="isAuthenticated">
+                            <el-button type="danger" size="small" link @click="handleDeleteLedBoardPlugin(led)">
                               <el-icon><Delete /></el-icon>删除
                             </el-button>
                           </div>
@@ -459,34 +447,14 @@
       </template>
     </el-dialog>
 
-    <!-- 管理员密码验证对话框 -->
-    <el-dialog
-      v-model="showPasswordDialog"
-      title="管理员验证"
-      width="400px"
-    >
-      <el-form>
-        <el-form-item label="密码">
-          <el-input
-            v-model="passwordInput"
-            type="password"
-            placeholder="请输入管理员密码"
-            @keyup.enter="authenticateAdmin"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showPasswordDialog = false">取消</el-button>
-        <el-button type="primary" @click="authenticateAdmin">验证</el-button>
-      </template>
-    </el-dialog>
+    
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck, Lock } from '@element-plus/icons-vue'
+import { Plus, Refresh, Edit, Delete, Upload, Download, ArrowDown, ArrowUp, Minus, Switch, Remove, CircleClose, CircleCheck } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
 // 响应式数据
@@ -495,10 +463,7 @@ const tableData = ref([])
 const currentPage = ref(1)
 const pageSize = ref(5)
 const total = ref(0)
-const isAuthenticated = ref(false) // 管理员验证状态
-const showPasswordDialog = ref(false) // 显示密码验证对话框
-const passwordInput = ref('') // 管理员密码输入
-const ADMIN_PASSWORD = 'admin123' // 管理员密码
+
 // 定义不同文件类型的存储桶
 const circuitBoardBucket = ref('circuit-boards')
 const semiProductBucket = ref('semi-products')
@@ -880,18 +845,7 @@ const handleAdd = () => {
   boardDialog.visible = true
 }
 
-// 管理员验证
-const authenticateAdmin = () => {
-  if (passwordInput.value === ADMIN_PASSWORD) {
-    isAuthenticated.value = true
-    showPasswordDialog.value = false
-    passwordInput.value = ''
-    ElMessage.success('管理员验证成功')
-  } else {
-    ElMessage.error('密码错误，请重新输入')
-    passwordInput.value = ''
-  }
-}
+
 
 
 
