@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>文件管理器（数据库）</span>
           <div class="header-actions">
-            <el-button type="primary" size="small" @click="showUploadDialog = true">
+            <el-button v-permission="'doc:update'" type="primary" size="small" @click="showUploadDialog = true">
               <el-icon><Upload /></el-icon>
               上传到MinIO
             </el-button>
@@ -131,6 +131,7 @@
             <el-table-column label="操作" width="200" fixed="right">
               <template #default="{ row }">
                 <el-button 
+                  v-permission="'doc:view'"
                   type="primary" 
                   size="small" 
                   link
@@ -140,6 +141,7 @@
                   下载
                 </el-button>
                 <el-button 
+                  v-permission="'doc:delete'"
                   type="danger" 
                   size="small" 
                   link
@@ -188,6 +190,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Folder, Download, Delete, Plus, Refresh, Upload, Search } from '@element-plus/icons-vue'
 import FileUpload from '../components/FileUpload.vue'
 import axios from 'axios'
+import PermissionManager from '@/utils/permission'
 
 const baseUrl = 'http://192.168.100.125:8083'
 

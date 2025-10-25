@@ -15,7 +15,7 @@
               </el-form-item>
             </el-form>
             <div class="header-buttons">
-              <el-button type="primary" size="small" @click="handleAdd">
+              <el-button v-permission="'user:add'" type="primary" size="small" @click="handleAdd">
                 <el-icon><Plus /></el-icon>
                 新增用户
               </el-button>
@@ -59,13 +59,14 @@
           </el-table-column>
           <el-table-column label="操作" min-width="320" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" size="small" link @click="handleEdit(row)">
+              <el-button v-permission="'user:update'" type="primary" size="small" link @click="handleEdit(row)">
                 <el-icon><Edit /></el-icon>编辑
               </el-button>
-              <el-button type="warning" size="small" link @click="handleRoleAssignment(row)">
+              <el-button v-permission="'user:role'" type="warning" size="small" link @click="handleRoleAssignment(row)">
                 <el-icon><User /></el-icon>分配角色
               </el-button>
               <el-button 
+                v-permission="'user:update'"
                 :type="row.status === 1 ? 'danger' : 'success'" 
                 size="small" 
                 link 
@@ -74,7 +75,7 @@
                 <el-icon><CircleClose v-if="row.status === 1" /><CircleCheck v-else /></el-icon>
                 {{ row.status === 1 ? '禁用' : '启用' }}
               </el-button>
-              <el-button type="danger" size="small" link @click="handleDelete(row)">
+              <el-button v-permission="'user:delete'" type="danger" size="small" link @click="handleDelete(row)">
                 <el-icon><Delete /></el-icon>删除
               </el-button>
             </template>
@@ -186,6 +187,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import request from '../utils/request'
+import PermissionManager from '@/utils/permission'
 
 // 数据定义
 interface User {

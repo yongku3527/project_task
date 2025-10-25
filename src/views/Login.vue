@@ -54,6 +54,7 @@ import { ref, reactive } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { http } from '../utils/request'
+import PermissionManager from '../utils/permission'
 
 const router = useRouter()
 const loginFormRef = ref<FormInstance>()
@@ -92,6 +93,19 @@ const handleLogin = async () => {
           // 保存token到localStorage
           localStorage.setItem('token', data.data)
           localStorage.setItem('username', loginForm.username)
+          
+          // 获取用户权限和角色信息
+          try {
+
+            await PermissionManager.fetchPermissions()
+            await PermissionManager.fetchRoles()
+            
+            ElMessage.success('权限加载成功！')
+          } catch (error) {
+            console.error('Failed to load permissions:', error)
+            ElMessage.warning('权限加载失败，但登录成功')
+          }
+          
           // 跳转到首页
           router.push('/')
         } else {

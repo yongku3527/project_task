@@ -12,7 +12,7 @@
       router
     >
       <!-- 项目管理类 -->
-      <el-sub-menu index="project-management">
+      <el-sub-menu  index="project-management">
         <template #title>
           <Files style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>项目管理</span>
@@ -40,32 +40,32 @@
       </el-sub-menu>
 
       <!-- 开发材料类 -->
-      <el-sub-menu index="development-materials">
+      <el-sub-menu v-permission="'doc:menu'" index="development-materials">
         <template #title>
           <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>开发材料</span>
         </template>
-        <el-menu-item index="/file-manager">
+        <el-menu-item v-permission="'doc:view'" index="/file-manager">
           <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>文件管理</span>
         </el-menu-item>
-        <el-menu-item index="/circuit-board">
+        <el-menu-item v-permission="'doc:view'" index="/circuit-board">
           <Cpu style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>线路板管理</span>
         </el-menu-item>
       </el-sub-menu>
 
       <!-- 系统管理 -->
-      <el-sub-menu index="system-management">
+      <el-sub-menu v-permission="'permission:menu'" index="system-management">
         <template #title>
           <Setting style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>系统管理</span>
         </template>
-        <el-menu-item index="/user-manager">
+        <el-menu-item v-permission="'user:menu'" index="/user-manager">
           <User style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>用户管理</span>
         </el-menu-item>
-        <el-menu-item index="/role-permission">
+        <el-menu-item v-permission="'role:menu'" index="/role-permission">
           <Key style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>角色权限</span>
         </el-menu-item>
@@ -100,6 +100,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key } from '@element-plus/icons-vue';
+import PermissionManager from './utils/permission';
 
 const route = useRoute();
 const router = useRouter();
@@ -141,6 +142,9 @@ const handleUserCommand = (command: string) => {
 const handleLogout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('username');
+  // 清除权限和角色信息
+  PermissionManager.clearPermissions();
+  PermissionManager.clearRoles();
   isLoggedIn.value = false;
   username.value = '';
   router.push('/login');

@@ -7,7 +7,7 @@
           <template #header>
             <div class="card-header">
               <span>角色管理</span>
-              <el-button type="primary" size="small" @click="handleAddRole">
+              <el-button v-permission="'role:add'" type="primary" size="small" @click="handleAddRole">
                 <el-icon><Plus /></el-icon>
                 新增角色
               </el-button>
@@ -36,13 +36,13 @@
             </el-table-column>
             <el-table-column label="操作" min-width="200" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" link @click.stop="handleEditRole(row)">
+                <el-button v-permission="'role:update'" type="primary" size="small" link @click.stop="handleEditRole(row)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button type="warning" size="small" link @click.stop="handleRolePermission(row)">
+                <el-button v-permission="'role:permission'" type="warning" size="small" link @click.stop="handleRolePermission(row)">
                   <el-icon><Key /></el-icon>权限
                 </el-button>
-                <el-button type="danger" size="small" link @click.stop="handleDeleteRole(row)">
+                <el-button v-permission="'role:delete'" type="danger" size="small" link @click.stop="handleDeleteRole(row)">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
               </template>
@@ -69,7 +69,7 @@
           <template #header>
             <div class="card-header">
               <span>权限管理</span>
-              <el-button type="primary" size="small" @click="handleAddPermission">
+              <el-button v-permission="'permission:add'" type="primary" size="small" @click="handleAddPermission">
                 <el-icon><Plus /></el-icon>
                 新增权限
               </el-button>
@@ -105,10 +105,10 @@
             </el-table-column>
             <el-table-column label="操作" min-width="150" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" link @click="handleEditPermission(row)">
+                <el-button v-permission="'permission:update'" type="primary" size="small" link @click="handleEditPermission(row)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button type="danger" size="small" link @click="handleDeletePermission(row)">
+                <el-button v-permission="'permission:delete'" type="danger" size="small" link @click="handleDeletePermission(row)">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
               </template>
@@ -253,6 +253,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import request from '../utils/request'
+import PermissionManager from '@/utils/permission'
 
 // 数据定义
 interface Role {

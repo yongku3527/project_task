@@ -7,9 +7,11 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import 'element-plus/theme-chalk/index.css'
 import axios from 'axios'
 import router from './router'
+import permission from './directives/permission'
 
 const app = createApp(App)
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
+app.directive('permission', permission)
 app.config.globalProperties.$axios = axios
 app.mount('#app')
