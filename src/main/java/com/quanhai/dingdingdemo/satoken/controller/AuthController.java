@@ -96,6 +96,7 @@ public class AuthController {
     @SaCheckLogin
     public Map<String, Object> getPermissionList() {
         Long userId = StpUtil.getLoginIdAsLong();
+
         List<String> permissionList = authService.getPermissionByUserId(userId);
         Map<String, Object> result = new HashMap<>();
         result.put("code", 200);
