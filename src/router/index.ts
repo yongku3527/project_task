@@ -97,17 +97,14 @@ router.beforeEach((to, from, next) => {
     return;
   }
   
-  // 如果访问其他页面且没有token，跳转到登录页
-  if (to.path !== '/login' && !token) {
+  // 需要token验证的路径列表
+  const protectedRoutes = ['/file-manager', '/circuit-board', '/user-manager', '/role-permission'];
+  
+  // 如果访问需要token的路径但没有token，跳转到登录页
+  if (protectedRoutes.includes(to.path) && !token) {
     next('/login');
     return;
   }
-// // 如果访问其他页面且没有token，跳转到登录页
-//   if (to.path !== '/login' && !token) {
-//     next('/login');
-//     return;
-//   }
-
   
   next();
 });

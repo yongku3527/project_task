@@ -122,21 +122,12 @@ const handleToggleNavbar = (event: CustomEvent) => {
 // 检查登录状态
 const checkLoginStatus = () => {
   const token = localStorage.getItem('token');
-  const currentPath = route.path;
   const currentUsername = localStorage.getItem('username');
   
   isLoggedIn.value = !!token;
   username.value = currentUsername || '';
   
-  // 如果没有token且不在登录页面，跳转到登录页
-  if (!token && currentPath !== '/login') {
-    router.push('/login');
-  }
-  
-  // 如果有token且在登录页面，跳转到首页
-  if (token && currentPath === '/login') {
-    router.push('/');
-  }
+  // 登录状态检查由路由守卫处理，这里只更新UI状态
 };
 
 // 处理用户菜单命令
