@@ -1,24 +1,29 @@
 package com.quanhai.dingdingdemo.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.quanhai.dingdingdemo.config.MailConfig;
 import com.quanhai.dingdingdemo.mapper.yiDa.PrcsMapper;
+import com.quanhai.dingdingdemo.mapper.yiDa.ReminderInfoMapper;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.model.yiDa.CodeAndPrcsIns;
+import com.quanhai.dingdingdemo.model.yiDa.ReminderInfo;
 import com.quanhai.dingdingdemo.service.TaskService;
+import com.quanhai.dingdingdemo.service.msg.MsgService;
 import com.quanhai.dingdingdemo.service.yiDa.PrcsServiceImpl;
 import com.quanhai.dingdingdemo.tools.CommonTools;
 import org.apache.commons.mail.EmailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
-//@Component
+@Component
 public class yiDaTask {
     @Autowired
     private PrcsServiceImpl prcsService;
@@ -63,5 +68,57 @@ public class yiDaTask {
                 logger.info("不做任何处理 projectNum："+itemNum+"\n");
             }
         }
+    }
+
+
+    @Autowired
+    private ReminderInfoMapper reminderInfoMapper;
+
+    @Autowired
+    private RedisTemplate<String,String> redisTemplate;
+
+    @Autowired
+    private MsgService msgService;
+
+    @Scheduled(cron = "0 0/10 8-18 * * *")
+//    @Scheduled(cron = "0 0/2 8-18 * * *")
+    public void checkReminderInfo() {
+
+        logger.info("=====================checkReminderInfo定时任务执行======================");
+
+        // 1. 算边界
+        LocalDateTime fourHoursAgo = LocalDateTime.now().minusHours(4);
+//        LocalDateTime fourHoursAgo = LocalDateTime.now().minusSeconds(10);
+
+        // 2. 查 createTime < 边界 的数据
+        List<ReminderInfo> list = reminderInfoMapper.selectList(
+                Wrappers.<ReminderInfo>lambdaQuery()
+                        .lt(ReminderInfo::getCreateTime, fourHoursAgo)   // 早于 4 小时前
+        );
+
+        for (ReminderInfo reminderInfo : list) {
+            //1.获取id信息
+            String executorId = reminderInfo.getExecutorId();
+            String pcbName = reminderInfo.getPcbName();
+
+            String usernameAndPhone  = redisTemplate.opsForValue().get("Reminder:" + executorId);
+            //没在redis中找到就跳过
+            if (usernameAndPhone == null) {
+                logger.info("在redis中未找到用户信息 executorId："+executorId);
+                continue;
+            }
+            String[] usernameAndPhoneArr = usernameAndPhone.split(",");
+            //3. 发送短信
+
+            msgService.sendCustomMsg(usernameAndPhoneArr[1],"【山东泉海汽车科技有限公司】"+pcbName+"的原理图、PCB设计审批已超4小时未审批，请尽快处理。");
+            logger.info("短信发送成功 手机号："+usernameAndPhoneArr[1]+"  用户名："+usernameAndPhoneArr[0]+"  pcbName："+pcbName);
+
+
+            //将数据库中的数据删除
+            reminderInfoMapper.deleteById(reminderInfo.getId());
+        }
+
+
+        logger.info("=====================checkReminderInfo定时任务执行===完毕===================");
     }
 }

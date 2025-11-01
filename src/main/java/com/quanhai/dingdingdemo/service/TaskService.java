@@ -14,4 +14,6 @@ public interface TaskService {
 
 
     Result getProjectTime();
+
+    String getAccessToken();
 }

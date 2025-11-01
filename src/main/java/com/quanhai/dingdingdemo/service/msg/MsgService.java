@@ -34,7 +34,6 @@ public class MsgService {
 
     public String sendMsg(String phone,String variable){
 
-
         // 2. 构建请求参数
         JSONObject requestParam = buildRequestParam(phone,variable);
 
@@ -61,6 +60,62 @@ public class MsgService {
         return taskId;
         
     }
+
+
+
+    public String sendCustomMsg(String phone,String variable){
+
+        // 2. 构建请求参数
+        JSONObject requestParam = buildCustomRequestParam(phone,variable);
+
+        // 3. 构建请求Header（含鉴权参数）
+        String timeStamp = String.valueOf(System.currentTimeMillis()); // 毫秒级时间戳
+        String token = tools.getMsgToken(timeStamp);
+        // 4. 发送POST请求（JSON格式）
+        HttpResponse response = HttpRequest.post(msgConfig.getUrl())
+                // 设置公共Header鉴权参数
+                .header("userId", msgConfig.getUserId())
+                .header("timeStamp", timeStamp)
+                .header("token", token)
+                // 设置请求体（JSON字符串）
+                .body(requestParam.toString())
+                // 设置编码（强制UTF-8，避免中文乱码）
+                .charset("UTF-8")
+                // 执行请求
+                .execute();
+
+        // 5. 解析响应结果
+        String taskId = parseResponse(response);
+        Date date = new Date();
+        redisTemplate.opsForHash().put("sendDuanXinTaskIdHash", taskId,phone+"&&"+variable+"&&"+date);
+        return taskId;
+
+    }
+
+
+
+    /**
+     * 构建短信发送接口的业务参数
+     */
+    private static JSONObject buildCustomRequestParam(String phones,String smsContent) {
+        JSONObject param = new JSONObject();
+        // 必选参数：手机号集合（英文逗号分隔，最多1000个）
+        param.put("phones", phones);
+        // 必选参数：短信内容（含【签名】，符合平台规范）
+//        param.put("smsContent", "【山东泉海汽车科技有限公司】您的验证码是123456，5分钟内有效，请妥善保管！点击www.baidu.com查询公司详细信息");
+        param.put("smsContent", smsContent);
+        // 可选参数：定时发送时间（格式yyyyMMddHHmmss，不填则立即发送）
+        // param.put("sendtime", "20241231235959");
+        // 可选参数：扩展号（最大12位）
+        // param.put("sendtermid", "23456");
+        // 可选参数：客户自定义任务ID（最大70位，用于关联批次）
+        // param.put("customTaskid", "task_20241001_001");
+        return param;
+    }
+
+
+
+
     /**
      * 构建短信发送接口的业务参数
      */
@@ -101,7 +156,7 @@ public class MsgService {
                 String msg = result.getStr("msg");
                 log.error("短信发送请求失败！错误信息：" + msg);
                 try {
-                    tools.send("开门短信发送失败", "3123544976@qq.com", "错误信息：" + msg);
+                    tools.send("短信发送失败", "3123544976@qq.com", "错误信息：" + msg);
                     return "-1";
                 } catch (EmailException e) {
                     throw new RuntimeException(e.getCause());
@@ -112,7 +167,7 @@ public class MsgService {
             log.error("HTTP请求失败！状态码：" + response.getStatus());
 
             try {
-                tools.send("开门短信发送失败", "3123544976@qq.com", "错误信息：" + "HTTP请求失败");
+                tools.send("短信发送失败", "3123544976@qq.com", "错误信息：" + "HTTP请求失败");
                 return "-1";
             } catch (EmailException e) {
                 throw new RuntimeException(e.getCause());

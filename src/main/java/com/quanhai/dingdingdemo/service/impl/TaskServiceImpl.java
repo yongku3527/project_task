@@ -12,7 +12,6 @@ import com.aliyun.tea.TeaException;
 import com.aliyun.teautil.Common;
 import com.aliyun.teautil.models.RuntimeOptions;
 import com.quanhai.dingdingdemo.client.MyDingClient;
-
 import com.quanhai.dingdingdemo.config.DingAppConfig;
 
 import com.quanhai.dingdingdemo.model.Project;
@@ -241,7 +240,9 @@ public class TaskServiceImpl implements TaskService {
         com.aliyun.dingtalkproject_1_0.Client client = null;
         try {
             client = myDingClient.getProjectClient();
+
         } catch (Exception e) {
+
             throw new MyExcption("获取ProjectClient失败");
         }
 
@@ -342,7 +343,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
-    String getAccessToken() throws Exception {
+    public String getAccessToken() {
 
         if (Boolean.TRUE.equals(redisTemplate.hasKey("accessToken"))) {
             Long Exp = redisTemplate.getExpire("accessToken", TimeUnit.SECONDS);
@@ -415,7 +416,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
-    private String getToken() throws Exception {
+    private String getToken() {
         Client oauthClient = myDingClient.getOauthClient();
         // 构建获取access_token的请求
         GetAccessTokenRequest request = new GetAccessTokenRequest()
@@ -423,7 +424,12 @@ public class TaskServiceImpl implements TaskService {
                 .setAppSecret(dingAppConfig.getAppsecret());
 
         // 发送请求获取access_token
-        GetAccessTokenResponseBody responseBody = oauthClient.getAccessToken(request).getBody();
+        GetAccessTokenResponseBody responseBody = null;
+        try {
+            responseBody = oauthClient.getAccessToken(request).getBody();
+        } catch (Exception e) {
+            throw new MyExcption("TaskServiceImpl 中getToken方法获取token失败！");
+        }
         String accessToken = responseBody.getAccessToken();
         redisTemplate.opsForValue().set("accessToken", accessToken, responseBody.getExpireIn(), TimeUnit.SECONDS);
         System.out.println("accessToken: " + accessToken);
@@ -483,6 +489,7 @@ public class TaskServiceImpl implements TaskService {
 
                 // 提取用户名称
                 userName = userInfo.getStr("name", "未知");
+
 
                 // 提取部门ID列表并转换为List<String>
                 JSONArray deptArray = userInfo.getJSONArray("dept_id_list");
