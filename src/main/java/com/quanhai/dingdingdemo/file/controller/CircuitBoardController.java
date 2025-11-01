@@ -137,7 +137,7 @@ public class CircuitBoardController {
 //                // 始终创建新的文件记录，避免多个线路板共享同一个文件ID
 //                FileInfo fileInfo = new FileInfo();
 //                fileInfo.setFileName(circuitBoardDTO.getFileName());
-//                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  // 设置原始文件名
+//                fileInfo.setOriginalName(circuitBoardDTO.getFileName());  //  设置原始文件名
 //                fileInfo.setFileUrl(circuitBoardDTO.getFileUrl());
 //
 //                // 提取文件后缀
