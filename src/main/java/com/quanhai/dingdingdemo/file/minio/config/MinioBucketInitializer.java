@@ -24,7 +24,9 @@ public class MinioBucketInitializer implements ApplicationRunner {
         // "semi-products",       // 半成品文件存储桶
         "schematic-files",     // 原理图文件专用存储桶
         "smt-files",          // SMT文件专用存储桶
-        "led-board-plugins"   // 灯板插件文件存储桶
+        "led-board-plugins",   // 灯板插件文件存储桶
+        "dwg-files",          // DWG图纸文件存储桶
+        "pdf-files"           // PDF图纸文件存储桶
     };
 
     @Override

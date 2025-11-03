@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quanhai.dingdingdemo.file.mapper.DocProdDrawingMapper">
+
+    <!-- 成品图纸结果映射 -->
+    <resultMap id="DocProdDrawingResultMap" type="com.quanhai.dingdingdemo.file.dto.DocProdDrawingDTO">
+        <id property="id" column="id"/>
+        <result property="pid" column="pid"/>
+        <result property="drawingType" column="drawing_type"/>
+        <result property="itemName" column="item_name"/>
+        <result property="model" column="model"/>
+        <result property="dwgFileUrl" column="dwg_file_url"/>
+        <result property="dwgFileName" column="dwg_file_name"/>
+        <result property="pdfFileUrl" column="pdf_file_url"/>
+        <result property="pdfFileName" column="pdf_file_name"/>
+        <result property="dwgFileId" column="dwg_file_id"/>
+        <result property="pdfFileId" column="pdf_file_id"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 根据ID查询成品图纸及其文件信息 -->
+    <select id="selectDocProdDrawingById" parameterType="java.lang.Long" resultMap="DocProdDrawingResultMap">
+        SELECT 
+            d.id,
+            d.pid,
+            d.drawing_type,
+            d.item_name,
+            d.model,
+            d.dwg_file_id,
+            d.pdf_file_id,
+            d.status,
+            d.create_time,
+            d.update_time,
+            dwg_file.file_url as dwg_file_url,
+            dwg_file.file_name as dwg_file_name,
+            pdf_file.file_url as pdf_file_url,
+            pdf_file.file_name as pdf_file_name
+        FROM 
+            doc_prod_drawing d
+        LEFT JOIN 
+            file_info dwg_file ON d.dwg_file_id = dwg_file.id
+        LEFT JOIN 
+            file_info pdf_file ON d.pdf_file_id = pdf_file.id
+        WHERE 
+            d.id = #{id}
+    </select>
+
+    <!-- 根据成品编号查询图纸列表 -->
+    <select id="selectDocProdDrawingByPid" parameterType="java.lang.String" resultMap="DocProdDrawingResultMap">
+        SELECT 
+            d.id,
+            d.pid,
+            d.drawing_type,
+            d.item_name,
+            d.model,
+            d.dwg_file_id,
+            d.pdf_file_id,
+            d.status,
+            d.create_time,
+            d.update_time,
+            dwg_file.file_url as dwg_file_url,
+            dwg_file.file_name as dwg_file_name,
+            pdf_file.file_url as pdf_file_url,
+            pdf_file.file_name as pdf_file_name
+        FROM 
+            doc_prod_drawing d
+        LEFT JOIN 
+            file_info dwg_file ON d.dwg_file_id = dwg_file.id
+        LEFT JOIN 
+            file_info pdf_file ON d.pdf_file_id = pdf_file.id
+        WHERE 
+            d.pid = #{pid}
+    </select>
+
+    <!-- 根据文件ID查询文件URL -->
+    <select id="selectFileUrlById" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT file_url FROM file_info WHERE id = #{fileId}
+    </select>
+
+    <!-- 根据文件ID查询文件名称 -->
+    <select id="selectFileNameById" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT file_name FROM file_info WHERE id = #{fileId}
+    </select>
+
+    <!-- 查询所有成品图纸及其文件信息 -->
+    <select id="selectAllDocProdDrawingsWithFiles" resultMap="DocProdDrawingResultMap">
+        SELECT 
+            d.id,
+            d.pid,
+            d.drawing_type,
+            d.item_name,
+            d.model,
+            d.dwg_file_id,
+            d.pdf_file_id,
+            d.status,
+            d.create_time,
+            d.update_time,
+            dwg_file.file_url as dwg_file_url,
+            dwg_file.file_name as dwg_file_name,
+            pdf_file.file_url as pdf_file_url,
+            pdf_file.file_name as pdf_file_name
+        FROM 
+            doc_prod_drawing d
+        LEFT JOIN 
+            file_info dwg_file ON d.dwg_file_id = dwg_file.id
+        LEFT JOIN 
+            file_info pdf_file ON d.pdf_file_id = pdf_file.id
+        ORDER BY 
+            d.create_time DESC
+    </select>
+
+</mapper>
