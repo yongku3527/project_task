@@ -750,7 +750,13 @@ const handleDwgUpload = async (options) => {
   try {
     // 获取当前成品图纸信息用于生成格式化文件名
     const pid = dialog.form.pid || 'UNKNOWN'
-    const itemName = dialog.form.model || 'DWG文件'
+    let itemName = dialog.form.model || 'DWG文件'
+    
+    // 处理规格型号字段，当文本中包含括号时截取括号前的文本
+    const leftParenIndex = itemName.search(/[（(]/)
+    if (leftParenIndex > -1) {
+      itemName = itemName.substring(0, leftParenIndex).trim()
+    }
     
     // 第一步：创建格式化文件名预上传任务
     const presignResponse = await http.post(
@@ -817,7 +823,13 @@ const handlePdfUpload = async (options) => {
   try {
     // 获取当前成品图纸信息用于生成格式化文件名
     const pid = dialog.form.pid || 'UNKNOWN'
-    const itemName = dialog.form.itemName || 'PDF文件'
+    let itemName = dialog.form.itemName || 'PDF文件'
+    
+    // 处理物料名称字段，当文本中包含括号时截取括号前的文本
+    const leftParenIndex = itemName.search(/[（(]/)
+    if (leftParenIndex > -1) {
+      itemName = itemName.substring(0, leftParenIndex).trim()
+    }
     
     // 第一步：创建格式化文件名预上传任务
     const presignResponse = await http.post(
