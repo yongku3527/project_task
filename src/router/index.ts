@@ -8,6 +8,7 @@ import MeetingMinutes from '../views/MeetingMinutes.vue';
 import MemberGanttChart from '../views/MemberGanttChart.vue';
 import FileManager from '../views/FileManager.vue';
 import CircuitBoardManager from '../views/CircuitBoardManager.vue';
+import DocProdDrawingManager from '../views/DocProdDrawingManager.vue';
 import Login from '../views/Login.vue';
 import TestLogin from '../views/TestLogin.vue';
 import CookieTest from '../views/CookieTest.vue';
@@ -59,6 +60,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/circuit-board',
     name: 'CircuitBoardManager',
     component: CircuitBoardManager
+  },
+  {
+    path: '/doc-prod-drawing',
+    name: 'DocProdDrawingManager',
+    component: DocProdDrawingManager
   },
   {
     path: '/test-login',
