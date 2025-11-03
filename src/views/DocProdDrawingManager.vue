@@ -55,9 +55,9 @@
           :table-layout="'fixed'"
           :row-class-name="getRowClassName"
         >
-          <el-table-column prop="pid" label="成品编号" min-width="100" />
-          <el-table-column prop="drawingType" label="文件类别" min-width="80" />
-          <el-table-column prop="itemName" label="物料名称" min-width="120" />
+          <el-table-column prop="pid" label="成品编号" min-width="70" />
+          <el-table-column prop="drawingType" label="文件类别" min-width="50" />
+          <el-table-column prop="itemName" label="物料名称" min-width="50" />
           <el-table-column prop="model" label="规格型号" min-width="120" />
           
           <!-- DWG文件列 -->
@@ -100,7 +100,7 @@
             </template>
           </el-table-column>
           
-          <el-table-column prop="createTime" label="创建时间" min-width="140" />
+          <el-table-column prop="createTime" label="创建时间" min-width="100" />
           
           <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
@@ -750,7 +750,7 @@ const handleDwgUpload = async (options) => {
   try {
     // 获取当前成品图纸信息用于生成格式化文件名
     const pid = dialog.form.pid || 'UNKNOWN'
-    const itemName = dialog.form.itemName || 'DWG文件'
+    const itemName = dialog.form.model || 'DWG文件'
     
     // 第一步：创建格式化文件名预上传任务
     const presignResponse = await http.post(
