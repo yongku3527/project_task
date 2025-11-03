@@ -53,6 +53,7 @@
           stripe
           :flexible="true"
           :table-layout="'fixed'"
+          :row-class-name="getRowClassName"
         >
           <el-table-column prop="pid" label="成品编号" min-width="100" />
           <el-table-column prop="drawingType" label="文件类别" min-width="80" />
@@ -101,7 +102,7 @@
           
           <el-table-column prop="createTime" label="创建时间" min-width="140" />
           
-          <el-table-column label="操作" width="240" fixed="right">
+          <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
               <div class="action-buttons">
                 <el-button type="primary" size="small" link @click="handleEdit(row)">
@@ -882,6 +883,23 @@ const downloadFile = (url, fileName) => {
   docProdDrawingApi.downloadFile(url, fileName)
 }
 
+// MES接口调用 - 根据物料编号查询物料信息
+const getItemInfoFromMES = async (itemCode) => {
+  try {
+    const response = await http.get(`/mes/item-info/${itemCode}`)
+    
+    if (response.code === 200) {
+      return response.data
+    } else {
+      console.warn('MES物料信息查询失败: ' + response.msg)
+      return null
+    }
+  } catch (error) {
+    console.warn('MES接口调用失败: ' + error.message)
+    return null
+  }
+}
+
 // 成品编号输入处理（防抖）
 const handlePidInput = () => {
   // 清除之前的定时器
@@ -892,16 +910,31 @@ const handlePidInput = () => {
   // 设置新的定时器
   inputTimers.pid = setTimeout(async () => {
     if (dialog.form.pid?.trim()) {
-      // 这里可以调用API根据成品编号获取物料名称和规格型号
-      // const itemInfo = await getItemInfoFromMES(dialog.form.pid)
-      // if (itemInfo) {
-      //   dialog.form.itemName = itemInfo.itemName
-      //   dialog.form.model = itemInfo.model
-      //   ElMessage.success('已自动填充物料名称和规格型号')
-      // }
+      // 调用MES接口根据成品编号获取物料信息
+      const itemInfo = await getItemInfoFromMES(dialog.form.pid.trim())
+
+      if (itemInfo) {
+        dialog.form.itemName = itemInfo.itemName || ''
+        dialog.form.model = itemInfo.itemSpec ||  ''
+        ElMessage.success('已自动填充物料名称和规格型号')
+      }
     }
     inputTimers.pid = null
   }, 1000)
+}
+
+// 根据状态获取表格行类名
+const getRowClassName = ({ row }) => {
+  switch (row.status) {
+    case 0:
+      return 'row-disabled' // 禁用状态 - 红色背景
+    case 1:
+      return 'row-enabled' // 启用状态 - 默认背景
+    case 2:
+      return 'row-consumed' // 消耗状态 - 黄色背景
+    default:
+      return ''
+  }
 }
 </script>
 
@@ -979,7 +1012,7 @@ const handlePidInput = () => {
 }
 
 .file-link {
-  max-width: 180px;
+  max-width: 500px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1018,5 +1051,33 @@ const handlePidInput = () => {
   .header-buttons {
     justify-content: center;
   }
+}
+
+/* 状态行背景色 */
+:deep(.el-table .row-enabled) {
+  background-color: #ffffff !important;
+}
+
+:deep(.el-table .row-enabled td) {
+  background-color: #ffffff !important;
+  border-color: #e2e0df !important;
+}
+
+:deep(.el-table .row-disabled) {
+  background-color: #fff1f0 !important;
+}
+
+:deep(.el-table .row-disabled td) {
+  background-color: #fff1f0 !important;
+  border-color: #ffa39e !important;
+}
+
+:deep(.el-table .row-consumed) {
+  background-color: #fffbe6 !important;
+}
+
+:deep(.el-table .row-consumed td) {
+  background-color: #fffbe6 !important;
+  border-color: #ffe58f !important;
 }
 </style>
