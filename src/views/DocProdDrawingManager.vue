@@ -51,14 +51,16 @@
           row-key="id"
           border
           stripe
+          :flexible="true"
+          :table-layout="'fixed'"
         >
-          <el-table-column prop="pid" label="成品编号" width="120" />
-          <el-table-column prop="drawingType" label="文件类别" width="100" />
-          <el-table-column prop="itemName" label="物料名称" width="150" />
-          <el-table-column prop="model" label="规格型号" width="150" />
+          <el-table-column prop="pid" label="成品编号" min-width="100" />
+          <el-table-column prop="drawingType" label="文件类别" min-width="80" />
+          <el-table-column prop="itemName" label="物料名称" min-width="120" />
+          <el-table-column prop="model" label="规格型号" min-width="120" />
           
           <!-- DWG文件列 -->
-          <el-table-column label="DWG文件" width="200">
+          <el-table-column label="DWG文件" min-width="150">
             <template #default="{ row }">
               <div v-if="row.dwgFileUrl" class="file-info">
                 <el-link 
@@ -74,7 +76,7 @@
           </el-table-column>
           
           <!-- PDF文件列 -->
-          <el-table-column label="PDF文件" width="200">
+          <el-table-column label="PDF文件" min-width="150">
             <template #default="{ row }">
               <div v-if="row.pdfFileUrl" class="file-info">
                 <el-link 
@@ -91,16 +93,15 @@
           
           <el-table-column prop="status" label="状态" width="80">
             <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-                {{ row.status === 1 ? '启用' : '禁用' }}
+              <el-tag :type="getStatusType(row.status)">
+                {{ getStatusText(row.status) }}
               </el-tag>
             </template>
           </el-table-column>
           
-          <el-table-column prop="createTime" label="创建时间" width="160" />
+          <el-table-column prop="createTime" label="创建时间" min-width="140" />
           
-          <el-table-column label="操作" width="180" fixed="right">
-            
+          <el-table-column label="操作" width="240" fixed="right">
             <template #default="{ row }">
               <div class="action-buttons">
                 <el-button type="primary" size="small" link @click="handleEdit(row)">
@@ -117,6 +118,24 @@
                 >
                   <el-icon><Switch /></el-icon>
                   {{ row.status === 1 ? '禁用' : '启用' }}
+                </el-button>
+                <el-button 
+                  type="info" 
+                  size="small" 
+                  link 
+                  @click="handleConsumeStatus(row)"
+                  v-if="row.status !== 2"
+                >
+                  <el-icon><Switch /></el-icon>消耗
+                </el-button>
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  link 
+                  @click="handleDisableStatus(row)"
+                  v-if="row.status === 2"
+                >
+                  <el-icon><Switch /></el-icon>禁用
                 </el-button>
               </div>
             </template>
@@ -561,6 +580,90 @@ const handleToggleStatus = async (row) => {
   }
 }
 
+// 状态类型处理函数
+const getStatusType = (status) => {
+  switch (status) {
+    case 0:
+      return 'danger' // 禁用
+    case 1:
+      return 'success' // 启用
+    case 2:
+      return 'warning' // 消耗
+    default:
+      return 'info'
+  }
+}
+
+// 状态文本处理函数
+const getStatusText = (status) => {
+  switch (status) {
+    case 0:
+      return '禁用'
+    case 1:
+      return '启用'
+    case 2:
+      return '消耗'
+    default:
+      return '未知'
+  }
+}
+
+// 消耗状态处理
+const handleConsumeStatus = async (row) => {
+  try {
+    await ElMessageBox.confirm('确认将该成品图纸状态变更为消耗吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 调用实际的API
+    const response = await docProdDrawingApi.updateDocProdDrawing({
+      id: row.id,
+      status: 2 // 2表示消耗状态
+    })
+    
+    if (response.code === 200) {
+      row.status = 2
+      ElMessage.success('状态已变更为消耗')
+    } else {
+      ElMessage.error(response.msg || '操作失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败: ' + error.message)
+    }
+  }
+}
+
+// 禁用状态处理（从消耗状态变更为禁用）
+const handleDisableStatus = async (row) => {
+  try {
+    await ElMessageBox.confirm('确认将该成品图纸状态从消耗变更为禁用吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 调用实际的API
+    const response = await docProdDrawingApi.updateDocProdDrawing({
+      id: row.id,
+      status: 0 // 0表示禁用状态
+    })
+    
+    if (response.code === 200) {
+      row.status = 0
+      ElMessage.success('状态已从消耗变更为禁用')
+    } else {
+      ElMessage.error(response.msg || '操作失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败: ' + error.message)
+    }
+  }
+}
+
 // 保存
 const save = async () => {
   if (!formRef.value) return
@@ -805,12 +908,30 @@ const handlePidInput = () => {
 <style scoped>
 .doc-prod-drawing-manager {
   padding: 20px;
+  height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.el-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.el-card :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+  overflow: hidden;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .header-actions {
@@ -836,6 +957,20 @@ const handlePidInput = () => {
 
 .table-container {
   margin-top: 15px;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-container :deep(.el-table) {
+  flex: 1;
+  height: 100%;
+}
+
+.table-container :deep(.el-table__body-wrapper) {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .file-info {
@@ -866,6 +1001,7 @@ const handlePidInput = () => {
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
+  flex-shrink: 0;
 }
 
 /* 响应式设计 */
