@@ -30,7 +30,7 @@
               </el-form>
             </div>
             <div class="header-buttons">
-              <el-button v-permission="'doc:add'" type="primary" size="small" @click="handleAdd">
+              <el-button v-permission="'prodDrawing:add'" type="primary" size="small" @click="handleAdd">
                 <el-icon><Plus /></el-icon>
                 新增图纸
               </el-button>
@@ -102,16 +102,16 @@
           
           <el-table-column prop="createTime" label="创建时间" min-width="100" />
           
-          <el-table-column label="操作" width="280" fixed="right">
-            <template #default="{ row }">
-              <div class="action-buttons">
-                <el-button type="primary" size="small" link @click="handleEdit(row)">
+          <el-table-column   label="操作" width="280" fixed="right">
+            <template #default="{ row }" >
+              <div class="action-buttons" >
+                <el-button v-permission="'prodDrawing:update'" type="primary" size="small" link @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button type="danger" size="small" link @click="handleDelete(row)">
+                <el-button v-permission="'prodDrawing:delete'" type="danger" size="small" link @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
-                <el-button 
+                <el-button v-permission="'prodDrawing:update'" 
                   :type="row.status === 1 ? 'warning' : 'success'" 
                   size="small" 
                   link 
@@ -120,7 +120,7 @@
                   <el-icon><Switch /></el-icon>
                   {{ row.status === 1 ? '禁用' : '启用' }}
                 </el-button>
-                <el-button 
+                <el-button v-permission="'prodDrawing:update'" 
                   type="info" 
                   size="small" 
                   link 
@@ -129,7 +129,7 @@
                 >
                   <el-icon><Switch /></el-icon>消耗
                 </el-button>
-                <el-button 
+                <el-button v-permission="'prodDrawing:update'" 
                   type="danger" 
                   size="small" 
                   link 

@@ -558,7 +558,8 @@ const loadParentPermissions = async () => {
   try {
     const response = await request.get('/sys/permission/tree')
     if (response.code === 200) {
-      parentPermissions.value = response.data.filter((perm: Permission) => perm.parentId === 0 || !perm.parentId)
+      // 修改：获取所有菜单类型的权限作为父级权限选项
+      parentPermissions.value = response.data.filter((perm: Permission) => perm.permType === 1)
     }
   } catch (error) {
     console.error('Load parent permissions error:', error)

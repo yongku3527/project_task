@@ -40,27 +40,27 @@
       </el-sub-menu>
 
       <!-- 开发材料类 -->
-      <el-sub-menu v-permission="'doc:menu'" index="development-materials">
+      <el-sub-menu v-permission="'doc:model'" index="development-materials">
         <template #title>
           <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>开发材料</span>
         </template>
-        <el-menu-item v-permission="'doc:view'" index="/file-manager">
+        <el-menu-item v-permission="'file:menu'" index="/file-manager">
           <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>文件管理</span>
         </el-menu-item>
-        <el-menu-item v-permission="'doc:view'" index="/circuit-board">
+        <el-menu-item v-permission="'circuitBoard:menu'" index="/circuit-board">
           <Cpu style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>线路板管理</span>
         </el-menu-item>
-        <el-menu-item v-permission="'doc:view'" index="/doc-prod-drawing">
+        <el-menu-item v-permission="'prodDrawing:menu'" index="/doc-prod-drawing">
           <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>成品图纸管理</span>
         </el-menu-item>
       </el-sub-menu>
 
       <!-- 系统管理 -->
-      <el-sub-menu v-permission="'permission:menu'" index="system-management">
+      <el-sub-menu v-permission="'system:model'" index="system-management">
         <template #title>
           <Setting style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>系统管理</span>
@@ -73,7 +73,7 @@
           <Key style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>角色权限</span>
         </el-menu-item>
-        <el-menu-item v-permission="'itemType:menu'" index="/item-type">
+        <el-menu-item v-permission="'basicParam:menu'" index="/item-type">
           <List style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>基础参数管理</span>
         </el-menu-item>

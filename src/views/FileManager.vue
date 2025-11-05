@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>文件管理器（数据库）</span>
           <div class="header-actions">
-            <el-button v-permission="'doc:update'" type="primary" size="small" @click="showUploadDialog = true">
+            <el-button v-permission="'file:add'" type="primary" size="small" @click="showUploadDialog = true">
               <el-icon><Upload /></el-icon>
               上传到MinIO
             </el-button>
@@ -131,7 +131,7 @@
             <el-table-column label="操作" width="200" fixed="right">
               <template #default="{ row }">
                 <el-button 
-                  v-permission="'doc:view'"
+                  v-permission="'file:menu'"
                   type="primary" 
                   size="small" 
                   link
@@ -141,7 +141,7 @@
                   下载
                 </el-button>
                 <el-button 
-                  v-permission="'doc:delete'"
+                  v-permission="'file:delete'"
                   type="danger" 
                   size="small" 
                   link

@@ -25,7 +25,7 @@
               </el-form>
             </div>
             <div class="header-buttons">
-              <el-button v-permission="'doc:add'" type="primary" size="small" @click="handleAdd">
+              <el-button v-permission="'circuitBoard:add'" type="primary" size="small" @click="handleAdd">  
                 <el-icon><Plus /></el-icon>
                 新增线路板
               </el-button>
@@ -80,14 +80,14 @@
 
               </div>
               <div class="board-actions">
-                <el-button v-permission="'doc:update'" type="primary" size="small" link @click="handleEdit(row)">
+                <el-button v-permission="'circuitBoard:update'" type="primary" size="small" link @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button v-permission="'doc:delete'" type="danger" size="small" link @click="handleDelete(row)">
+                <el-button v-permission="'circuitBoard:delete'" type="danger" size="small" link @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
                 <el-button 
-                  v-permission="'doc:update'"
+                  v-permission="'circuitBoard:update'"
                   type="primary" 
                   size="small" 
                   link 
@@ -97,7 +97,7 @@
                   <el-icon><Minus /></el-icon>消耗
                 </el-button>
                 <el-button 
-                  v-permission="'doc:update'"
+                  v-permission="'circuitBoard:update'"
                   :type="row.status === 1 ? 'danger' : 'success'" 
                   size="small" 
                   link 
@@ -105,7 +105,7 @@
                 >
                   <el-icon><CircleClose v-if="row.status === 1" /><CircleCheck v-else /></el-icon>{{ row.status === 1 ? '停用' : '启用' }}
                 </el-button>
-                <el-button v-permission="'doc:add'" type="success" size="small" link @click="handleAddSemiProduct(row)">
+                <el-button v-permission="'circuitBoard:add'" type="success" size="small" link @click="handleAddSemiProduct(row)">
                   <el-icon><Plus /></el-icon>添加半成品
                 </el-button>
               </div>
@@ -165,14 +165,14 @@
 
                     </div>
                     <div class="semi-product-actions">
-                      <el-button v-permission="'doc:update'" type="warning" size="small" link @click="handleEditSemiProduct(semi)">
+                      <el-button v-permission="'circuitBoard:update'" type="warning" size="small" link @click="handleEditSemiProduct(semi)">
                         <el-icon><Edit /></el-icon>编辑
                       </el-button>
-                      <el-button v-permission="'doc:delete'" type="danger" size="small" link @click="handleDeleteSemiProduct(semi)">
+                      <el-button v-permission="'circuitBoard:delete'" type="danger" size="small" link @click="handleDeleteSemiProduct(semi)">
                         <el-icon><Delete /></el-icon>删除
                       </el-button>
                       <el-button 
-                        v-permission="'doc:update'"
+                        v-permission="'circuitBoard:update'"
                         type="primary" 
                         size="small" 
                         link 
@@ -182,7 +182,7 @@
                         <el-icon><Remove /></el-icon>消耗
                       </el-button>
                       <el-button 
-                        v-permission="'doc:update'"
+                        v-permission="'circuitBoard:update'"
                         :type="semi.status === 1 ? 'danger' : 'success'" 
                         size="small" 
                         link 
