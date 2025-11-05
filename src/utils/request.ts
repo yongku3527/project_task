@@ -61,8 +61,17 @@ class Request {
     }
 
     if (params) {
-      const queryString = new URLSearchParams(params).toString()
-      url += `?${queryString}`
+      // 修复参数处理，确保正确处理对象参数
+      const searchParams = new URLSearchParams()
+      Object.keys(params).forEach(key => {
+        if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+          searchParams.append(key, params[key])
+        }
+      })
+      const queryString = searchParams.toString()
+      if (queryString) {
+        url += `?${queryString}`
+      }
     }
 
     const requestUrl = this.baseConfig.baseURL + url

@@ -14,6 +14,7 @@ import TestLogin from '../views/TestLogin.vue';
 import CookieTest from '../views/CookieTest.vue';
 import UserManager from '../views/UserManager.vue';
 import RolePermissionManager from '../views/RolePermissionManager.vue';
+import ItemTypeManager from '../views/ItemTypeManager.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -85,6 +86,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/role-permission',
     name: 'RolePermissionManager',
     component: RolePermissionManager
+  },
+  {
+    path: '/item-type',
+    name: 'ItemTypeManager',
+    component: ItemTypeManager
   }
 ];
 

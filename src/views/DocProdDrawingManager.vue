@@ -173,12 +173,7 @@
           />
         </el-form-item>
         <el-form-item label="文件类别" prop="drawingType">
-          <el-select v-model="dialog.form.drawingType" placeholder="请选择文件类别" style="width: 100%">
-            <el-option label="原理图" value="原理图" />
-            <el-option label="装配图" value="装配图" />
-            <el-option label="零件图" value="零件图" />
-            <el-option label="接线图" value="接线图" />
-          </el-select>
+          <el-input v-model="dialog.form.drawingType" placeholder="请输入文件类别" />
         </el-form-item>
         <el-form-item label="物料名称" prop="itemName">
           <el-input v-model="dialog.form.itemName" placeholder="请输入物料名称" />
@@ -291,7 +286,7 @@ const dialog = reactive({
   },
   rules: {
     pid: [{ required: true, message: '请输入成品编号', trigger: 'blur' }],
-    drawingType: [{ required: true, message: '请选择文件类别', trigger: 'change' }],
+    drawingType: [{ required: true, message: '请输入文件类别', trigger: 'blur' }],
     itemName: [{ required: true, message: '请输入物料名称', trigger: 'blur' }],
     model: [{ required: true, message: '请输入规格型号', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]

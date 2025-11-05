@@ -73,6 +73,10 @@
           <Key style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>角色权限</span>
         </el-menu-item>
+        <el-menu-item v-permission="'itemType:menu'" index="/item-type">
+          <List style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>基础参数管理</span>
+        </el-menu-item>
       </el-sub-menu>
       
       <!-- 用户菜单 -->
@@ -103,7 +107,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key } from '@element-plus/icons-vue';
+import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key, List } from '@element-plus/icons-vue';
 import PermissionManager from './utils/permission';
 
 const route = useRoute();
