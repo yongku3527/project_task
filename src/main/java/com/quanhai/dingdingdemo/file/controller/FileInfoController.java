@@ -1,5 +1,6 @@
 package com.quanhai.dingdingdemo.file.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
@@ -104,7 +105,6 @@ public class FileInfoController {
      * 删除文件信息（物理删除）
      */
     @DeleteMapping("/{id}")
-
     public Result<String> deleteFileInfo(@PathVariable Long id) {
         log.info("删除文件信息 - ID: {}", id);
         

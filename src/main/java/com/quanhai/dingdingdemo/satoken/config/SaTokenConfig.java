@@ -59,6 +59,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
             SaRouter.match("/sys/**"
                             ,"/circuit-board/**"
                             ,"/semi-product/**"
+                            ,"/doc-prod-drawing/**"
                             )
                     .check(r -> StpUtil.checkLogin());
 
