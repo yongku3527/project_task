@@ -35,6 +35,11 @@ export function deleteDocProdDrawing(id) {
   return http.delete(`/doc-prod-drawing/delete/${id}`)
 }
 
+// 根据成品编号前三位查询物料类型
+export function getItemTypeByPid(pid) {
+  return http.get('/item-type/get-type-by-pid', { pid })
+}
+
 // 下载文件
 export function downloadFile(url, fileName) {
   // 创建一个隐藏的a标签来下载文件

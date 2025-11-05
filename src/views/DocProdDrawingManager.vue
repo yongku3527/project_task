@@ -930,6 +930,21 @@ const handlePidInput = () => {
         dialog.form.model = itemInfo.itemSpec ||  ''
         ElMessage.success('已自动填充物料名称和规格型号')
       }
+      
+      // 调用API根据成品编号前三位查询物料类型
+      try {
+        const itemTypeResponse = await docProdDrawingApi.getItemTypeByPid(dialog.form.pid.trim())
+        if (itemTypeResponse.code === 200) {
+          dialog.form.drawingType = itemTypeResponse.data.drawingType || ''
+          ElMessage.success('已自动填充图纸类型')
+        } else {
+          // 显示后端返回的错误信息
+          ElMessage.warning(itemTypeResponse.msg || '获取图纸类型失败')
+        }
+      } catch (error) {
+        console.warn('获取图纸类型失败: ' + error.message)
+        ElMessage.error('获取图纸类型失败: ' + error.message)
+      }
     }
     inputTimers.pid = null
   }, 1000)
