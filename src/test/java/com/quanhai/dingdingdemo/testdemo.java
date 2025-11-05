@@ -19,6 +19,8 @@ import com.quanhai.dingdingdemo.controller.yiDa.DownloadController;
 import com.quanhai.dingdingdemo.controller.yiDa.PrcsController;
 import com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO;
 import com.quanhai.dingdingdemo.file.mapper.CircuitBoardMapper;
+import com.quanhai.dingdingdemo.file.mapper.ItemTypeMapper;
+import com.quanhai.dingdingdemo.file.model.ItemType;
 import com.quanhai.dingdingdemo.mapper.yiDa.PrcsMapper;
 import com.quanhai.dingdingdemo.model.yiDa.CodeAndPrcsIns;
 import com.quanhai.dingdingdemo.service.msg.MsgService;
@@ -154,12 +156,16 @@ public class testdemo {
     @Autowired
     private CircuitBoardMapper circuitBoardMapper;
 
+
+    @Autowired
+    private ItemTypeMapper itemTypeMapper;
+
     @Test
     @Transactional
     public void getItemInfoForMES() throws Exception {
 
-        CircuitBoardDTO dto = circuitBoardMapper.selectCircuitBoardById(2L);
-        System.out.println("dto = " + dto);
+        ItemType itemType = itemTypeMapper.selectOne(new LambdaQueryWrapper<ItemType>().eq(ItemType::getItemPrefix, "SFJ"));
+        System.out.println("itemType = " + itemType);
     }
 
 }

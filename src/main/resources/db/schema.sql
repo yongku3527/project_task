@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `circuit_board` (
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`),
-    CONSTRAINT `fk_circuit_board_file` FOREIGN KEY (`file_id`) REFERENCES `file_info` (`id`)
+    CONSTRAINT `fk_circuit_board_file` FOREIGN KEY (`file_id`) REFERENCES file_info (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='线路板表';
 
 -- 半成品表
@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS `semi_product` (
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`),
     CONSTRAINT `fk_semi_product_circuit_board` FOREIGN KEY (`circuit_board_id`) REFERENCES `circuit_board` (`id`),
-    CONSTRAINT `fk_semi_product_schematic_file` FOREIGN KEY (`schematic_file_id`) REFERENCES `file_info` (`id`),
-    CONSTRAINT `fk_semi_product_smt_file` FOREIGN KEY (`smt_file_id`) REFERENCES `file_info` (`id`)
+    CONSTRAINT `fk_semi_product_schematic_file` FOREIGN KEY (`schematic_file_id`) REFERENCES file_info (`id`),
+    CONSTRAINT `fk_semi_product_smt_file` FOREIGN KEY (`smt_file_id`) REFERENCES file_info (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='半成品表';
 
 -- 灯板插件半成品表
@@ -81,5 +81,5 @@ CREATE TABLE IF NOT EXISTS `led_board_plugin_semi_product` (
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`),
     CONSTRAINT `fk_led_board_plugin_semi_product` FOREIGN KEY (`semi_product_id`) REFERENCES `semi_product` (`id`),
-    CONSTRAINT `fk_led_board_plugin_file` FOREIGN KEY (`file_id`) REFERENCES `file_info` (`id`)
+    CONSTRAINT `fk_led_board_plugin_file` FOREIGN KEY (`file_id`) REFERENCES file_info (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='灯板插件半成品表';
