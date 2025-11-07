@@ -23,7 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-//@Component
+@Component
 public class yiDaTask {
     @Autowired
     private PrcsServiceImpl prcsService;
@@ -80,8 +80,7 @@ public class yiDaTask {
     @Autowired
     private MsgService msgService;
 
-    @Scheduled(cron = "0 0/10 8-18 * * *")
-//    @Scheduled(cron = "0 0/2 8-18 * * *")
+//    @Scheduled(cron = "0 0/10 8-18 * * *")
     public void checkReminderInfo() {
 
         logger.info("=====================checkReminderInfo定时任务执行======================");

@@ -72,6 +72,8 @@
             file_info pdf_file ON d.pdf_file_id = pdf_file.id
         WHERE 
             d.pid = #{pid}
+
+
     </select>
 
     <!-- 根据文件ID查询文件URL -->
