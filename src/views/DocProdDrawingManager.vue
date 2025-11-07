@@ -17,10 +17,12 @@
                 </el-form-item>
                 <el-form-item label="文件类别:">
                   <el-select v-model="searchForm.drawingType" placeholder="请选择文件类别" clearable>
-                    <el-option label="原理图" value="原理图" />
-                    <el-option label="装配图" value="装配图" />
-                    <el-option label="零件图" value="零件图" />
-                    <el-option label="接线图" value="接线图" />
+                    <el-option 
+                      v-for="type in drawingTypes" 
+                      :key="type.value" 
+                      :label="type.label" 
+                      :value="type.value" 
+                    />
                   </el-select>
                 </el-form-item>
                 <el-form-item>
@@ -246,6 +248,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Switch, Refresh, Upload } from '@element-plus/icons-vue'
 import * as docProdDrawingApi from '@/api/docProdDrawing'
+import * as itemTypeApi from '@/api/itemType'
 import { http } from '@/utils/request'
 
 // 响应式数据
@@ -254,6 +257,7 @@ const tableData = ref([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const drawingTypes = ref([]) // 文件类别选项
 
 // 定义不同文件类型的存储桶
 const dwgBucket = ref('dwg-files')
@@ -335,7 +339,24 @@ const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
 // 页面加载时获取数据
 onMounted(() => {
   loadData()
+  loadDrawingTypes()
 })
+
+// 加载文件类别选项
+const loadDrawingTypes = async () => {
+  try {
+    const response = await itemTypeApi.getItemTypeList({ page: 1, size: 1000 })
+    if (response.code === 200) {
+      // 提取所有物料类型的typeName作为文件类别选项
+      drawingTypes.value = response.data.records.map(item => ({
+        label: item.typeName,
+        value: item.typeName
+      }))
+    }
+  } catch (error) {
+    console.error('加载文件类别失败:', error)
+  }
+}
 
 // 加载数据
 const loadData = async () => {
