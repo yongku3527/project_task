@@ -29,5 +29,25 @@
         </if>
         LIMIT 1
     </select>
+    
+    <!-- 获取所有不重复的失效模式 -->
+    <select id="selectDistinctFailureModes" resultType="java.lang.String">
+        SELECT DISTINCT failure_mode FROM knowledge_info WHERE failure_mode IS NOT NULL AND failure_mode != '' ORDER BY failure_mode
+    </select>
+    
+    <!-- 获取所有不重复的问题来源 -->
+    <select id="selectDistinctIssueSources" resultType="java.lang.String">
+        SELECT DISTINCT issue_source FROM knowledge_info WHERE issue_source IS NOT NULL AND issue_source != '' ORDER BY issue_source
+    </select>
+    
+    <!-- 获取所有不重复的产品机型 -->
+    <select id="selectDistinctProductModels" resultType="java.lang.String">
+        SELECT DISTINCT product_model FROM knowledge_info WHERE product_model IS NOT NULL AND product_model != '' ORDER BY product_model
+    </select>
+    
+    <!-- 获取所有不重复的产品分类 -->
+    <select id="selectDistinctProductCategories" resultType="java.lang.String">
+        SELECT DISTINCT product_category FROM knowledge_info WHERE product_category IS NOT NULL AND product_category != '' ORDER BY product_category
+    </select>
 
 </mapper>

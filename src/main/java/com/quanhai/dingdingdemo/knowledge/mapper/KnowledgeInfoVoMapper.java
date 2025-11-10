@@ -39,4 +39,6 @@ public interface KnowledgeInfoVoMapper extends BaseMapper<KnowledgeInfoVo> {
     List<KnowledgeInfoVo> selectVoListByRoleAndStatus(@Param("roleList") List<String> roleList, 
                                                     @Param("userId") String userId, 
                                                     @Param("completionStatus") Integer completionStatus);
+
+
 }

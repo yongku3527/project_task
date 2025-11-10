@@ -35,4 +35,24 @@ public interface KnowledgeInfoService extends IService<KnowledgeInfo> {
      * 根据完成状态获取完整经验库信息列表
      */
     List<KnowledgeInfoVo> getCompleteListByStatus(Integer completionStatus);
+    
+    /**
+     * 获取失效模式选项列表
+     */
+    List<String> getFailureModes();
+    
+    /**
+     * 获取问题来源选项列表
+     */
+    List<String> getIssueSources();
+    
+    /**
+     * 获取产品机型选项列表
+     */
+    List<String> getProductModels();
+    
+    /**
+     * 获取产品分类选项列表
+     */
+    List<String> getProductCategories();
 }

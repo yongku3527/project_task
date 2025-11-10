@@ -136,4 +136,56 @@ public class KnowledgeInfoController {
             return ResultUtil.fail("根据完成状态获取完整经验库列表失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 获取失效模式选项列表
+     */
+    @GetMapping("/failure-modes")
+    public Result getFailureModes() {
+        try {
+            List<String> failureModes = knowledgeInfoService.getFailureModes();
+            return ResultUtil.success(failureModes);
+        } catch (Exception e) {
+            return ResultUtil.fail("获取失效模式选项失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取问题来源选项列表
+     */
+    @GetMapping("/issue-sources")
+    public Result getIssueSources() {
+        try {
+            List<String> issueSources = knowledgeInfoService.getIssueSources();
+            return ResultUtil.success(issueSources);
+        } catch (Exception e) {
+            return ResultUtil.fail("获取问题来源选项失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取产品机型选项列表
+     */
+    @GetMapping("/product-models")
+    public Result getProductModels() {
+        try {
+            List<String> productModels = knowledgeInfoService.getProductModels();
+            return ResultUtil.success(productModels);
+        } catch (Exception e) {
+            return ResultUtil.fail("获取产品机型选项失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取产品分类选项列表
+     */
+    @GetMapping("/product-categories")
+    public Result getProductCategories() {
+        try {
+            List<String> productCategories = knowledgeInfoService.getProductCategories();
+            return ResultUtil.success(productCategories);
+        } catch (Exception e) {
+            return ResultUtil.fail("获取产品分类选项失败: " + e.getMessage());
+        }
+    }
 }

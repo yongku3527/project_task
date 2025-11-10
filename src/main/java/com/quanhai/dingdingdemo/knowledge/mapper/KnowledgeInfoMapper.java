@@ -27,4 +27,28 @@ public interface KnowledgeInfoMapper extends BaseMapper<KnowledgeInfo> {
      * @return 经验库信息
      */
     KnowledgeInfo selectByIdAndRoles(@Param("id") Long id, @Param("roleList") List<String> roleList);
+    
+    /**
+     * 获取所有不重复的失效模式
+     * @return 失效模式列表
+     */
+    List<String> selectDistinctFailureModes();
+    
+    /**
+     * 获取所有不重复的问题来源
+     * @return 问题来源列表
+     */
+    List<String> selectDistinctIssueSources();
+    
+    /**
+     * 获取所有不重复的产品机型
+     * @return 产品机型列表
+     */
+    List<String> selectDistinctProductModels();
+    
+    /**
+     * 获取所有不重复的产品分类
+     * @return 产品分类列表
+     */
+    List<String> selectDistinctProductCategories();
 }

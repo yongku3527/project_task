@@ -176,4 +176,24 @@ public class KnowledgeInfoServiceImpl extends ServiceImpl<KnowledgeInfoMapper, K
         // 调用KnowledgeInfoVoMapper查询完整数据
         return knowledgeInfoVoMapper.selectVoListByRoleAndStatus(roleList, userId, completionStatus);
     }
+    
+    @Override
+    public List<String> getFailureModes() {
+        return baseMapper.selectDistinctFailureModes();
+    }
+    
+    @Override
+    public List<String> getIssueSources() {
+        return baseMapper.selectDistinctIssueSources();
+    }
+    
+    @Override
+    public List<String> getProductModels() {
+        return baseMapper.selectDistinctProductModels();
+    }
+    
+    @Override
+    public List<String> getProductCategories() {
+        return baseMapper.selectDistinctProductCategories();
+    }
 }
