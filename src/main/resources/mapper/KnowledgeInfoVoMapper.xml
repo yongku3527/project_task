@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quanhai.dingdingdemo.knowledge.mapper.KnowledgeInfoVoMapper">
+
+    <resultMap id="KnowledgeInfoVoMap" type="com.quanhai.dingdingdemo.knowledge.model.vo.KnowledgeInfoVo">
+        <id column="id" property="id"/>
+        <result column="product_model" property="productModel"/>
+        <result column="product_category" property="productCategory"/>
+        <result column="failure_mode" property="failureMode"/>
+        <result column="issue_source" property="issueSource"/>
+        <result column="issue_description" property="issueDescription"/>
+        <result column="issue_attachments_id" property="issueAttachmentsId"/>
+        <result column="root_cause" property="rootCause"/>
+        <result column="permanent_action" property="permanentAction"/>
+        <result column="action_attachments_id" property="actionAttachmentsId"/>
+        <result column="application_scene" property="applicationScene"/>
+        <result column="role" property="role"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="completion_status" property="completionStatus"/>
+        <result column="issue_file_name" property="issueAttachmentsFileName"/>
+        <result column="issue_file_url" property="issueAttachmentsFileUrl"/>
+        <result column="action_file_name" property="actionAttachmentsFileName"/>
+        <result column="action_file_url" property="actionAttachmentsFileUrl"/>
+    </resultMap>
+
+    <!-- 根据用户角色查询完整经验库信息列表（包含文件信息和完成状态） -->
+    <select id="selectVoListByRole" resultMap="KnowledgeInfoVoMap">
+        SELECT 
+            k.id,
+            k.product_model,
+            k.product_category,
+            k.failure_mode,
+            k.issue_source,
+            k.issue_description,
+            k.issue_attachments_id,
+            k.root_cause,
+            k.permanent_action,
+            k.action_attachments_id,
+            k.application_scene,
+            k.role,
+            k.create_time,
+            k.update_time,
+            COALESCE(cs.completion_status, 0) as completion_status,
+            issue_file.file_name as issue_file_name,
+            issue_file.file_url as issue_file_url,
+            action_file.file_name as action_file_name,
+            action_file.file_url as action_file_url
+        FROM 
+            knowledge_info k
+        LEFT JOIN 
+            completion_status cs ON k.id = cs.knowledge_info_id AND cs.user_id = #{userId}
+        LEFT JOIN 
+            file_info issue_file ON k.issue_attachments_id = issue_file.id
+        LEFT JOIN 
+            file_info action_file ON k.action_attachments_id = action_file.id
+        WHERE 
+            <foreach collection="roleList" item="role" open="(" separator=" OR " close=")">
+                k.role LIKE CONCAT('%', #{role}, '%')
+            </foreach>
+        ORDER BY 
+            k.create_time DESC
+    </select>
+
+    <!-- 根据ID查询完整经验库信息（包含文件信息和完成状态） -->
+    <select id="selectVoById" resultMap="KnowledgeInfoVoMap">
+        SELECT 
+            k.id,
+            k.product_model,
+            k.product_category,
+            k.failure_mode,
+            k.issue_source,
+            k.issue_description,
+            k.issue_attachments_id,
+            k.root_cause,
+            k.permanent_action,
+            k.action_attachments_id,
+            k.application_scene,
+            k.role,
+            k.create_time,
+            k.update_time,
+            COALESCE(cs.completion_status, 0) as completion_status,
+            issue_file.file_name as issue_file_name,
+            issue_file.file_url as issue_file_url,
+            action_file.file_name as action_file_name,
+            action_file.file_url as action_file_url
+        FROM 
+            knowledge_info k
+        LEFT JOIN 
+            completion_status cs ON k.id = cs.knowledge_info_id AND cs.user_id = #{userId}
+        LEFT JOIN 
+            file_info issue_file ON k.issue_attachments_id = issue_file.id
+        LEFT JOIN 
+            file_info action_file ON k.action_attachments_id = action_file.id
+        WHERE 
+            k.id = #{id}
+    </select>
+
+    <!-- 根据用户角色和完成状态查询完整经验库信息列表 -->
+    <select id="selectVoListByRoleAndStatus" resultMap="KnowledgeInfoVoMap">
+        SELECT 
+            k.id,
+            k.product_model,
+            k.product_category,
+            k.failure_mode,
+            k.issue_source,
+            k.issue_description,
+            k.issue_attachments_id,
+            k.root_cause,
+            k.permanent_action,
+            k.action_attachments_id,
+            k.application_scene,
+            k.role,
+            k.create_time,
+            k.update_time,
+            COALESCE(cs.completion_status, 0) as completion_status,
+            issue_file.file_name as issue_file_name,
+            issue_file.file_url as issue_file_url,
+            action_file.file_name as action_file_name,
+            action_file.file_url as action_file_url
+        FROM 
+            knowledge_info k
+        LEFT JOIN 
+            completion_status cs ON k.id = cs.knowledge_info_id AND cs.user_id = #{userId}
+        LEFT JOIN 
+            file_info issue_file ON k.issue_attachments_id = issue_file.id
+        LEFT JOIN 
+            file_info action_file ON k.action_attachments_id = action_file.id
+        WHERE 
+            <foreach collection="roleList" item="role" open="(" separator=" OR " close=")">
+                k.role LIKE CONCAT('%', #{role}, '%')
+            </foreach>
+            AND COALESCE(cs.completion_status, 0) = #{completionStatus}
+        ORDER BY 
+            k.create_time DESC
+    </select>
+
+</mapper>

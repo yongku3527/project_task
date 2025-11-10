@@ -431,8 +431,9 @@ class DingdingDemoApplicationTests {
 
             com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsRequest getTaskByIdsRequest = new com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsRequest()
                     .setTaskId(joinTaskIds);
+
             try {
-                GetTaskByIdsResponse taskByIdsResponse = client.getTaskByIdsWithOptions("02186700545626304822", getTaskByIdsRequest, getTaskByIdsHeaders, new RuntimeOptions());
+                GetTaskByIdsResponse taskByIdsResponse = client.getTaskByIdsWithOptions("011965232633828543", getTaskByIdsRequest, getTaskByIdsHeaders, new RuntimeOptions());
                 List<GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult> taskByIdsResponseData = taskByIdsResponse.getBody().getResult();
                 for (GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult taskInfo : taskByIdsResponseData) {
                     redisTemplate.opsForValue().set("taskInfo_" + taskInfo.getTaskId(), taskInfo,1, TimeUnit.DAYS);

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quanhai.dingdingdemo.knowledge.mapper.KnowledgeInfoMapper">
+
+    <!-- 根据角色列表查询经验库信息 -->
+    <select id="selectListByRoles" resultType="com.quanhai.dingdingdemo.knowledge.model.pojo.KnowledgeInfo">
+        SELECT * FROM knowledge_info
+        <where>
+            <if test="roleList != null and roleList.size() > 0">
+                AND (
+                <foreach collection="roleList" item="role" open="" separator=" OR " close="">
+                    role LIKE CONCAT('%', #{role}, '%')
+                </foreach>
+                )
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据ID和角色列表查询经验库信息 -->
+    <select id="selectByIdAndRoles" resultType="com.quanhai.dingdingdemo.knowledge.model.pojo.KnowledgeInfo">
+        SELECT * FROM knowledge_info WHERE id = #{id}
+        <if test="roleList != null and roleList.size() > 0">
+            AND (
+            <foreach collection="roleList" item="role" open="" separator=" OR " close="">
+                role LIKE CONCAT('%', #{role}, '%')
+            </foreach>
+            )
+        </if>
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -28,12 +28,12 @@ public class KnowledgeInfo {
     @TableField("product_category")
     private String productCategory;
 
-    /** 失效模式（标准字典值，如 不开机、花屏、烧屏） */
+    /** 失效模式 */
      @TableField("failure_mode")
     private String failureMode;
 
 
-    /** 问题来源（枚举：IQC、市场、生产线、客退、可靠性实验…） */
+    /** 问题来源 */
      @TableField("issue_source")
     private String issueSource;
 

@@ -1,5 +1,6 @@
 package com.quanhai.dingdingdemo;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
@@ -39,10 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @SpringBootTest(classes = DingdingDemoApplication.class)
@@ -123,7 +121,7 @@ public class testdemo {
         com.aliyun.dingtalkyida_2_0.models.GetInstanceByIdRequest getInstanceByIdRequest = new com.aliyun.dingtalkyida_2_0.models.GetInstanceByIdRequest()
                 .setSystemToken("8D7668A1LCL2GTN39RHSGD04QLXV3UY0J396LXWI")
                 .setFormUuid("FORM-EFEFFE4B77BA46919ED0BB37443069AA7FGB")
-                .setUserId("02186700545626304822")
+                .setUserId("011965232633828543")
                 .setAppType("APP_XZT8TFAQ7QCQQW4QQPP1")
                 .setUseAlias(true);
 
@@ -166,6 +164,14 @@ public class testdemo {
 
         ItemType itemType = itemTypeMapper.selectOne(new LambdaQueryWrapper<ItemType>().eq(ItemType::getItemPrefix, "SFJ"));
         System.out.println("itemType = " + itemType);
+
+        List<String> roleList = StpUtil.getRoleList();
+        String roleStr = String.join(",", roleList);
+
+        LambdaQueryWrapper<ItemType> itemTypeLambdaQueryWrapper = new LambdaQueryWrapper<>();
+
+
+        List<ItemType> itemTypeList = itemTypeMapper.selectList(itemTypeLambdaQueryWrapper.like(ItemType::getTypeName, roleStr));
     }
 
 }
