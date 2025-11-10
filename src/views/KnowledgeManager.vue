@@ -7,28 +7,43 @@
             <div class="search-bar-inline">
               <el-form :inline="true" size="small">
                 <el-form-item label="产品机型:">
-                  <el-input v-model="searchForm.productModel" placeholder="请输入产品机型" clearable />
+                  <el-select v-model="searchForm.productModel" placeholder="请选择产品机型" clearable filterable>
+                    <el-option
+                      v-for="item in productModelOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
                 </el-form-item>
                 <el-form-item label="产品分类:">
-                  <el-input v-model="searchForm.productCategory" placeholder="请输入产品分类" clearable />
+                  <el-select v-model="searchForm.productCategory" placeholder="请选择产品分类" clearable filterable>
+                    <el-option
+                      v-for="item in productCategoryOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
                 </el-form-item>
                 <el-form-item label="失效模式:">
                   <el-select v-model="searchForm.failureMode" placeholder="请选择失效模式" clearable>
-                    <el-option label="不开机" value="不开机" />
-                    <el-option label="花屏" value="花屏" />
-                    <el-option label="烧屏" value="烧屏" />
-                    <el-option label="触摸失灵" value="触摸失灵" />
-                    <el-option label="系统崩溃" value="系统崩溃" />
-                    <el-option label="充电异常" value="充电异常" />
+                    <el-option
+                      v-for="item in failureModeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
                   </el-select>
                 </el-form-item>
                 <el-form-item label="问题来源:">
                   <el-select v-model="searchForm.issueSource" placeholder="请选择问题来源" clearable>
-                    <el-option label="IQC" value="IQC" />
-                    <el-option label="市场" value="市场" />
-                    <el-option label="生产线" value="生产线" />
-                    <el-option label="客退" value="客退" />
-                    <el-option label="可靠性实验" value="可靠性实验" />
+                    <el-option
+                      v-for="item in issueSourceOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
                   </el-select>
                 </el-form-item>
                 <el-form-item label="完成状态:">
@@ -227,23 +242,24 @@
           <el-col :span="12">
             <el-form-item label="失效模式" prop="failureMode">
               <el-select v-model="dialog.form.failureMode" placeholder="请选择失效模式" style="width: 100%">
-                <el-option label="不开机" value="不开机" />
-                <el-option label="花屏" value="花屏" />
-                <el-option label="烧屏" value="烧屏" />
-                <el-option label="触摸失灵" value="触摸失灵" />
-                <el-option label="系统崩溃" value="系统崩溃" />
-                <el-option label="充电异常" value="充电异常" />
+                <el-option
+                  v-for="item in failureModeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="问题来源" prop="issueSource">
               <el-select v-model="dialog.form.issueSource" placeholder="请选择问题来源" style="width: 100%">
-                <el-option label="IQC" value="IQC" />
-                <el-option label="市场" value="市场" />
-                <el-option label="生产线" value="生产线" />
-                <el-option label="客退" value="客退" />
-                <el-option label="可靠性实验" value="可靠性实验" />
+                <el-option
+                  v-for="item in issueSourceOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -410,7 +426,11 @@ import {
   getCompleteKnowledgeById,
   createKnowledge, 
   updateKnowledge, 
-  deleteKnowledge 
+  deleteKnowledge,
+  getFailureModeOptions,
+  getIssueSourceOptions,
+  getProductModelOptions,
+  getProductCategoryOptions
 } from '@/api/knowledge'
 
 // 响应式数据
@@ -420,6 +440,12 @@ const tableData = ref([]) // 当前页显示的数据
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// 选项数据
+const failureModeOptions = ref([])
+const issueSourceOptions = ref([])
+const productModelOptions = ref([])
+const productCategoryOptions = ref([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -485,7 +511,115 @@ const roleString = computed(() => {
 // 生命周期
 onMounted(() => {
   loadData()
+  loadOptionsData()
 })
+
+// 加载选项数据
+const loadOptionsData = async () => {
+  try {
+    // 并行加载所有选项数据
+    const [
+      failureModeRes,
+      issueSourceRes,
+      productModelRes,
+      productCategoryRes
+    ] = await Promise.all([
+      getFailureModeOptions(),
+      getIssueSourceOptions(),
+      getProductModelOptions(),
+      getProductCategoryOptions()
+    ])
+    
+    // 处理失效模式选项
+    if (failureModeRes.code === 200) {
+      // 将字符串数组转换为选项对象数组
+      failureModeOptions.value = (failureModeRes.data || []).map(item => ({
+        label: item,
+        value: item
+      }))
+    } else {
+      console.error('获取失效模式选项失败:', failureModeRes.msg)
+      // 如果接口失败，使用默认选项
+      failureModeOptions.value = [
+        { label: '不开机', value: '不开机' },
+        { label: '花屏', value: '花屏' },
+        { label: '烧屏', value: '烧屏' },
+        { label: '触摸失灵', value: '触摸失灵' },
+        { label: '系统崩溃', value: '系统崩溃' },
+        { label: '充电异常', value: '充电异常' }
+      ]
+    }
+    
+    // 处理问题来源选项
+    if (issueSourceRes.code === 200) {
+      // 将字符串数组转换为选项对象数组
+      issueSourceOptions.value = (issueSourceRes.data || []).map(item => ({
+        label: item,
+        value: item
+      }))
+    } else {
+      console.error('获取问题来源选项失败:', issueSourceRes.msg)
+      // 如果接口失败，使用默认选项
+      issueSourceOptions.value = [
+        { label: 'IQC', value: 'IQC' },
+        { label: '市场', value: '市场' },
+        { label: '生产线', value: '生产线' },
+        { label: '客退', value: '客退' },
+        { label: '可靠性实验', value: '可靠性实验' }
+      ]
+    }
+    
+    // 处理产品机型选项
+    if (productModelRes.code === 200) {
+      // 将字符串数组转换为选项对象数组
+      productModelOptions.value = (productModelRes.data || []).map(item => ({
+        label: item,
+        value: item
+      }))
+    } else {
+      console.error('获取产品机型选项失败:', productModelRes.msg)
+      // 如果接口失败，使用空数组
+      productModelOptions.value = []
+    }
+    
+    // 处理产品分类选项
+    if (productCategoryRes.code === 200) {
+      // 将字符串数组转换为选项对象数组
+      productCategoryOptions.value = (productCategoryRes.data || []).map(item => ({
+        label: item,
+        value: item
+      }))
+    } else {
+      console.error('获取产品分类选项失败:', productCategoryRes.msg)
+      // 如果接口失败，使用空数组
+      productCategoryOptions.value = []
+    }
+  } catch (error) {
+    console.error('加载选项数据失败:', error)
+    ElMessage.error('加载选项数据失败')
+    
+    // 如果请求失败，使用默认选项
+    failureModeOptions.value = [
+      { label: '不开机', value: '不开机' },
+      { label: '花屏', value: '花屏' },
+      { label: '烧屏', value: '烧屏' },
+      { label: '触摸失灵', value: '触摸失灵' },
+      { label: '系统崩溃', value: '系统崩溃' },
+      { label: '充电异常', value: '充电异常' }
+    ]
+    
+    issueSourceOptions.value = [
+      { label: 'IQC', value: 'IQC' },
+      { label: '市场', value: '市场' },
+      { label: '生产线', value: '生产线' },
+      { label: '客退', value: '客退' },
+      { label: '可靠性实验', value: '可靠性实验' }
+    ]
+    
+    productModelOptions.value = []
+    productCategoryOptions.value = []
+  }
+}
 
 // 加载数据
 const loadData = async () => {
@@ -742,7 +876,7 @@ const handleActionUploadRemove = () => {
 
 // 上传前校验
 const beforeUpload = (file) => {
-  const isLt10M = file.size / 1024 / 1024 < 10
+  const isLt10M = file.size / 1024 / 1024 < 50
   if (!isLt10M) {
     ElMessage.error('上传文件大小不能超过 10MB!')
   }

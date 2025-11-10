@@ -54,6 +54,38 @@ export function getCompleteKnowledgeList() {
 }
 
 /**
+ * 获取失效模式选项列表
+ * @returns {Promise} 返回失效模式选项列表
+ */
+export function getFailureModeOptions() {
+  return http.get('/knowledge-info/failure-modes')
+}
+
+/**
+ * 获取问题来源选项列表
+ * @returns {Promise} 返回问题来源选项列表
+ */
+export function getIssueSourceOptions() {
+  return http.get('/knowledge-info/issue-sources')
+}
+
+/**
+ * 获取产品机型选项列表
+ * @returns {Promise} 返回产品机型选项列表
+ */
+export function getProductModelOptions() {
+  return http.get('/knowledge-info/product-models')
+}
+
+/**
+ * 获取产品分类选项列表
+ * @returns {Promise} 返回产品分类选项列表
+ */
+export function getProductCategoryOptions() {
+  return http.get('/knowledge-info/product-categories')
+}
+
+/**
  * 根据ID获取完整经验库详情（包含文件信息和完成状态）
  * @param {Number} id 经验库ID
  * @returns {Promise} 返回完整经验库详情

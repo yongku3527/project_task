@@ -16,7 +16,7 @@
                   <el-input v-model="searchForm.model" placeholder="请输入规格型号" clearable />
                 </el-form-item>
                 <el-form-item label="文件类别:">
-                  <el-select v-model="searchForm.drawingType" placeholder="请选择文件类别" clearable>
+                  <el-select v-model="searchForm.drawingType" placeholder="请选择文件类别" clearable style="width: 150px;">
                     <el-option 
                       v-for="type in drawingTypes" 
                       :key="type.value" 
@@ -57,10 +57,11 @@
           :table-layout="'fixed'"
           :row-class-name="getRowClassName"
         >
-          <el-table-column prop="pid" label="成品编号" min-width="70" />
-          <el-table-column prop="drawingType" label="文件类别" min-width="50" />
-          <el-table-column prop="itemName" label="物料名称" min-width="50" />
-          <el-table-column prop="model" label="规格型号" min-width="120" />
+        <el-table-column prop="drawingType" label="产品类别" min-width="70" />
+          <el-table-column prop="pid" label="成品编号" min-width="90" />
+          
+          <el-table-column prop="itemName" label="物料名称" min-width="180" />
+          <el-table-column prop="model" label="规格型号" min-width="110" />
           
           <!-- DWG文件列 -->
           <el-table-column label="DWG文件" min-width="150">
@@ -104,7 +105,7 @@
           
           <el-table-column prop="createTime" label="创建时间" min-width="100" />
           
-          <el-table-column   label="操作" width="280" fixed="right">
+          <el-table-column   label="操作" width="250" fixed="right">
             <template #default="{ row }" >
               <div class="action-buttons" >
                 <el-button v-permission="'prodDrawing:update'" type="primary" size="small" link @click="handleEdit(row)">
@@ -120,7 +121,7 @@
                   @click="handleToggleStatus(row)"
                 >
                   <el-icon><Switch /></el-icon>
-                  {{ row.status === 1 ? '禁用' : '启用' }}
+                  {{ row.status === 1 ? '停用' : '启用' }}
                 </el-button>
                 <el-button v-permission="'prodDrawing:update'" 
                   type="info" 
@@ -138,7 +139,7 @@
                   @click="handleDisableStatus(row)"
                   v-if="row.status === 2"
                 >
-                  <el-icon><Switch /></el-icon>禁用
+                  <el-icon><Switch /></el-icon>停用
                 </el-button>
               </div> 
             
@@ -176,7 +177,14 @@
           />
         </el-form-item>
         <el-form-item label="文件类别" prop="drawingType">
-          <el-input v-model="dialog.form.drawingType" placeholder="请输入文件类别" />
+          <el-select v-model="dialog.form.drawingType" placeholder="请选择文件类别" style="width: 100%;">
+            <el-option 
+              v-for="type in drawingTypes" 
+              :key="type.value" 
+              :label="type.label" 
+              :value="type.value" 
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="物料名称" prop="itemName">
           <el-input v-model="dialog.form.itemName" placeholder="请输入物料名称" />
@@ -229,7 +237,7 @@
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="dialog.form.status">
             <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">禁用</el-radio>
+            <el-radio :label="0">停用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -571,7 +579,7 @@ const handleDelete = async (row) => {
 const handleToggleStatus = async (row) => {
   try {
     const newStatus = row.status === 1 ? 0 : 1
-    const statusText = newStatus === 1 ? '启用' : '禁用'
+    const statusText = newStatus === 1 ? '启用' : '停用'
     
     await ElMessageBox.confirm(`确认${statusText}该成品图纸吗？`, '提示', {
       confirmButtonText: '确定',
@@ -602,7 +610,7 @@ const handleToggleStatus = async (row) => {
 const getStatusType = (status) => {
   switch (status) {
     case 0:
-      return 'danger' // 禁用
+      return 'danger' // 停用
     case 1:
       return 'success' // 启用
     case 2:
@@ -616,7 +624,7 @@ const getStatusType = (status) => {
 const getStatusText = (status) => {
   switch (status) {
     case 0:
-      return '禁用'
+      return '停用'
     case 1:
       return '启用'
     case 2:
@@ -654,10 +662,10 @@ const handleConsumeStatus = async (row) => {
   }
 }
 
-// 禁用状态处理（从消耗状态变更为禁用）
+// 停用状态处理（从消耗状态变更为停用）
 const handleDisableStatus = async (row) => {
   try {
-    await ElMessageBox.confirm('确认将该成品图纸状态从消耗变更为禁用吗？', '提示', {
+    await ElMessageBox.confirm('确认将该成品图纸状态从消耗变更为停用吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -666,12 +674,12 @@ const handleDisableStatus = async (row) => {
     // 调用实际的API
     const response = await docProdDrawingApi.updateDocProdDrawing({
       id: row.id,
-      status: 0 // 0表示禁用状态
+      status: 0 // 0表示停用状态
     })
     
     if (response.code === 200) {
       row.status = 0
-      ElMessage.success('状态已从消耗变更为禁用')
+      ElMessage.success('状态已从消耗变更为停用')
     } else {
       ElMessage.error(response.msg || '操作失败')
     }
@@ -971,7 +979,7 @@ const handlePidInput = () => {
 const getRowClassName = ({ row }) => {
   switch (row.status) {
     case 0:
-      return 'row-disabled' // 禁用状态 - 红色背景
+      return 'row-disabled' // 停用状态 - 红色背景
     case 1:
       return 'row-enabled' // 启用状态 - 默认背景
     case 2:
