@@ -15,6 +15,7 @@ import CookieTest from '../views/CookieTest.vue';
 import UserManager from '../views/UserManager.vue';
 import RolePermissionManager from '../views/RolePermissionManager.vue';
 import ItemTypeManager from '../views/ItemTypeManager.vue';
+import KnowledgeManager from '../views/KnowledgeManager.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -91,6 +92,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/item-type',
     name: 'ItemTypeManager',
     component: ItemTypeManager
+  },
+  {
+    path: '/knowledge',
+    name: 'KnowledgeManager',
+    component: KnowledgeManager
   }
 ];
 

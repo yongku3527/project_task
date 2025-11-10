@@ -39,6 +39,22 @@
         </el-menu-item>
       </el-sub-menu>
 
+
+
+      <!-- 知识库 -->
+      <el-sub-menu  index="knowledge">
+        <template #title>
+          <Reading style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>知识库管理</span>
+        </template>
+        <el-menu-item  index="/knowledge">
+          <Reading style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>知识库信息列表</span>
+        </el-menu-item>
+      </el-sub-menu>
+
+
+
       <!-- 开发材料类 -->
       <el-sub-menu v-permission="'doc:model'" index="development-materials">
         <template #title>
@@ -57,7 +73,10 @@
           <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>成品图纸管理</span>
         </el-menu-item>
+        
       </el-sub-menu>
+
+
 
       <!-- 系统管理 -->
       <el-sub-menu v-permission="'system:model'" index="system-management">
@@ -107,7 +126,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key, List } from '@element-plus/icons-vue';
+import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key, List, Reading } from '@element-plus/icons-vue';
 import PermissionManager from './utils/permission';
 
 const route = useRoute();

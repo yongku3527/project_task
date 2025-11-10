@@ -39,12 +39,7 @@
           </el-button>
         </el-form-item>
       </el-form>
-      <!-- <div class="login-tips">
-        <p>测试账号：</p>
-        <p>管理员 - admin/admin123</p>
-        <p>用户 - user/user123</p>
-        <p>访客 - guest/guest123</p>
-      </div> -->
+
     </div>
   </div>
 </template>
