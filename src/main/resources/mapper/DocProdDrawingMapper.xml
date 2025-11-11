@@ -113,9 +113,4 @@
             d.create_time DESC
     </select>
 
-    <!-- 根据成品编号查询数量 -->
-    <select id="selectCountByPid" parameterType="java.lang.String" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM doc_prod_drawing WHERE pid = #{pid}
-    </select>
-
 </mapper>

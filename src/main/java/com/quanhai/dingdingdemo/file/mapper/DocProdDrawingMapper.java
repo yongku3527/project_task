@@ -38,9 +38,4 @@ public interface DocProdDrawingMapper extends BaseMapper<docProdDrawing> {
      * 查询所有成品图纸及其文件信息
      */
     List<DocProdDrawingDTO> selectAllDocProdDrawingsWithFiles();
-    
-    /**
-     * 根据成品编号查询数量
-     */
-    int selectCountByPid(@Param("pid") String pid);
 }

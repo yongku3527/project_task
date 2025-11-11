@@ -26,9 +26,6 @@ public class FileNameFormatter {
     public static String generateFormattedFileName(String number, String name, String originalFilename) {
         LocalDateTime now = LocalDateTime.now();
         String date = now.format(DATE_FORMATTER);
-        String time = now.format(TIME_FORMATTER);
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        
         // 获取文件扩展名
         String extension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -36,11 +33,10 @@ public class FileNameFormatter {
         }
         
         // 构建新文件名
-        return String.format("%s~%s~%s~%s%s", 
+        return String.format("%s~%s~%s%s",
                 sanitizeFileName(number), 
                 sanitizeFileName(name), 
-                date, 
-                timestamp, 
+                date,
                 extension);
     }
 

@@ -25,9 +25,4 @@ public interface DocProdDrawingService extends IService<docProdDrawing> {
      * 获取所有成品图纸及其文件信息
      */
     List<DocProdDrawingDTO> getAllDocProdDrawingsWithFiles();
-    
-    /**
-     * 检查成品编号是否存在
-     */
-    boolean isPidExists(String pid);
 }
