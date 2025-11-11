@@ -78,6 +78,11 @@ public class DocProdDrawingServiceImpl extends ServiceImpl<DocProdDrawingMapper,
         return docProdDrawingMapper.selectAllDocProdDrawingsWithFiles();
     }
 
-
+    @Override
+    public boolean isPidExists(String pid) {
+        // 检查指定的成品编号是否已存在
+        int count = docProdDrawingMapper.selectCountByPid(pid);
+        return count > 0;
+    }
     
 }

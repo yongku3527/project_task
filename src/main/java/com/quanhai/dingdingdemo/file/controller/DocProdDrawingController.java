@@ -113,6 +113,13 @@ public class DocProdDrawingController {
     @PostMapping("/save")
     public Result save(@RequestBody docProdDrawing docProdDrawing) {
         try {
+            // 先检查成品编号是否存在
+            if (docProdDrawing.getPid() != null && !docProdDrawing.getPid().trim().isEmpty()) {
+                if (docProdDrawingService.isPidExists(docProdDrawing.getPid())) {
+                    return ResultUtil.fail("新增失败，成品编号已存在");
+                }
+            }
+            
             boolean success = docProdDrawingService.save(docProdDrawing);
             if (success) {
                 return ResultUtil.success("新增成功");
