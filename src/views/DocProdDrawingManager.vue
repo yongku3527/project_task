@@ -785,7 +785,7 @@ const handleDwgUpload = async (options) => {
     
     // 第一步：创建格式化文件名预上传任务
     const presignResponse = await http.post(
-      `/minio/buckets/${dwgBucket.value}/files/formatted-presigned-upload`,
+      `/minio/buckets/${dwgBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
       null,
       {
         code: pid,
@@ -858,7 +858,7 @@ const handlePdfUpload = async (options) => {
     
     // 第一步：创建格式化文件名预上传任务
     const presignResponse = await http.post(
-      `/minio/buckets/${pdfBucket.value}/files/formatted-presigned-upload`,
+      `/minio/buckets/${pdfBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
       null,
       {
         code: pid,
