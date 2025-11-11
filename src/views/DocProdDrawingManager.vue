@@ -60,11 +60,11 @@
         <el-table-column prop="drawingType" label="产品类别" min-width="70" />
           <el-table-column prop="pid" label="成品编号" min-width="90" />
           
-          <el-table-column prop="itemName" label="物料名称" min-width="180" />
+          <el-table-column prop="itemName" label="物料名称" min-width="90" />
           <el-table-column prop="model" label="规格型号" min-width="110" />
           
           <!-- DWG文件列 -->
-          <el-table-column label="DWG文件" min-width="150">
+          <el-table-column label="DWG文件" min-width="120">
             <template #default="{ row }">
               <div v-if="row.dwgFileUrl" class="file-info">
                 <el-link 
@@ -80,7 +80,7 @@
           </el-table-column>
           
           <!-- PDF文件列 -->
-          <el-table-column label="PDF文件" min-width="150">
+          <el-table-column label="PDF文件" min-width="120">
             <template #default="{ row }">
               <div v-if="row.pdfFileUrl" class="file-info">
                 <el-link 
