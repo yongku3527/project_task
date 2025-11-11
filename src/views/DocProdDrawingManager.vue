@@ -914,10 +914,38 @@ const handlePdfUpload = async (options) => {
   }
 }
 
-// 下载文件
-const downloadFile = (url, fileName) => {
-  // 使用API服务下载文件
-  docProdDrawingApi.downloadFile(url, fileName)
+// 下载文件 - 使用预签名链接在新窗口中打开文件
+const downloadFile = async (url, fileName) => {
+  try {
+    // 提取存储桶名称和对象名称
+    const urlMatch = url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      // 如果不是MinIO URL，直接在新窗口中打开
+      window.open(url, '_blank')
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    // 获取预签名下载URL
+    const response = await http.get(
+      `/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
+    )
+    
+    if (response.code === 200) {
+      const downloadUrl = response.data
+      
+      // 在新窗口中打开文件内容，而不是下载
+      window.open(downloadUrl, '_blank')
+      
+      ElMessage.success('文件已在新窗口中打开')
+    } else {
+      ElMessage.error('获取下载链接失败')
+    }
+  } catch (error) {
+    ElMessage.error('打开文件失败: ' + error.message)
+  }
 }
 
 // MES接口调用 - 根据物料编号查询物料信息
