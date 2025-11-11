@@ -43,6 +43,35 @@ public class FileNameFormatter {
                 timestamp, 
                 extension);
     }
+
+    /**
+     * 生成格式化文件名 专为成品图纸使用
+     * 格式：编号~日期.扩展名
+     *
+     * @param number 编号
+     * @param name 名称
+     * @param originalFilename 原始文件名（用于获取扩展名）
+     * @return 格式化后的文件名
+     */
+    public static String generateFormattedFileNameForDocProdDrawing(String number, String name, String originalFilename) {
+        LocalDateTime now = LocalDateTime.now();
+        String date = now.format(DATE_FORMATTER);
+        String time = now.format(TIME_FORMATTER);
+        String timestamp = String.valueOf(System.currentTimeMillis());
+
+        // 获取文件扩展名
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        // 构建新文件名
+        return String.format("%s~%s%s",
+                sanitizeFileName(number),
+                date,
+                extension);
+
+    }
     
     /**
      * 生成格式化文件名（使用UUID作为编号）
@@ -120,4 +149,6 @@ public class FileNameFormatter {
         
         return new String[]{formattedFileName, "", "", ""};
     }
+
+
 }

@@ -270,7 +270,7 @@ public class MinioController {
 
     /**
      * 创建格式化文件名预上传任务
-     * 上传文件方法TODO
+     *
      * 
      * @param bucketName 存储桶名称
      * @param code 编号
@@ -291,6 +291,36 @@ public class MinioController {
                 bucketName, code, name, originalFileName, fileSize);
         return minioService.createFormattedPresignedUploadTask(bucketName, code, name, originalFileName, fileSize);
     }
+
+
+
+
+    /**
+     * 创建格式化文件名预上传任务
+     * 成品图纸独有的创建格式化文件名预上传任务
+     *
+     *
+     * @param bucketName 存储桶名称
+     * @param code 编号
+     * @param name 名称
+     * @param originalFileName 原始文件名
+     * @param fileSize 文件大小（字节）
+     * @return Result结果，包含上传任务信息
+     */
+    @PostMapping("/buckets/{bucketName}/files/formatted-presigned-upload-for-doc-prod-drawing")
+    public Result<Map<String, Object>> createFormattedPresignedUploadTaskForDocProdDrawing(
+            @PathVariable String bucketName,
+            @RequestParam("code") String code,
+            @RequestParam("name") String name,
+            @RequestParam("originalFileName") String originalFileName,
+            @RequestParam("fileSize") long fileSize) {
+
+        log.info("创建格式化文件名预上传任务: {}，编号: {}，名称: {}，原始文件名: {}，文件大小: {}字节",
+                bucketName, code, name, originalFileName, fileSize);
+        return minioService.createFormattedPresignedUploadTaskForDocProdDrawing(bucketName, code, name, originalFileName, fileSize);
+    }
+
+
 
     /**
      * 保存文件信息到数据库（客户端直传后调用）

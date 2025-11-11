@@ -439,4 +439,20 @@ public class MinioService {
     }
 
 
+    public Result<Map<String, Object>> createFormattedPresignedUploadTaskForDocProdDrawing(String bucketName, String number, String name, String originalFilename, long fileSize) {
+
+        try {
+            // 生成格式化文件名
+            String formattedObjectName = FileNameFormatter.generateFormattedFileNameForDocProdDrawing(number, name, originalFilename);
+
+            // 创建预上传任务
+            return createPresignedUploadTask(bucketName, formattedObjectName, fileSize);
+
+        } catch (Exception e) {
+            log.error("创建格式化文件名预上传任务失败: {}/{}/{}，文件大小: {}字节",
+                    bucketName, number, name, fileSize, e);
+            return ResultUtil.fail("创建格式化文件名预上传任务失败: " + e.getMessage());
+        }
+
+    }
 }
