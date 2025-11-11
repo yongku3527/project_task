@@ -5,10 +5,10 @@
         <div class="card-header">
           <span>文件管理器（数据库）</span>
           <div class="header-actions">
-            <el-button v-permission="'file:add'" type="primary" size="small" @click="showUploadDialog = true">
+            <!-- <el-button v-permission="'file:add'" type="primary" size="small" @click="showUploadDialog = true">
               <el-icon><Upload /></el-icon>
               上传到MinIO
-            </el-button>
+            </el-button> -->
             <el-button type="success" size="small" @click="refreshFiles">
               <el-icon><Refresh /></el-icon>
               刷新
@@ -346,11 +346,42 @@ const downloadFile = async (file) => {
   }
 }
 
-// 删除文件（从数据库）
+// 从MinIO中删除文件
+const deleteFileFromMinIO = async (fileUrl, fileName) => {
+  try {
+    // 从文件URL中提取桶名和对象名
+    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (urlMatch) {
+      const bucketName = urlMatch[1]
+      const objectName = urlMatch[2]
+      
+      // 调用后端接口删除MinIO中的文件
+      const response = await axios.delete(
+        `${baseUrl}/minio/buckets/${bucketName}/files/${objectName}`
+      )
+      
+      if (response.data?.code === 200) {
+        console.log(`成功删除MinIO文件: ${fileName}`)
+        return true
+      } else {
+        console.error(`删除MinIO文件失败: ${fileName}`, response.data?.msg)
+        return false
+      }
+    } else {
+      console.error('文件URL格式不正确:', fileUrl)
+      return false
+    }
+  } catch (error) {
+    console.error('删除MinIO文件出错:', error)
+    return false
+  }
+}
+
+// 删除文件（同时删除数据库和MinIO中的文件）
 const deleteFile = async (file) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除文件 "${file.objectName}" 吗？`,
+      `确定要删除文件 "${file.objectName}" 吗？删除后无法恢复。`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -359,13 +390,20 @@ const deleteFile = async (file) => {
       }
     )
     
-    // 使用文件ID删除数据库记录
+    // 先从MinIO中删除文件
+    const minioDeleteSuccess = await deleteFileFromMinIO(file.fileUrl, file.objectName)
+    
+    // 再删除数据库记录
     const response = await axios.delete(
       `${baseUrl}/file-info/${file.id}`
     )
     
     if (response.data?.code === 200) {
-      ElMessage.success('文件删除成功')
+      if (minioDeleteSuccess) {
+        ElMessage.success('文件删除成功，已同时删除MinIO中的文件')
+      } else {
+        ElMessage.success('文件删除成功，但MinIO中的文件删除失败')
+      }
       loadFiles()
     } else {
       ElMessage.error(response.data?.msg || '删除文件失败')

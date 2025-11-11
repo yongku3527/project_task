@@ -559,11 +559,21 @@ const handleDelete = async (row) => {
       type: 'warning'
     })
     
+    // 如果有DWG文件，先删除DWG文件
+    if (row.dwgFileId && row.dwgFileUrl) {
+      await deleteFileFromMinIO(row.dwgFileUrl, 'DWG', row.dwgFileId)
+    }
+    
+    // 如果有PDF文件，先删除PDF文件
+    if (row.pdfFileId && row.pdfFileUrl) {
+      await deleteFileFromMinIO(row.pdfFileUrl, 'PDF', row.pdfFileId)
+    }
+    
     // 使用API服务删除数据
     const response = await docProdDrawingApi.deleteDocProdDrawing(row.id)
     
     if (response.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功，已同时删除关联的文件')
       loadData()
     } else {
       ElMessage.error(response.msg || '删除失败')
@@ -754,15 +764,72 @@ const handlePdfUploadSuccess = (response, file) => {
   dialog.form.pdfFileName = file.name
 }
 
-// DWG文件移除
-const handleDwgUploadRemove = () => {
+// 通用文件删除方法（从MinIO和数据库删除文件）
+const deleteFileFromMinIO = async (fileUrl, fileType, fileId = null) => {
+  if (!fileUrl) {
+    console.warn(`文件URL为空，跳过${fileType}文件删除`)
+    return
+  }
+  
+  try {
+    // 从fileUrl中提取桶名称和对象名称
+    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      console.error(`无法从${fileType}文件URL中提取桶名称和文件名称:`, fileUrl)
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    console.log(`提取的${fileType}桶名称:`, bucketName)
+    console.log(`提取的${fileType}文件名称:`, objectName)
+    
+    // 先删除MinIO文件
+    try {
+      await http.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
+      console.log(`${fileType}文件从MinIO删除成功`)
+    } catch (minioError) {
+      console.warn(`删除${fileType}MinIO文件失败:`, minioError)
+      // MinIO删除失败也继续，不抛出错误
+    }
+    
+    // 如果提供了fileId，也删除数据库记录
+    if (fileId) {
+      try {
+        await http.delete(`/file-info/${fileId}`)
+        console.log(`${fileType}文件数据库记录删除成功`)
+      } catch (dbError) {
+        console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
+        // 数据库删除失败也继续，不抛出错误
+      }
+    }
+  } catch (error) {
+    console.error(`删除${fileType}文件时出错:`, error)
+  }
+}
+
+// DWG文件移除 - 添加删除数据库和MinIO文件的逻辑
+const handleDwgUploadRemove = async () => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (dialog.form.dwgFileId && dialog.form.dwgFileUrl) {
+    await deleteFileFromMinIO(dialog.form.dwgFileUrl, 'DWG', dialog.form.dwgFileId)
+  }
+  
+  // 重置文件信息
   dialog.form.dwgFileId = null
   dialog.form.dwgFileUrl = ''
   dialog.form.dwgFileName = ''
 }
 
-// PDF文件移除
-const handlePdfUploadRemove = () => {
+// PDF文件移除 - 添加删除数据库和MinIO文件的逻辑
+const handlePdfUploadRemove = async () => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (dialog.form.pdfFileId && dialog.form.pdfFileUrl) {
+    await deleteFileFromMinIO(dialog.form.pdfFileUrl, 'PDF', dialog.form.pdfFileId)
+  }
+  
+  // 重置文件信息
   dialog.form.pdfFileId = null
   dialog.form.pdfFileUrl = ''
   dialog.form.pdfFileName = ''
