@@ -60,7 +60,7 @@
               </el-form>
             </div>
             <div class="header-buttons">
-              <el-button v-permission="'knowledge:add'" type="primary" size="small" @click="handleAdd">  
+              <el-button v-permission="'knowledge_info:add'" type="primary" size="small" @click="handleAdd">  
                 <el-icon><Plus /></el-icon>
                 新增经验库
               </el-button>
@@ -118,10 +118,10 @@
                 </div>
               </div>
               <div class="knowledge-actions">
-                <el-button v-permission="'knowledge:update'" type="primary" size="small" link @click="handleEdit(row)">
+                <el-button v-permission="'knowledge_info:update'" type="primary" size="small" link @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button v-permission="'knowledge:delete'" type="danger" size="small" link @click="handleDelete(row)">
+                <el-button v-permission="'knowledge_info:delete'" type="danger" size="small" link @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
                 <el-button type="success" size="small" link @click="handleViewDetail(row)">
@@ -326,17 +326,7 @@
             placeholder="请输入应用场景"
           />
         </el-form-item>
-        <el-form-item label="所属角色" prop="role">
-          <el-checkbox-group v-model="roleList">
-            <el-checkbox label="engineer">工程师</el-checkbox>
-            <el-checkbox label="quality">质量</el-checkbox>
-            <el-checkbox label="support">支持</el-checkbox>
-            <el-checkbox label="design">设计</el-checkbox>
-            <el-checkbox label="iqc">IQC</el-checkbox>
-            <el-checkbox label="production">生产</el-checkbox>
-            <el-checkbox label="developer">开发</el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
+
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -409,7 +399,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="detailDialog.visible = false">关闭</el-button>
-          <el-button v-permission="'knowledge:update'" type="primary" @click="handleEditFromDetail">编辑</el-button>
+          <el-button v-permission="'knowledge_info:update'" type="primary" @click="handleEditFromDetail">编辑</el-button>
         </span>
       </template>
     </el-dialog>
@@ -482,8 +472,7 @@ const dialog = reactive({
     issueDescription: [{ required: true, message: '请输入问题描述', trigger: 'blur' }],
     rootCause: [{ required: true, message: '请输入根本原因', trigger: 'blur' }],
     permanentAction: [{ required: true, message: '请输入永久处理措施', trigger: 'blur' }],
-    applicationScene: [{ required: true, message: '请输入应用场景', trigger: 'blur' }],
-    role: [{ required: true, message: '请选择所属角色', trigger: 'change' }]
+    applicationScene: [{ required: true, message: '请输入应用场景', trigger: 'blur' }]
   },
   issueFileList: [],
   actionFileList: []
@@ -500,13 +489,7 @@ const formRef = ref()
 const issueUploadRef = ref()
 const actionUploadRef = ref()
 
-// 角色列表
-const roleList = ref([])
 
-// 计算属性，将角色列表转换为字符串
-const roleString = computed(() => {
-  return roleList.value.join(',')
-})
 
 // 生命周期
 onMounted(() => {
@@ -743,7 +726,6 @@ const handleAdd = () => {
   }
   dialog.issueFileList = []
   dialog.actionFileList = []
-  roleList.value = []
 }
 
 // 编辑
@@ -763,8 +745,7 @@ const handleEdit = (row) => {
     url: row.actionAttachmentsFileUrl
   }] : []
   
-  // 设置角色列表
-  roleList.value = row.role ? row.role.split(',') : []
+
 }
 
 // 删除
@@ -824,9 +805,6 @@ const saveKnowledge = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 设置角色字符串
-        dialog.form.role = roleString.value
-        
         const res = dialog.form.id 
           ? await updateKnowledge(dialog.form)
           : await createKnowledge(dialog.form)

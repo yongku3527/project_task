@@ -41,15 +41,15 @@
 
 
 
-      <!-- 知识库 -->
-      <el-sub-menu  index="knowledge">
+      <!-- 经验库 -->
+      <el-sub-menu v-permission="'knowledge:model'" index="knowledge">
         <template #title>
           <Reading style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
-          <span>知识库管理</span>
+          <span>经验库管理</span>
         </template>
-        <el-menu-item  index="/knowledge">
+        <el-menu-item v-permission="'knowledge_info:menu'" index="/knowledge">
           <Reading style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
-          <span>知识库信息列表</span>
+          <span>经验库信息列表</span>
         </el-menu-item>
       </el-sub-menu>
 

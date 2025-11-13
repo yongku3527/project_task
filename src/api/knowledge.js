@@ -15,7 +15,7 @@ export function getKnowledgeList(params) {
  * @returns {Promise} 返回经验库详情
  */
 export function getKnowledgeById(id) {
-  return http.get(`/knowledge-info/${id}`)
+  return http.get(`/knowledge-info/info/${id}`)
 }
 
 /**
@@ -24,7 +24,7 @@ export function getKnowledgeById(id) {
  * @returns {Promise} 返回新增结果
  */
 export function createKnowledge(data) {
-  return http.post('/knowledge-info', data)
+  return http.post('/knowledge-info/save', data)
 }
 
 /**
@@ -33,7 +33,7 @@ export function createKnowledge(data) {
  * @returns {Promise} 返回更新结果
  */
 export function updateKnowledge(data) {
-  return http.put('/knowledge-info', data)
+  return http.put('/knowledge-info/update', data)
 }
 
 /**
@@ -42,7 +42,7 @@ export function updateKnowledge(data) {
  * @returns {Promise} 返回删除结果
  */
 export function deleteKnowledge(id) {
-  return http.delete(`/knowledge-info/${id}`)
+  return http.delete(`/knowledge-info/delete/${id}`)
 }
 
 /**
