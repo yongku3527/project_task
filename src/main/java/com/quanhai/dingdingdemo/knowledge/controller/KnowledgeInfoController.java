@@ -70,6 +70,13 @@ public class KnowledgeInfoController {
     @PutMapping("/update")
     public Result updateById(@RequestBody KnowledgeInfo knowledgeInfo) {
         try {
+            if (knowledgeInfo.getIssueAttachmentsId() == null) {
+                knowledgeInfo.setIssueAttachmentsId(0L);
+            }
+            if (knowledgeInfo.getActionAttachmentsId() == null) {
+                knowledgeInfo.setActionAttachmentsId(0L);
+            }
+
             boolean success = knowledgeInfoService.updateById(knowledgeInfo);
             if (success) {
                 return ResultUtil.success("更新成功");
