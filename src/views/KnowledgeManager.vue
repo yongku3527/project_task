@@ -288,16 +288,19 @@
         <el-form-item label="问题附件">
           <el-upload
             ref="issueUploadRef"
-            action="/api/minio/upload/knowledge"
             :limit="1"
             :on-success="handleIssueUploadSuccess"
             :on-remove="handleIssueUploadRemove"
             :file-list="dialog.issueFileList"
             :before-upload="beforeUpload"
+            :http-request="handleIssueUpload"
           >
             <el-button type="primary">
               <el-icon><Upload /></el-icon>选择问题附件
             </el-button>
+            <template #tip>
+              <div class="upload-tip">支持PDF、图片等格式，单个文件不超过200MB</div>
+            </template>
           </el-upload>
         </el-form-item>
         <el-form-item label="根本原因" prop="rootCause">
@@ -319,16 +322,19 @@
         <el-form-item label="措施附件">
           <el-upload
             ref="actionUploadRef"
-            action="/api/minio/upload/knowledge"
             :limit="1"
             :on-success="handleActionUploadSuccess"
             :on-remove="handleActionUploadRemove"
             :file-list="dialog.actionFileList"
             :before-upload="beforeUpload"
+            :http-request="handleActionUpload"
           >
             <el-button type="primary">
               <el-icon><Upload /></el-icon>选择措施附件
             </el-button>
+            <template #tip>
+              <div class="upload-tip">支持PDF、图片等格式，单个文件不超过200MB</div>
+            </template>
           </el-upload>
         </el-form-item>
         <el-form-item label="应用场景" prop="applicationScene">
@@ -436,6 +442,7 @@ import {
   getProductCategoryOptions,
   updateCompletionStatus
 } from '@/api/knowledge'
+import request from '@/utils/request'
 
 // 响应式数据
 const loading = ref(false)
@@ -444,6 +451,9 @@ const tableData = ref([]) // 当前页显示的数据
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// MinIO存储桶配置
+const knowledgeBucket = ref('knowledge')
 
 // 选项数据
 const failureModeOptions = ref([])
@@ -838,51 +848,277 @@ const saveKnowledge = async () => {
   })
 }
 
+// 使用预签名URL上传文件
+const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    
+    // 监听上传进度
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentCompleted = Math.round((event.loaded * 100) / event.total)
+        onProgress({ percent: percentCompleted })
+      }
+    }
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        resolve()
+      } else {
+        reject(new Error(`上传失败: ${xhr.status} ${xhr.statusText}`))
+      }
+    }
+    
+    xhr.onerror = () => reject(new Error('网络错误'))
+    
+    xhr.open('PUT', presignedUrl, true)
+    xhr.send(file)
+  })
+}
+
+// 问题附件预签名URL上传
+const handleIssueUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    // 使用原始文件名，避免复杂的格式化逻辑
+    const objectName = file.name
+    
+    // 第一步：创建普通预上传任务
+    const presignResponse = await request.post(
+      `/minio/buckets/${knowledgeBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload?fileSize=${file.size}`,
+      null
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 保存文件信息到数据库
+    const saveFileResponse = await request.post(`/minio/buckets/${knowledgeBucket.value}/files/save-info`, {
+      bucketName: knowledgeBucket.value,
+      objectName: objectName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${knowledgeBucket.value}/files/${encodeURIComponent(objectName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        fileUrl: fileUrl,
+        fileName: file.name,
+        fileId: saveFileResponse.data?.fileId || null
+      }
+    }
+    
+    // 调用原成功处理函数
+    handleIssueUploadSuccess(mockResponse)
+    onSuccess(mockResponse)
+    
+    ElMessage.success(`问题附件上传成功，文件名: ${file.name}`)
+    
+  } catch (error) {
+    ElMessage.error('问题附件上传失败: ' + error.message)
+    onError(error)
+  }
+}
+
+// 措施附件预签名URL上传
+const handleActionUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    // 使用原始文件名，避免复杂的格式化逻辑
+    const objectName = file.name
+    
+    // 第一步：创建普通预上传任务
+    const presignResponse = await request.post(
+      `/minio/buckets/${knowledgeBucket.value}/files/${encodeURIComponent(objectName)}/presigned-upload?fileSize=${file.size}`,
+      null
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 保存文件信息到数据库
+    const saveFileResponse = await request.post(`/minio/buckets/${knowledgeBucket.value}/files/save-info`, {
+      bucketName: knowledgeBucket.value,
+      objectName: objectName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${knowledgeBucket.value}/files/${encodeURIComponent(objectName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        fileUrl: fileUrl,
+        fileName: file.name,
+        fileId: saveFileResponse.data?.fileId || null
+      }
+    }
+    
+    // 调用原成功处理函数
+    handleActionUploadSuccess(mockResponse)
+    onSuccess(mockResponse)
+    
+    ElMessage.success(`措施附件上传成功，文件名: ${file.name}`)
+    
+  } catch (error) {
+    ElMessage.error('措施附件上传失败: ' + error.message)
+    onError(error)
+  }
+}
+
 // 问题附件上传成功
 const handleIssueUploadSuccess = (response) => {
-  if (response.code === 200) {
-    dialog.form.issueAttachmentsId = response.data.id
+  if (response.code === 200 && response.data) {
+    // 使用fileId字段而不是id字段
+    dialog.form.issueAttachmentsId = response.data.fileId
+    // 设置文件信息
+    dialog.issueFileList = [{
+      name: response.data.fileName,
+      url: response.data.fileUrl
+    }]
+    console.log('问题附件上传成功，fileId:', response.data.fileId)
   } else {
     ElMessage.error(response.msg || '上传失败')
   }
 }
 
 // 问题附件移除
-const handleIssueUploadRemove = () => {
+const handleIssueUploadRemove = async (file, fileList) => {
   dialog.form.issueAttachmentsId = null
+  dialog.issueFileList = []
+  
+  // 如果有文件URL，需要删除MinIO文件
+  if (file && file.url) {
+    try {
+      const urlMatch = file.url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+      if (urlMatch) {
+        const bucketName = urlMatch[1]
+        const objectName = urlMatch[2]
+        
+        // 删除MinIO文件
+        await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
+        console.log('问题附件从MinIO删除成功')
+      }
+    } catch (error) {
+      console.warn('删除问题附件MinIO文件失败:', error)
+      // 不阻止删除流程，只记录警告
+    }
+  }
 }
 
 // 措施附件上传成功
 const handleActionUploadSuccess = (response) => {
-  if (response.code === 200) {
-    dialog.form.actionAttachmentsId = response.data.id
+  if (response.code === 200 && response.data) {
+    // 使用fileId字段而不是id字段
+    dialog.form.actionAttachmentsId = response.data.fileId
+    // 设置文件信息
+    dialog.actionFileList = [{
+      name: response.data.fileName,
+      url: response.data.fileUrl
+    }]
+    console.log('措施附件上传成功，fileId:', response.data.fileId)
   } else {
     ElMessage.error(response.msg || '上传失败')
   }
 }
 
 // 措施附件移除
-const handleActionUploadRemove = () => {
+const handleActionUploadRemove = async (file, fileList) => {
   dialog.form.actionAttachmentsId = null
+  dialog.actionFileList = []
+  
+  // 如果有文件URL，需要删除MinIO文件
+  if (file && file.url) {
+    try {
+      const urlMatch = file.url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+      if (urlMatch) {
+        const bucketName = urlMatch[1]
+        const objectName = urlMatch[2]
+        
+        // 删除MinIO文件
+        await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
+        console.log('措施附件从MinIO删除成功')
+      }
+    } catch (error) {
+      console.warn('删除措施附件MinIO文件失败:', error)
+      // 不阻止删除流程，只记录警告
+    }
+  }
 }
 
 // 上传前校验
 const beforeUpload = (file) => {
-  const isLt10M = file.size / 1024 / 1024 < 50
-  if (!isLt10M) {
-    ElMessage.error('上传文件大小不能超过 10MB!')
+  // 文件大小限制 (200MB)
+  const maxSize = 200 * 1024 * 1024
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过200MB')
+    return false
   }
-  return isLt10M
+  return true
 }
 
-// 下载文件
-const downloadFile = (url, fileName) => {
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName || 'download'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+// 下载文件 - 使用预签名URL方式
+const downloadFile = async (url, fileName) => {
+  try {
+    // 提取存储桶名称和对象名称
+    const urlMatch = url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      // 如果不是MinIO URL，直接在新窗口中打开
+      window.open(url, '_blank')
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    // 获取预签名下载URL
+    const response = await request.get(
+      `/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
+    )
+    
+    if (response.code === 200) {
+      const downloadUrl = response.data
+      
+      // 在新窗口中打开文件内容，而不是下载
+      window.open(downloadUrl, '_blank')
+      
+      ElMessage.success('文件已在新窗口中打开')
+    } else {
+      ElMessage.error('获取下载链接失败')
+    }
+  } catch (error) {
+    ElMessage.error('打开文件失败: ' + error.message)
+  }
 }
 
 // 格式化日期时间
@@ -1046,6 +1282,12 @@ const getCompletionStatusText = (status) => {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
+  }
+
+  .upload-tip {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
   }
 
   .description-container,
