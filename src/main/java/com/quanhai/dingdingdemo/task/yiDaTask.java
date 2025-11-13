@@ -45,6 +45,7 @@ public class yiDaTask {
         logger.info("=====================checkItemNumber定时任务执行======================");
         for (CodeAndPrcsIns codeAndPrcsIns : prcsMapper.getAll()) {
             logger.info("当前执行参数：ItemCode: "+codeAndPrcsIns.getItemCode()+",InstanceCode: "+codeAndPrcsIns.getPrcsInstanceCode());
+            //虽说这里写的是ItemNum旦其实是获取的receiveNum ！！！
             BigDecimal itemNum = prcsService.getItemNum(codeAndPrcsIns.getItemCode());
 
             if (itemNum.compareTo(new BigDecimal(0)) > 0) {
