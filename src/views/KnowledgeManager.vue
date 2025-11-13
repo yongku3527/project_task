@@ -742,9 +742,13 @@ const handleAdd = () => {
     issueSource: '',
     issueDescription: '',
     issueAttachmentsId: null,
+    issueAttachmentsFileName: '',
+    issueAttachmentsFileUrl: '',
     rootCause: '',
     permanentAction: '',
     actionAttachmentsId: null,
+    actionAttachmentsFileName: '',
+    actionAttachmentsFileUrl: '',
     applicationScene: '',
     role: ''
   }
@@ -1014,7 +1018,10 @@ const handleIssueUploadSuccess = (response) => {
 
 // 问题附件移除
 const handleIssueUploadRemove = async (file, fileList) => {
+  // 清除相关字段
   dialog.form.issueAttachmentsId = null
+  dialog.form.issueAttachmentsFileName = ''
+  dialog.form.issueAttachmentsFileUrl = ''
   dialog.issueFileList = []
   
   // 如果有文件URL，需要删除MinIO文件
@@ -1054,7 +1061,10 @@ const handleActionUploadSuccess = (response) => {
 
 // 措施附件移除
 const handleActionUploadRemove = async (file, fileList) => {
+  // 清除相关字段
   dialog.form.actionAttachmentsId = null
+  dialog.form.actionAttachmentsFileName = ''
+  dialog.form.actionAttachmentsFileUrl = ''
   dialog.actionFileList = []
   
   // 如果有文件URL，需要删除MinIO文件
