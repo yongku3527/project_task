@@ -101,7 +101,7 @@
       <!-- 用户菜单 -->
       <div class="user-menu">
         <el-dropdown v-if="isLoggedIn" @command="handleUserCommand">
-          <span class="el-dropdown-link">
+          <span class="el-dropdown-link"> 
             <el-icon><User /></el-icon>
             {{ username }}
             <el-icon class="el-icon--right"><ArrowDown /></el-icon>

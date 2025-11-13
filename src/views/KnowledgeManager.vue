@@ -48,7 +48,7 @@
                 </el-form-item>
                 <el-form-item label="完成状态:">
                   <el-select v-model="searchForm.completionStatus" placeholder="请选择完成状态" clearable>
-                    <el-option label="待完成" :value="0" />
+                    <el-option label="待学习" :value="0" />
                     <el-option label="已学习" :value="1" />
                     <el-option label="已掌握" :value="2" />
                   </el-select>
@@ -127,6 +127,19 @@
                 <el-button type="success" size="small" link @click="handleViewDetail(row)">
                   <el-icon><View /></el-icon>详情
                 </el-button>
+                <!-- 完成状态修改按钮 -->
+                <el-dropdown @command="(command) => handleCompletionStatusChange(row, command)" trigger="click">
+                  <el-button type="warning" size="small" link>
+                    <el-icon><Setting /></el-icon>修改状态<i class="el-icon--right el-icon-arrow-down"></i>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item :command="0">待学习</el-dropdown-item>
+                      <el-dropdown-item :command="1">已学习</el-dropdown-item>
+                      <el-dropdown-item :command="2">已掌握</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </template>
           </el-table-column>
@@ -420,7 +433,8 @@ import {
   getFailureModeOptions,
   getIssueSourceOptions,
   getProductModelOptions,
-  getProductCategoryOptions
+  getProductCategoryOptions,
+  updateCompletionStatus
 } from '@/api/knowledge'
 
 // 响应式数据
@@ -906,17 +920,42 @@ const getIssueSourceTagType = (issueSource) => {
 // 获取完成状态标签类型
 const getCompletionStatusTagType = (status) => {
   const typeMap = {
-    0: 'info',    // 待完成
+    0: 'info',    // 待学习
     1: 'warning', // 已学习
     2: 'success'  // 已掌握
   }
   return typeMap[status] || 'info'
 }
 
+// 修改完成状态
+const handleCompletionStatusChange = async (row, newStatus) => {
+  try {
+    // 检查状态是否发生变化
+    if (row.completionStatus === newStatus) {
+      ElMessage.warning('状态未发生变化')
+      return
+    }
+    
+    // 调用后端接口更新完成状态
+    const response = await updateCompletionStatus(row.id, newStatus)
+    
+    if (response.code === 200) {
+      // 更新前端数据
+      row.completionStatus = newStatus
+      ElMessage.success('完成状态更新成功')
+    } else {
+      ElMessage.error('更新完成状态失败：' + (response.msg || '未知错误'))
+    }
+  } catch (error) {
+    console.error('更新完成状态失败:', error)
+    ElMessage.error('更新完成状态失败')
+  }
+}
+
 // 获取完成状态文本
 const getCompletionStatusText = (status) => {
   const textMap = {
-    0: '待完成',
+    0: '待学习',
     1: '已学习',
     2: '已掌握'
   }

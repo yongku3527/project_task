@@ -103,3 +103,13 @@ export function getCompleteKnowledgeById(id) {
 export function getKnowledgeListByStatus(completionStatus, params) {
   return http.get(`/knowledge-info/complete-list-by-status/${completionStatus}`, params)
 }
+
+/**
+ * 更新经验库的完成状态
+ * @param {Number} knowledgeInfoId 经验库ID
+ * @param {Number} completionStatus 完成状态（0待完成、1已学习、2已掌握）
+ * @returns {Promise} 返回更新结果
+ */
+export function updateCompletionStatus(knowledgeInfoId, completionStatus) {
+  return http.post(`/completion-status/update-status?knowledgeInfoId=${knowledgeInfoId}&completionStatus=${completionStatus}`)
+}
