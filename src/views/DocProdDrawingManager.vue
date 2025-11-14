@@ -167,14 +167,70 @@
       v-model="dialog.visible"
       :title="dialog.title"
       width="600px"
+      @close="handleCancel"
     >
       <el-form :model="dialog.form" :rules="dialog.rules" ref="formRef" label-width="100px">
         <el-form-item label="成品编号" prop="pid">
-          <el-input 
-            v-model="dialog.form.pid" 
+          <el-input
+            v-model="dialog.form.pid"
             placeholder="请输入成品编号"
+            clearable
             @input="handlePidInput"
+            style="width: 100%;"
           />
+          <!-- 搜索结果展示 -->
+          <div v-if="pidSearchResults.length > 0" class="pid-search-results">
+            <div class="search-results-header">
+              <span>搜索结果 ({{ pidSearchResults.length }} 条)</span>
+              <el-button type="text" size="small" @click="clearPidSearchResults">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+            <div class="search-results-list">
+              <div 
+                v-for="item in pidSearchResults" 
+                :key="item.id"
+                :class="`search-result-item status-${item.status}`"
+              >
+                <div class="result-main">
+                  <div class="result-pid">{{ item.pid }}</div>
+                  <div class="result-item-name">{{ item.itemName }}</div>
+                  <div class="result-model">{{ item.model }}</div>
+                </div>
+                <div class="result-status">
+                  <el-tag :type="getStatusType(item.status)" size="small">
+                    {{ getStatusText(item.status) }}
+                  </el-tag>
+                  <div class="status-actions">
+                    <el-button 
+                      v-if="item.status === 0" 
+                      type="primary" 
+                      size="small" 
+                      @click="updateItemStatus(item, 1)"
+                    >
+                      启用
+                    </el-button>
+                    <el-button 
+                      v-if="item.status === 1" 
+                      type="warning" 
+                      size="small" 
+                      @click="updateItemStatus(item, 2)"
+                    >
+                      消耗
+                    </el-button>
+                    <el-button 
+                      v-if="item.status === 2" 
+                      type="primary" 
+                      size="small" 
+                      @click="updateItemStatus(item, 0)"
+                    >
+                      停用
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="文件类别" prop="drawingType">
           <el-select v-model="dialog.form.drawingType" placeholder="请选择文件类别" style="width: 100%;">
@@ -243,7 +299,7 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialog.visible = false">取消</el-button>
+          <el-button @click="handleCancel">取消</el-button>
           <el-button type="primary" @click="save">保存</el-button>
         </span>
       </template>
@@ -254,7 +310,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Switch, Refresh, Upload } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Switch, Refresh, Upload, Close } from '@element-plus/icons-vue'
 import * as docProdDrawingApi from '@/api/docProdDrawing'
 import * as itemTypeApi from '@/api/itemType'
 import { http } from '@/utils/request'
@@ -307,6 +363,9 @@ const dialog = reactive({
   dwgFileList: [],
   pdfFileList: []
 })
+
+// 响应式数据
+const pidSearchResults = ref([]) // 成品编号搜索结果
 
 // 表单引用
 const formRef = ref(null)
@@ -714,6 +773,8 @@ const save = async () => {
     
     if (response.code === 200) {
       ElMessage.success(dialog.form.id ? '更新成功' : '新增成功')
+      // 清除搜索结果
+      pidSearchResults.value = []
       dialog.visible = false
       loadData()
     } else {
@@ -723,7 +784,17 @@ const save = async () => {
     if (error !== 'cancel') {
       ElMessage.error('保存失败: ' + error.message)
     }
+  } finally {
+    // 不管成功失败都清除搜索结果
+    pidSearchResults.value = []
   }
+}
+
+// 取消
+const handleCancel = () => {
+  // 清除搜索结果
+  pidSearchResults.value = []
+  dialog.visible = false
 }
 
 // DWG文件上传前的验证
@@ -1032,6 +1103,92 @@ const getItemInfoFromMES = async (itemCode) => {
   }
 }
 
+// 实时搜索成品编号匹配的条目
+const searchPidItems = async (pidValue) => {
+  try {
+    // 调用API搜索匹配的条目
+    const response = await docProdDrawingApi.getDocProdDrawingList({
+      pid: pidValue,
+      page: 1,
+      size: 50 // 限制搜索结果数量
+    })
+    
+    if (response.code === 200) {
+      let results = response.data.records || response.data || []
+      
+      // 按照状态排序：启用(1) > 消耗(2) > 停用(0)
+      results = results.sort((a, b) => {
+        // 启用状态优先级最高
+        if (a.status === 1 && b.status !== 1) return -1
+        if (b.status === 1 && a.status !== 1) return 1
+        
+        // 消耗状态优先级其次
+        if (a.status === 2 && b.status === 0) return -1
+        if (b.status === 2 && a.status === 0) return 1
+        
+        // 停用状态优先级最低
+        return 0
+      })
+      
+      pidSearchResults.value = results
+      console.log(`找到 ${results.length} 个匹配条目`)
+    } else {
+      pidSearchResults.value = []
+      console.warn('搜索失败:', response.msg)
+    }
+  } catch (error) {
+    pidSearchResults.value = []
+    console.error('搜索失败:', error.message)
+  }
+}
+
+// 清除搜索结果
+const clearPidSearchResults = () => {
+  pidSearchResults.value = []
+  ElMessage.info('已清除搜索结果')
+}
+
+// 更新条目状态
+const updateItemStatus = async (item, newStatus) => {
+  try {
+    const statusText = getStatusText(newStatus)
+    
+    await ElMessageBox.confirm(`确认将条目"${item.pid} - ${item.itemName}"状态修改为"${statusText}"吗？`, '状态修改确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 调用API更新状态
+    const response = await docProdDrawingApi.updateDocProdDrawing({
+      id: item.id,
+      status: newStatus
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success(`状态已更新为"${statusText}"`)
+      
+      // 更新本地搜索结果中的状态
+      const index = pidSearchResults.value.findIndex(result => result.id === item.id)
+      if (index !== -1) {
+        pidSearchResults.value[index].status = newStatus
+      }
+      
+      // 更新表格数据中的状态
+      const tableIndex = tableData.value.findIndex(tableItem => tableItem.id === item.id)
+      if (tableIndex !== -1) {
+        tableData.value[tableIndex].status = newStatus
+      }
+    } else {
+      ElMessage.error(response.msg || '状态更新失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('状态更新失败: ' + error.message)
+    }
+  }
+}
+
 // 成品编号输入处理（防抖）
 const handlePidInput = () => {
   // 清除之前的定时器
@@ -1041,9 +1198,14 @@ const handlePidInput = () => {
   
   // 设置新的定时器
   inputTimers.pid = setTimeout(async () => {
-    if (dialog.form.pid?.trim()) {
+    const pidValue = dialog.form.pid?.trim()
+    
+    if (pidValue) {
+      // 实时搜索匹配的条目
+      await searchPidItems(pidValue)
+      
       // 调用MES接口根据成品编号获取物料信息
-      const itemInfo = await getItemInfoFromMES(dialog.form.pid.trim())
+      const itemInfo = await getItemInfoFromMES(pidValue)
 
       if (itemInfo) {
         dialog.form.itemName = itemInfo.itemName || ''
@@ -1053,7 +1215,7 @@ const handlePidInput = () => {
       
       // 调用API根据成品编号前三位查询物料类型
       try {
-        const itemTypeResponse = await docProdDrawingApi.getItemTypeByPid(dialog.form.pid.trim())
+        const itemTypeResponse = await docProdDrawingApi.getItemTypeByPid(pidValue)
         if (itemTypeResponse.code === 200) {
           dialog.form.drawingType = itemTypeResponse.data.drawingType || ''
           ElMessage.success('已自动填充图纸类型')
@@ -1065,9 +1227,12 @@ const handlePidInput = () => {
         console.warn('获取图纸类型失败: ' + error.message)
         ElMessage.error('获取图纸类型失败: ' + error.message)
       }
+    } else {
+      // 清除搜索结果
+      pidSearchResults.value = []
     }
     inputTimers.pid = null
-  }, 1000)
+  }, 500) // 减少防抖时间，提高响应速度
 }
 
 // 根据状态获取表格行类名
@@ -1198,6 +1363,114 @@ const getRowClassName = ({ row }) => {
   .header-buttons {
     justify-content: center;
   }
+}
+
+/* 搜索结果区域 */
+.pid-search-results {
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: 250px;
+  overflow: hidden;
+  margin-top: 8px;
+  z-index: 1000;
+  position: relative;
+}
+
+.search-results-header {
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #606266;
+}
+
+.search-results-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  padding: 12px;
+  border-bottom: 1px solid #f0f2f5;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-result-item:hover {
+  background-color: #f5f7fa;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.result-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-pid {
+  font-weight: 500;
+  color: #303133;
+  font-size: 14px;
+}
+
+.result-item-name {
+  color: #606266;
+  font-size: 13px;
+}
+
+.result-model {
+  color: #909399;
+  font-size: 12px;
+}
+
+.result-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.status-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* 不同状态的背景色 */
+.search-result-item.status-0 {
+  background-color: #fff1f0;
+}
+
+.search-result-item.status-0:hover {
+  background-color: #ffebe6;
+}
+
+.search-result-item.status-1 {
+  background-color: #f0f9ff;
+}
+
+.search-result-item.status-1:hover {
+  background-color: #e6f7ff;
+}
+
+.search-result-item.status-2 {
+  background-color: #fffbe6;
+}
+
+.search-result-item.status-2:hover {
+  background-color: #fff1b8;
 }
 
 /* 状态行背景色 */
