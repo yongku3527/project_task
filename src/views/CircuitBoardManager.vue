@@ -47,8 +47,14 @@
           border
           stripe
         >
+          <!-- 序号列 -->
+          <el-table-column type="index" label="序号" width="40" align="center">
+            <template #default="{ $index }">
+              {{ $index + 1 }}
+            </template>
+          </el-table-column>
           <!-- 线路板信息列 -->
-          <el-table-column label="线路板信息" width="350" fixed="left">
+          <el-table-column label="线路板信息" width="350" >
             <template #default="{ row }">
               <div class="board-info" :class="{
                 'board-info-enabled': row.status === 1,
@@ -98,12 +104,12 @@
                 </el-button>
                 <el-button 
                   v-permission="'circuitBoard:update'"
-                  :type="row.status === 1 ? 'danger' : 'success'" 
+                  :type="row.status === 1 || row.status === 2 ? 'danger' : 'success'" 
                   size="small" 
                   link 
                   @click="handleToggleCircuitBoardStatus(row)"
                 >
-                  <el-icon><CircleClose v-if="row.status === 1" /><CircleCheck v-else /></el-icon>{{ row.status === 1 ? '停用' : '启用' }}
+                  <el-icon><CircleClose v-if="row.status === 1 || row.status === 2" /><CircleCheck v-else /></el-icon>{{ row.status === 1 || row.status === 2 ? '停用' : '启用' }}
                 </el-button>
                 <el-button v-permission="'circuitBoard:add'" type="success" size="small" link @click="handleAddSemiProduct(row)">
                   <el-icon><Plus /></el-icon>添加半成品
@@ -183,12 +189,12 @@
                       </el-button>
                       <el-button 
                         v-permission="'circuitBoard:update'"
-                        :type="semi.status === 1 ? 'danger' : 'success'" 
+                        :type="semi.status === 1 || semi.status === 2 ? 'danger' : 'success'" 
                         size="small" 
                         link 
                         @click="handleToggleSemiProductStatus(semi)"
                       >
-                        <el-icon><CircleClose v-if="semi.status === 1" /><CircleCheck v-else /></el-icon>{{ semi.status === 1 ? '停用' : (semi.status === 2 ? '启用' : '启用') }}
+                        <el-icon><CircleClose v-if="semi.status === 1 || semi.status === 2" /><CircleCheck v-else /></el-icon>{{ semi.status === 1 || semi.status === 2 ? '停用' : '启用' }}
                       </el-button>
                       <!-- 添加灯板插件按钮已隐藏 -->
                       <!-- <el-button type="info" size="small" link @click="handleAddLedBoardPlugin(semi)">
@@ -258,17 +264,7 @@
       </div>
 
       <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[5, 10, 20, 50]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+      
     </el-card>
 
     <!-- 线路板编辑对话框 -->
@@ -1156,10 +1152,9 @@ const handleConsumeSemiProduct = async (semi) => {
 // 切换半成品状态
 const handleToggleSemiProductStatus = async (semi) => {
   try {
-    // 如果当前是消耗状态（2），则切换到启用状态（1）
-    // 如果当前是启用状态（1），则切换到停用状态（0）
+    // 如果当前是消耗状态（2）或启用状态（1），则切换到停用状态（0）
     // 如果当前是停用状态（0），则切换到启用状态（1）
-    const newStatus = semi.status === 2 ? 1 : (semi.status === 1 ? 0 : 1)
+    const newStatus = (semi.status === 2 || semi.status === 1) ? 0 : 1
     const statusText = newStatus === 1 ? '启用' : '停用'
     
     await ElMessageBox.confirm(`确认${statusText}该半成品吗？`, '提示', {
@@ -2147,7 +2142,9 @@ const deleteFileFromMinIO = async (fileUrl, fileType, fileId = null) => {
 // 切换线路板状态
 const handleToggleCircuitBoardStatus = async (row) => {
   try {
-    const newStatus = row.status === 1 ? 0 : 1
+    // 如果当前是消耗状态（2）或启用状态（1），则切换到停用状态（0）
+    // 如果当前是停用状态（0），则切换到启用状态（1）
+    const newStatus = (row.status === 2 || row.status === 1) ? 0 : 1
     const statusText = newStatus === 1 ? '启用' : '停用'
     
     await ElMessageBox.confirm(`确认${statusText}该线路板吗？此操作将同时${statusText}该线路板下的所有半成品。`, '提示', {
