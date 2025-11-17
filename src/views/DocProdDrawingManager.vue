@@ -319,7 +319,7 @@ import { http } from '@/utils/request'
 const loading = ref(false)
 const tableData = ref([])
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(50)
 const total = ref(0)
 const drawingTypes = ref([]) // 文件类别选项
 

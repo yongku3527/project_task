@@ -1942,7 +1942,7 @@ const inputTimers = reactive({
   ledBoardPluginCode: null
 })
 
-// 线路板编码输入监听 - 自动查询MES接口
+// 线路板编码输入监听 - 自动查询MES接口并检查重复
 const handleBoardCodeInput = () => {
   const boardCode = boardDialog.form.boardCode?.trim()
   
@@ -1956,6 +1956,18 @@ const handleBoardCodeInput = () => {
     inputTimers.boardCode = setTimeout(async () => {
       // 如果当前输入值与之前相同，则进行查询
       if (boardDialog.form.boardCode?.trim() === boardCode) {
+        // 检查线路板编号是否已存在
+        const existingBoard = tableData.value.find(board => 
+          board.boardCode === boardCode && 
+          (!boardDialog.form.id || board.id !== boardDialog.form.id) // 编辑时排除当前记录
+        )
+        
+        if (existingBoard) {
+          ElMessage.warning(`线路板编号 "${boardCode}" 已存在，请使用其他编号`)
+          // 可选：清空输入或保持输入让用户选择是否继续
+          return
+        }
+        
         const itemInfo = await getItemInfoFromMES(boardCode)
         if (itemInfo && itemInfo.itemSpec) {
           boardDialog.form.boardName = itemInfo.itemSpec
