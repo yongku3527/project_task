@@ -145,6 +145,7 @@
                         <span class="label">半成品名称:</span>
                         <span class="value">{{ semi.semiProductName }}</span>
                       </div>
+                      
                       <div class="info-row">
                         <span class="label">原理图:</span>
                         <el-link 
@@ -168,7 +169,10 @@
                         <span v-else>-</span>
                       </div>
 
-
+                      <div v-if="semi.remarks" class="info-row">
+                        <span class="label">备注:</span>
+                        <span class="value remarks-text">{{ semi.remarks }}</span>
+                      </div>
                     </div>
                     <div class="semi-product-actions">
                       <el-button v-permission="'circuitBoard:update'" type="warning" size="small" link @click="handleEditSemiProduct(semi)">
@@ -341,6 +345,14 @@
 </el-form-item>
         <el-form-item label="半成品名称" prop="semiProductName">
           <el-input v-model="semiProductDialog.form.semiProductName" placeholder="请输入半成品名称" />
+        </el-form-item>
+        <el-form-item label="备注" prop="remarks">
+          <el-input 
+            v-model="semiProductDialog.form.remarks" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入备注（可选）" 
+          />
         </el-form-item>
         <el-form-item label="原理图文件">
           <el-upload
@@ -517,6 +529,7 @@ const semiProductDialog = reactive({
     circuitBoardId: null,
     semiProductCode: '',
     semiProductName: '',
+    remarks: '',
     schematicFileId: null,
     schematicFileUrl: '',
     schematicFileName: '',
@@ -655,6 +668,7 @@ const generateMockData = async () => {
           circuitBoardName: '主控制板',
           semiProductCode: 'SP001',
           semiProductName: '主控制板半成品A',
+          remarks: '这是一个重要的半成品组件，主要用于主控制板的控制功能。',
           schematicFileUrl: 'http://example.com/schematic1.pdf',
           schematicFileName: '原理图A.pdf',
           smtFileUrl: 'http://example.com/smt1.pdf',
@@ -699,6 +713,7 @@ const generateMockData = async () => {
           circuitBoardName: '主控制板',
           semiProductCode: 'SP002',
           semiProductName: '主控制板半成品B',
+          remarks: '辅助控制半成品，集成度高，性能稳定。',
           schematicFileUrl: 'http://example.com/schematic2.pdf',
           schematicFileName: '原理图B.pdf',
           smtFileUrl: 'http://example.com/smt2.pdf',
@@ -2440,6 +2455,14 @@ const handleToggleCircuitBoardStatus = async (row) => {
     flex-shrink: 0;
     font-size: 13px;
     font-weight: 500;
+  }
+
+  .semi-product-info .info-row .value.remarks-text {
+    font-style: italic;
+    color: #606266;
+    max-width: 300px;
+    word-wrap: break-word;
+    line-height: 1.4;
   }
 
   .semi-product-actions {
