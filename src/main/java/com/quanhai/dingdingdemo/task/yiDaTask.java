@@ -57,6 +57,7 @@ public class yiDaTask {
                         try {
                             commonTools.send("创建新流程失败(定时任务)",mailConfig.getBadTo(),codeAndPrcsIns.toString()+"\n报错信息： "+e.getMessage());
                         } catch (EmailException ex) {
+
                             logger.error("报错邮件,发送失败 ："+ex.getMessage()+"\n");
                         }
                     continue;
@@ -116,6 +117,7 @@ public class yiDaTask {
 
             //将数据库中的数据删除
             reminderInfoMapper.deleteById(reminderInfo.getId());
+
         }
 
 

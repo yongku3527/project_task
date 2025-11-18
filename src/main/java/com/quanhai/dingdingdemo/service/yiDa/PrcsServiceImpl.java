@@ -44,6 +44,7 @@ public class PrcsServiceImpl {
     @Autowired
     private PrcsMapper prcsMapper;
 
+
     private Logger logger = LoggerFactory.getLogger(PrcsServiceImpl.class);
 
 
@@ -100,7 +101,6 @@ public class PrcsServiceImpl {
         String OriginatorUserId = interfaceInfo.getOriginator().getUserId();
 
 
-
         com.aliyun.dingtalkyida_2_0.models.StartInstanceRequest startInstanceRequest = new com.aliyun.dingtalkyida_2_0.models.StartInstanceRequest()
                 .setSystemToken("8D7668A1LCL2GTN39RHSGD04QLXV3UY0J396LXWI")
                 .setFormUuid("FORM-EE8496CDE0A34B969FD34A6590EBCCD8KSFZ")
@@ -116,7 +116,6 @@ public class PrcsServiceImpl {
 
         } catch (Exception _err) {
             logger.error("流程创建失败 msg: "+_err.getMessage());
-            logger.error(_err.getCause().toString());
             throw new RuntimeException(_err);
         }
     }
@@ -181,6 +180,5 @@ public class PrcsServiceImpl {
         }
         return result;
     }
-
 
 }

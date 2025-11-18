@@ -74,6 +74,11 @@ public class SemiProductDTO {
     private String smtFileName;
 
     /**
+     * 备注信息
+     */
+    private String remarks;
+
+    /**
      * 状态
      */
     private Integer status;

@@ -47,6 +47,7 @@ public class SemiProductController {
             semiProduct.setCircuitBoardId(semiProductDTO.getCircuitBoardId());
             semiProduct.setSemiProductCode(semiProductDTO.getSemiProductCode());
             semiProduct.setSemiProductName(semiProductDTO.getSemiProductName());
+            semiProduct.setRemarks(semiProductDTO.getRemarks());
             semiProduct.setStatus(semiProductDTO.getStatus() != null ? semiProductDTO.getStatus() : 1);
             semiProduct.setCreateTime(LocalDateTime.now());
             semiProduct.setUpdateTime(LocalDateTime.now());
@@ -56,7 +57,6 @@ public class SemiProductController {
             }else {
                 semiProduct.setSchematicFileId(999999999999L);
             }
-
             if (semiProductDTO.getSmtFileId() != null) {
                 semiProduct.setSmtFileId(semiProductDTO.getSmtFileId());
             }else {
@@ -106,6 +106,7 @@ public class SemiProductController {
             }
             
             semiProduct.setCircuitBoardId(semiProductDTO.getCircuitBoardId());
+            semiProduct.setRemarks(semiProductDTO.getRemarks());
             semiProduct.setSemiProductCode(semiProductDTO.getSemiProductCode());
             semiProduct.setSemiProductName(semiProductDTO.getSemiProductName());
             semiProduct.setStatus(semiProductDTO.getStatus());
@@ -235,6 +236,7 @@ public class SemiProductController {
             
             return ResultUtil.success(dtoList);
         } catch (Exception e) {
+            Throwable cause = e.getCause();
             return ResultUtil.fail("查询失败：" + e.getMessage());
         }
     }

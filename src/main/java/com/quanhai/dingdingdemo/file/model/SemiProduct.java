@@ -42,4 +42,10 @@ public class SemiProduct extends BaseEntity {
      */
     @TableField("smt_file_id")
     private Long smtFileId;
+    
+    /**
+     * 备注信息
+     */
+    @TableField("remarks")
+    private String remarks;
 }
