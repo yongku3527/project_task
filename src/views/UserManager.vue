@@ -115,8 +115,13 @@
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="userForm.nickname" placeholder="请输入昵称" />
         </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="dialogType === 'add'">
-          <el-input v-model="userForm.password" type="password" placeholder="请输入密码" />
+        <el-form-item label="密码" prop="password">
+          <el-input 
+            v-model="userForm.password" 
+            type="password" 
+            :placeholder="dialogType === 'add' ? '请输入密码' : '留空则不修改密码'"
+            :autocomplete="dialogType === 'add' ? 'new-password' : 'new-password'"
+          />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="userForm.status">
@@ -244,8 +249,31 @@ const userRules: FormRules = {
     { min: 2, max: 20, message: '昵称长度在 2 到 20 个字符', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 1, max: 20, message: '密码长度在 1 到 20 个字符', trigger: 'blur' }
+    {
+      validator: (rule: any, value: any, callback: any) => {
+        // 如果是编辑模式且密码为空，则不验证密码
+        if (dialogType.value === 'edit' && !value) {
+          callback()
+        } else if (dialogType.value === 'add') {
+          // 新增模式下必须输入密码
+          if (!value) {
+            callback(new Error('请输入密码'))
+          } else if (value.length < 1 || value.length > 20) {
+            callback(new Error('密码长度在 1 到 20 个字符'))
+          } else {
+            callback()
+          }
+        } else {
+          // 编辑模式下如果输入了密码，需要验证长度
+          if (value && (value.length < 1 || value.length > 20)) {
+            callback(new Error('密码长度在 1 到 20 个字符'))
+          } else {
+            callback()
+          }
+        }
+      },
+      trigger: 'blur'
+    }
   ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }
@@ -321,7 +349,7 @@ const handleEdit = (row: User) => {
   userForm.username = row.username
   userForm.nickname = row.nickname
   userForm.status = row.status
-  userForm.password = ''
+  userForm.password = '' // 编辑时密码字段保持空白，不加载原密码
   dialogVisible.value = true
 }
 
@@ -394,7 +422,13 @@ const handleSubmit = async () => {
         const url = dialogType.value === 'add' ? '/sys/user' : '/sys/user'
         const method = dialogType.value === 'add' ? 'post' : 'put'
         
-        const response = await request[method](url, userForm)
+        // 如果是编辑模式且密码为空，则不传递密码字段
+        let submitData = { ...userForm }
+        if (dialogType.value === 'edit' && !submitData.password) {
+          delete submitData.password
+        }
+        
+        const response = await request[method](url, submitData)
         
         if (response.code === 200) {
           ElMessage.success(dialogType.value === 'add' ? '新增成功' : '编辑成功')
@@ -423,7 +457,7 @@ const resetUserForm = () => {
   userForm.username = ''
   userForm.nickname = ''
   userForm.password = ''
-  userForm.status = 1
+  userForm.status = 1 
 }
 
 // 角色分配相关方法
