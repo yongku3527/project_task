@@ -4,10 +4,10 @@
       <template #header>
         <div class="card-header">
           <div class="header-actions">
-            <div class="search-bar-inline">
-              <el-form :inline="true" size="small">
-                <el-form-item label="产品机型:">
-                  <el-select v-model="searchForm.productModel" placeholder="请选择产品机型" clearable filterable>
+            <div class="search-bar-container">
+              <el-form :inline="true" size="small" class="search-form">
+                <el-form-item label="产品机型:" class="search-form-item">
+                  <el-select v-model="searchForm.productModel" placeholder="请选择产品机型" clearable filterable style="width: 120px;">
                     <el-option
                       v-for="item in productModelOptions"
                       :key="item.value"
@@ -16,8 +16,8 @@
                     />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="产品分类:">
-                  <el-select v-model="searchForm.productCategory" placeholder="请选择产品分类" clearable filterable>
+                <el-form-item label="产品分类:" class="search-form-item">
+                  <el-select v-model="searchForm.productCategory" placeholder="请选择产品分类" clearable filterable style="width: 120px;">
                     <el-option
                       v-for="item in productCategoryOptions"
                       :key="item.value"
@@ -26,8 +26,8 @@
                     />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="失效模式:">
-                  <el-select v-model="searchForm.failureMode" placeholder="请选择失效模式" clearable>
+                <el-form-item label="失效模式:" class="search-form-item">
+                  <el-select v-model="searchForm.failureMode" placeholder="请选择失效模式" clearable style="width: 120px;">
                     <el-option
                       v-for="item in failureModeOptions"
                       :key="item.value"
@@ -36,8 +36,8 @@
                     />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="问题来源:">
-                  <el-select v-model="searchForm.issueSource" placeholder="请选择问题来源" clearable>
+                <el-form-item label="问题来源:" class="search-form-item">
+                  <el-select v-model="searchForm.issueSource" placeholder="请选择问题来源" clearable style="width: 120px;">
                     <el-option
                       v-for="item in issueSourceOptions"
                       :key="item.value"
@@ -46,14 +46,14 @@
                     />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="完成状态:">
-                  <el-select v-model="searchForm.completionStatus" placeholder="请选择完成状态" clearable>
+                <el-form-item label="完成状态:" class="search-form-item">
+                  <el-select v-model="searchForm.completionStatus" placeholder="请选择完成状态" clearable style="width: 120px;">
                     <el-option label="待学习" :value="0" />
                     <el-option label="已学习" :value="1" />
                     <el-option label="已掌握" :value="2" />
                   </el-select>
                 </el-form-item>
-                <el-form-item>
+                <el-form-item class="search-form-item">
                   <el-button type="primary" @click="handleSearch">查询</el-button>
                   <el-button @click="handleReset">重置</el-button>
                 </el-form-item>
@@ -82,6 +82,9 @@
           border
           stripe
         >
+          <!-- 序号列 -->
+          <el-table-column type="index" label="序号" width="60" align="center" fixed="left"></el-table-column>
+
           <!-- 产品机型列 -->
           <el-table-column label="产品机型" width="150" fixed="left">
             <template #default="{ row }">
@@ -119,7 +122,7 @@
           </el-table-column>
 
           <!-- 问题来源列 -->
-          <el-table-column label="问题来源" width="100">
+          <el-table-column label="问题来源" width="110">
             <template #default="{ row }">
               <el-tag :type="getIssueSourceTagType(row.issueSource)" size="small">
                 {{ row.issueSource }}
@@ -134,8 +137,15 @@
                 <el-tooltip :content="row.issueDescription" placement="top">
                   <p class="description-text">{{ row.issueDescription.length > 50 ? row.issueDescription.substring(0, 50) + '...' : row.issueDescription }}</p>
                 </el-tooltip>
-                <div v-if="row.issueAttachmentsFileUrl" class="attachment-indicator">
+                <div v-if="row.issueAttachmentsFileUrl" class="attachment-container">
                   <el-icon><Paperclip /></el-icon>
+                  <el-link 
+                    type="primary" 
+                    @click="downloadFile(row.issueAttachmentsFileUrl, row.issueAttachmentsFileName)"
+                    class="attachment-link"
+                  >
+                    {{ row.issueAttachmentsFileName }}
+                  </el-link>
                 </div>
               </div>
             </template>
@@ -155,8 +165,15 @@
                     措施: {{ row.permanentAction.length > 30 ? row.permanentAction.substring(0, 30) + '...' : row.permanentAction }}
                   </p>
                 </el-tooltip>
-                <div v-if="row.actionAttachmentsFileUrl" class="attachment-indicator">
+                <div v-if="row.actionAttachmentsFileUrl" class="attachment-container">
                   <el-icon><Paperclip /></el-icon>
+                  <el-link 
+                    type="primary" 
+                    @click="downloadFile(row.actionAttachmentsFileUrl, row.actionAttachmentsFileName)"
+                    class="attachment-link"
+                  >
+                    {{ row.actionAttachmentsFileName }}
+                  </el-link>
                 </div>
               </div>
             </template>
@@ -171,19 +188,7 @@
             </template>
           </el-table-column>
 
-          <!-- 时间信息列 -->
-          <!-- <el-table-column label="时间信息" width="150">
-            <template #default="{ row }">
-              <div class="time-container">
-                <div class="time-item">
-                  <span class="time-label">创建:</span>
-                  <el-tooltip :content="formatDateTime(row.createTime)" placement="top">
-                    <span class="time-value">{{ formatDateTime(row.createTime).split(' ')[0] }}</span>
-                  </el-tooltip>
-                </div>
-              </div>
-            </template>
-          </el-table-column> -->
+        
 
           <!-- 操作列 -->
           <el-table-column label="操作" width="200" fixed="right">
@@ -201,7 +206,7 @@
                 <!-- 完成状态修改按钮 -->
                 <el-dropdown @command="(command) => handleCompletionStatusChange(row, command)" trigger="click">
                   <el-button type="warning" size="small" link>
-                    <el-icon><Setting /></el-icon>
+                    <el-icon><Setting /></el-icon>完成状态
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
@@ -214,63 +219,7 @@
               </div>
             </template>
           </el-table-column>
-
-          <!-- 问题描述列 -->
-          <el-table-column label="问题描述" min-width="300">
-            <template #default="{ row }">
-              <div class="description-container">
-                <p class="description-text">{{ row.issueDescription }}</p>
-                <div v-if="row.issueAttachmentsFileUrl" class="attachment-container">
-                  <span class="attachment-label">问题附件:</span>
-                  <el-link 
-                    type="primary" 
-                    @click="downloadFile(row.issueAttachmentsFileUrl, row.issueAttachmentsFileName)"
-                    class="attachment-link"
-                  >
-                    <el-icon><Download /></el-icon>
-                    {{ row.issueAttachmentsFileName }}
-                  </el-link>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-
-          <!-- 解决方案列 -->
-          <el-table-column label="解决方案" min-width="300">
-            <template #default="{ row }">
-              <div class="solution-container">
-                <div class="solution-item">
-                  <span class="solution-label">根本原因:</span>
-                  <p class="solution-text">{{ row.rootCause }}</p>
-                </div>
-                <div class="solution-item">
-                  <span class="solution-label">永久措施:</span>
-                  <p class="solution-text">{{ row.permanentAction }}</p>
-                </div>
-                <div v-if="row.actionAttachmentsFileUrl" class="attachment-container">
-                  <span class="attachment-label">措施附件:</span>
-                  <el-link 
-                    type="primary" 
-                    @click="downloadFile(row.actionAttachmentsFileUrl, row.actionAttachmentsFileName)"
-                    class="attachment-link"
-                  >
-                    <el-icon><Download /></el-icon>
-                    {{ row.actionAttachmentsFileName }}
-                  </el-link>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-
-          <!-- 应用场景列 -->
-          <el-table-column label="应用场景" width="200">
-            <template #default="{ row }">
-              <div class="scene-container">
-                <p class="scene-text">{{ row.applicationScene }}</p>
-              </div>
-            </template>
-          </el-table-column>
-
+          
           <!-- 时间信息列 -->
           <el-table-column label="时间信息" width="180">
             <template #default="{ row }">
@@ -499,7 +448,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete, Upload, Download, View, Paperclip } from '@element-plus/icons-vue'
+import { Plus, Refresh, Edit, Delete, Upload, Download, View, Paperclip, Setting } from '@element-plus/icons-vue'
 import { 
   getKnowledgeList, 
   getCompleteKnowledgeList, 
@@ -520,7 +469,7 @@ const loading = ref(false)
 const allTableData = ref([]) // 存储所有数据
 const tableData = ref([]) // 当前页显示的数据
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(50)
 const total = ref(0)
 
 // MinIO存储桶配置
@@ -1089,13 +1038,15 @@ const handleIssueUploadSuccess = (response) => {
 
 // 问题附件移除
 const handleIssueUploadRemove = async (file, fileList) => {
+  const originalFileId = dialog.form.issueAttachmentsId
+  
   // 清除相关字段
   dialog.form.issueAttachmentsId = null
   dialog.form.issueAttachmentsFileName = ''
   dialog.form.issueAttachmentsFileUrl = ''
   dialog.issueFileList = []
   
-  // 如果有文件URL，需要删除MinIO文件
+  // 如果有文件URL，需要删除MinIO文件和文件信息数据
   if (file && file.url) {
     try {
       const urlMatch = file.url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
@@ -1106,10 +1057,28 @@ const handleIssueUploadRemove = async (file, fileList) => {
         // 删除MinIO文件
         await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
         console.log('问题附件从MinIO删除成功')
+        
+        // 如果有文件ID，同时使用FileInfoController删除文件信息数据
+        if (originalFileId) {
+          try {
+            await request.delete(`/file-info/${originalFileId}`)
+            console.log('问题附件文件信息数据删除成功')
+          } catch (error) {
+            console.warn('删除问题附件文件信息数据失败:', error)
+          }
+        }
       }
     } catch (error) {
       console.warn('删除问题附件MinIO文件失败:', error)
       // 不阻止删除流程，只记录警告
+    }
+  } else if (originalFileId) {
+    // 如果没有URL但有文件ID，也尝试删除文件信息数据
+    try {
+      await request.delete(`/file-info/${originalFileId}`)
+      console.log('问题附件文件信息数据删除成功')
+    } catch (error) {
+      console.warn('删除问题附件文件信息数据失败:', error)
     }
   }
 }
@@ -1132,13 +1101,15 @@ const handleActionUploadSuccess = (response) => {
 
 // 措施附件移除
 const handleActionUploadRemove = async (file, fileList) => {
+  const originalFileId = dialog.form.actionAttachmentsId
+  
   // 清除相关字段
   dialog.form.actionAttachmentsId = null
   dialog.form.actionAttachmentsFileName = ''
   dialog.form.actionAttachmentsFileUrl = ''
   dialog.actionFileList = []
   
-  // 如果有文件URL，需要删除MinIO文件
+  // 如果有文件URL，需要删除MinIO文件和文件信息数据
   if (file && file.url) {
     try {
       const urlMatch = file.url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
@@ -1149,10 +1120,28 @@ const handleActionUploadRemove = async (file, fileList) => {
         // 删除MinIO文件
         await request.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
         console.log('措施附件从MinIO删除成功')
+        
+        // 如果有文件ID，同时使用FileInfoController删除文件信息数据
+        if (originalFileId) {
+          try {
+            await request.delete(`/file-info/${originalFileId}`)
+            console.log('措施附件文件信息数据删除成功')
+          } catch (error) {
+            console.warn('删除措施附件文件信息数据失败:', error)
+          }
+        }
       }
     } catch (error) {
       console.warn('删除措施附件MinIO文件失败:', error)
       // 不阻止删除流程，只记录警告
+    }
+  } else if (originalFileId) {
+    // 如果没有URL但有文件ID，也尝试删除文件信息数据
+    try {
+      await request.delete(`/file-info/${originalFileId}`)
+      console.log('措施附件文件信息数据删除成功')
+    } catch (error) {
+      console.warn('删除措施附件文件信息数据失败:', error)
     }
   }
 }
@@ -1286,19 +1275,39 @@ const getCompletionStatusText = (status) => {
     .header-actions {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
+      align-items: flex-start;
+      flex-wrap: nowrap;
       gap: 10px;
 
-      .search-bar-inline {
+      .search-bar-container {
         flex: 1;
-        min-width: 800px;
+        min-width: 0;
+        overflow-x: auto;
+        
+        .search-form {
+          display: flex;
+          align-items: center;
+          flex-wrap: nowrap;
+          gap: 8px;
+          
+          .search-form-item {
+            margin-bottom: 0;
+            margin-right: 0;
+            
+            .el-select {
+              .el-input__wrapper {
+                min-width: 120px;
+              }
+            }
+          }
+        }
       }
 
       .header-buttons {
         display: flex;
         gap: 10px;
         white-space: nowrap;
+        flex-shrink: 0;
       }
     }
   }
@@ -1399,10 +1408,10 @@ const getCompletionStatusText = (status) => {
   }
 
   .attachment-container {
-    margin-top: 10px;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
   }
 
   .attachment-label {
@@ -1414,7 +1423,12 @@ const getCompletionStatusText = (status) => {
   .attachment-link {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
+    font-size: 12px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .time-container {
