@@ -1208,7 +1208,8 @@ const getFailureModeTagType = (failureMode) => {
     '系统崩溃': 'danger',
     '充电异常': 'warning'
   }
-  return typeMap[failureMode] || 'info'
+  // return typeMap[failureMode] || 'info'
+   return 'danger'
 }
 
 // 获取问题来源标签类型
@@ -1220,14 +1221,16 @@ const getIssueSourceTagType = (issueSource) => {
     '客退': 'danger',
     '可靠性实验': 'primary'
   }
-  return typeMap[issueSource] || 'info'
+
+  // return typeMap[issueSource] || 'info'
+  return 'danger'
 }
 
 // 获取完成状态标签类型
 const getCompletionStatusTagType = (status) => {
   const typeMap = {
-    0: 'info',    // 待学习
-    1: 'warning', // 已学习
+    0: 'warning',    // 待学习
+    1: 'primary', // 已学习
     2: 'success'  // 已掌握
   }
   return typeMap[status] || 'info'
