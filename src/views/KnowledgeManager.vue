@@ -82,41 +82,112 @@
           border
           stripe
         >
-          <!-- 经验库基本信息列 -->
-          <el-table-column label="经验库信息" width="400" fixed="left">
+          <!-- 产品机型列 -->
+          <el-table-column label="产品机型" width="150" fixed="left">
             <template #default="{ row }">
-              <div class="knowledge-info" :class="{
-                'knowledge-info-pending': row.completionStatus === 0,
-                'knowledge-info-learning': row.completionStatus === 1,
-                'knowledge-info-mastered': row.completionStatus === 2
-              }">
-                <div class="info-item">
-                  <span class="label">产品机型:</span>
-                  <span class="value">{{ row.productModel }}</span>
+              <div class="product-info">
+                <div class="main-field">
+                  <el-tooltip :content="row.productModel" placement="top">
+                    <span class="field-text">{{ row.productModel }}</span>
+                  </el-tooltip>
                 </div>
-                <div class="info-item">
-                  <span class="label">产品分类:</span>
-                  <span class="value">{{ row.productCategory }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">失效模式:</span>
-                  <el-tag :type="getFailureModeTagType(row.failureMode)" size="small">
-                    {{ row.failureMode }}
-                  </el-tag>
-                </div>
-                <div class="info-item">
-                  <span class="label">问题来源:</span>
-                  <el-tag :type="getIssueSourceTagType(row.issueSource)" size="small">
-                    {{ row.issueSource }}
-                  </el-tag>
-                </div>
-                <div class="info-item">
-                  <span class="label">完成状态:</span>
+                <div class="status-tags">
                   <el-tag :type="getCompletionStatusTagType(row.completionStatus)" size="small">
                     {{ getCompletionStatusText(row.completionStatus) }}
                   </el-tag>
                 </div>
               </div>
+            </template>
+          </el-table-column>
+
+          <!-- 产品分类列 -->
+          <el-table-column label="产品分类" width="120">
+            <template #default="{ row }">
+              <el-tooltip :content="row.productCategory" placement="top">
+                <span class="field-text">{{ row.productCategory }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+
+          <!-- 失效模式列 -->
+          <el-table-column label="失效模式" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getFailureModeTagType(row.failureMode)" size="small">
+                {{ row.failureMode }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 问题来源列 -->
+          <el-table-column label="问题来源" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getIssueSourceTagType(row.issueSource)" size="small">
+                {{ row.issueSource }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 问题描述列 -->
+          <el-table-column label="问题描述" min-width="300">
+            <template #default="{ row }">
+              <div class="description-container">
+                <el-tooltip :content="row.issueDescription" placement="top">
+                  <p class="description-text">{{ row.issueDescription.length > 50 ? row.issueDescription.substring(0, 50) + '...' : row.issueDescription }}</p>
+                </el-tooltip>
+                <div v-if="row.issueAttachmentsFileUrl" class="attachment-indicator">
+                  <el-icon><Paperclip /></el-icon>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 解决方案列 -->
+          <el-table-column label="解决方案" min-width="300">
+            <template #default="{ row }">
+              <div class="solution-container">
+                <el-tooltip :content="row.rootCause" placement="top">
+                  <p class="solution-text">
+                    原因: {{ row.rootCause.length > 30 ? row.rootCause.substring(0, 30) + '...' : row.rootCause }}
+                  </p>
+                </el-tooltip>
+                <el-tooltip :content="row.permanentAction" placement="top">
+                  <p class="solution-text">
+                    措施: {{ row.permanentAction.length > 30 ? row.permanentAction.substring(0, 30) + '...' : row.permanentAction }}
+                  </p>
+                </el-tooltip>
+                <div v-if="row.actionAttachmentsFileUrl" class="attachment-indicator">
+                  <el-icon><Paperclip /></el-icon>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 应用场景列 -->
+          <el-table-column label="应用场景" width="150">
+            <template #default="{ row }">
+              <el-tooltip :content="row.applicationScene" placement="top">
+                <p class="scene-text">{{ row.applicationScene.length > 20 ? row.applicationScene.substring(0, 20) + '...' : row.applicationScene }}</p>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+
+          <!-- 时间信息列 -->
+          <!-- <el-table-column label="时间信息" width="150">
+            <template #default="{ row }">
+              <div class="time-container">
+                <div class="time-item">
+                  <span class="time-label">创建:</span>
+                  <el-tooltip :content="formatDateTime(row.createTime)" placement="top">
+                    <span class="time-value">{{ formatDateTime(row.createTime).split(' ')[0] }}</span>
+                  </el-tooltip>
+                </div>
+              </div>
+            </template>
+          </el-table-column> -->
+
+          <!-- 操作列 -->
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
               <div class="knowledge-actions">
                 <el-button v-permission="'knowledge_info:update'" type="primary" size="small" link @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>编辑
@@ -130,7 +201,7 @@
                 <!-- 完成状态修改按钮 -->
                 <el-dropdown @command="(command) => handleCompletionStatusChange(row, command)" trigger="click">
                   <el-button type="warning" size="small" link>
-                    <el-icon><Setting /></el-icon>修改状态<i class="el-icon--right el-icon-arrow-down"></i>
+                    <el-icon><Setting /></el-icon>
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
@@ -428,7 +499,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete, Upload, Download, View } from '@element-plus/icons-vue'
+import { Plus, Refresh, Edit, Delete, Upload, Download, View, Paperclip } from '@element-plus/icons-vue'
 import { 
   getKnowledgeList, 
   getCompleteKnowledgeList, 
@@ -1236,62 +1307,44 @@ const getCompletionStatusText = (status) => {
     margin-top: 10px;
   }
 
-  .knowledge-info {
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #e2e0df;
-    margin-bottom: 8px;
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
-  .knowledge-info-pending {
-    background-color: #f0f9ff;
-    border-color: #bae6fd;
-  }
-
-  .knowledge-info-learning {
-    background-color: #fefce8;
-    border-color: #fde047;
-  }
-
-  .knowledge-info-mastered {
-    background-color: #f0fdf4;
-    border-color: #bbf7d0;
-  }
-
-  .info-item {
-    display: inline-flex;
-    margin-right: 15px;
-    margin-bottom: 6px;
+  .main-field {
+    display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    padding: 2px 0;
   }
 
-  .info-item:last-child {
-    margin-right: 0;
-  }
-
-  .info-item .label {
-    font-weight: 600;
-    color: #606266;
-    width: auto;
-    min-width: 70px;
-    flex-shrink: 0;
-    margin-right: 6px;
-    font-size: 13px;
-  }
-
-  .info-item .value {
-    color: #303133;
-    flex-shrink: 0;
-    font-size: 13px;
+  .field-text {
     font-weight: 500;
+    color: #303133;
+    font-size: 14px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-tags {
+    display: flex;
+    gap: 4px;
+  }
+
+  .attachment-indicator {
+    display: inline-flex;
+    align-items: center;
+    color: #409eff;
+    margin-top: 4px;
   }
 
   .knowledge-actions {
     display: flex;
-    gap: 5px;
+    gap: 4px;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .upload-tip {
@@ -1300,34 +1353,49 @@ const getCompletionStatusText = (status) => {
     margin-top: 4px;
   }
 
-  .description-container,
-  .solution-container,
-  .scene-container {
-    padding: 10px;
+  .description-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
-  .description-text,
-  .scene-text {
-    margin: 0 0 10px 0;
-    line-height: 1.5;
+  .description-text {
+    margin: 0;
+    line-height: 1.4;
     color: #303133;
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  .solution-item {
-    margin-bottom: 15px;
-  }
-
-  .solution-label {
-    font-weight: 600;
-    color: #606266;
-    display: block;
-    margin-bottom: 5px;
+  .solution-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .solution-text {
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.4;
     color: #303133;
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .scene-text {
+    margin: 0;
+    line-height: 1.4;
+    color: #303133;
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .attachment-container {
