@@ -46,13 +46,22 @@
                     />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="完成状态:" class="search-form-item">
+                <el-form-item label="问题描述:" class="search-form-item">
+                  <el-input v-model="searchForm.issueDescription" placeholder="请输入问题描述" clearable style="width: 150px;" />
+                </el-form-item>
+                <el-form-item label="根本原因:" class="search-form-item">
+                  <el-input v-model="searchForm.rootCause" placeholder="请输入根本原因" clearable style="width: 150px;" />
+                </el-form-item>
+                <el-form-item label="处理措施:" class="search-form-item">
+                  <el-input v-model="searchForm.permanentAction" placeholder="请输入处理措施" clearable style="width: 150px;" />
+                </el-form-item>
+                <!-- <el-form-item label="完成状态:" class="search-form-item">
                   <el-select v-model="searchForm.completionStatus" placeholder="请选择完成状态" clearable style="width: 120px;">
                     <el-option label="待学习" :value="0" />
                     <el-option label="已学习" :value="1" />
                     <el-option label="已掌握" :value="2" />
                   </el-select>
-                </el-form-item>
+                </el-form-item> -->
                 <el-form-item class="search-form-item">
                   <el-button type="primary" @click="handleSearch">查询</el-button>
                   <el-button @click="handleReset">重置</el-button>
@@ -86,7 +95,7 @@
           <el-table-column type="index" label="序号" width="60" align="center" fixed="left"></el-table-column>
 
           <!-- 产品机型列 -->
-          <el-table-column label="产品机型" width="150" fixed="left">
+          <el-table-column label="产品机型" width="120" fixed="left">
             <template #default="{ row }">
               <div class="product-info">
                 <div class="main-field">
@@ -94,11 +103,12 @@
                     <span class="field-text">{{ row.productModel }}</span>
                   </el-tooltip>
                 </div>
-                <div class="status-tags">
+                <!-- 状态信息暂时隐藏TODO -->
+                <!-- <div class="status-tags">
                   <el-tag :type="getCompletionStatusTagType(row.completionStatus)" size="small">
                     {{ getCompletionStatusText(row.completionStatus) }}
                   </el-tag>
-                </div>
+                </div> -->
               </div>
             </template>
           </el-table-column>
@@ -206,7 +216,8 @@
                   <el-icon><View /></el-icon>详情
                 </el-button>
                 <!-- 完成状态修改按钮 -->
-                <el-dropdown @command="(command) => handleCompletionStatusChange(row, command)" trigger="click">
+                 <!-- 状态信息暂时隐藏TODO -->
+                <!-- <el-dropdown @command="(command) => handleCompletionStatusChange(row, command)" trigger="click">
                   <el-button type="warning" size="small" link>
                     <el-icon><Setting /></el-icon>完成状态
                   </el-button>
@@ -217,7 +228,7 @@
                       <el-dropdown-item :command="2">已掌握</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
-                </el-dropdown>
+                </el-dropdown> -->
               </div>
             </template>
           </el-table-column>
@@ -489,7 +500,10 @@ const searchForm = reactive({
   productCategory: '',
   failureMode: '',
   issueSource: '',
-  completionStatus: null
+  completionStatus: null,
+  issueDescription: '',
+  rootCause: '',
+  permanentAction: ''
 })
 
 // 经验库对话框
@@ -694,6 +708,21 @@ const applyFilters = () => {
     
     // 问题来源筛选
     if (searchForm.issueSource && !item.issueSource.includes(searchForm.issueSource)) {
+      return false
+    }
+    
+    // 问题描述筛选
+    if (searchForm.issueDescription && !item.issueDescription.toLowerCase().includes(searchForm.issueDescription.toLowerCase())) {
+      return false
+    }
+    
+    // 根本原因筛选
+    if (searchForm.rootCause && !item.rootCause.toLowerCase().includes(searchForm.rootCause.toLowerCase())) {
+      return false
+    }
+    
+    // 处理措施筛选
+    if (searchForm.permanentAction && !item.permanentAction.toLowerCase().includes(searchForm.permanentAction.toLowerCase())) {
       return false
     }
     
