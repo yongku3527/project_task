@@ -131,7 +131,7 @@
           </el-table-column>
 
           <!-- 问题描述列 -->
-          <el-table-column label="问题描述" min-width="300">
+          <el-table-column label="问题描述" min-width="280">
             <template #default="{ row }">
               <div class="description-container">
                 <el-tooltip :content="row.issueDescription" placement="top">
@@ -151,18 +151,22 @@
             </template>
           </el-table-column>
 
+          <!-- 根本原因列 -->
+          <el-table-column label="根本原因" min-width="200">
+            <template #default="{ row }">
+              <el-tooltip :content="row.rootCause" placement="top">
+                <span class="root-cause-text">{{ row.rootCause && row.rootCause.length > 40 ? row.rootCause.substring(0, 40) + '...' : row.rootCause }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+
           <!-- 解决方案列 -->
-          <el-table-column label="解决方案" min-width="300">
+          <el-table-column label="处理措施" min-width="200">
             <template #default="{ row }">
               <div class="solution-container">
-                <el-tooltip :content="row.rootCause" placement="top">
-                  <p class="solution-text">
-                    原因: {{ row.rootCause.length > 30 ? row.rootCause.substring(0, 30) + '...' : row.rootCause }}
-                  </p>
-                </el-tooltip>
                 <el-tooltip :content="row.permanentAction" placement="top">
                   <p class="solution-text">
-                    措施: {{ row.permanentAction.length > 30 ? row.permanentAction.substring(0, 30) + '...' : row.permanentAction }}
+                    {{ row.permanentAction && row.permanentAction.length > 30 ? row.permanentAction.substring(0, 30) + '...' : row.permanentAction }}
                   </p>
                 </el-tooltip>
                 <div v-if="row.actionAttachmentsFileUrl" class="attachment-container">
@@ -183,12 +187,10 @@
           <el-table-column label="应用场景" width="150">
             <template #default="{ row }">
               <el-tooltip :content="row.applicationScene" placement="top">
-                <p class="scene-text">{{ row.applicationScene.length > 20 ? row.applicationScene.substring(0, 20) + '...' : row.applicationScene }}</p>
+                <p class="scene-text">{{ row.applicationScene && row.applicationScene.length > 20 ? row.applicationScene.substring(0, 20) + '...' : row.applicationScene }}</p>
               </el-tooltip>
             </template>
           </el-table-column>
-
-        
 
           <!-- 操作列 -->
           <el-table-column label="操作" width="200" fixed="right">
@@ -1395,6 +1397,17 @@ const getCompletionStatusText = (status) => {
     font-size: 13px;
     display: -webkit-box;
     -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .root-cause-text {
+    margin: 0;
+    line-height: 1.4;
+    color: #303133;
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
