@@ -16,6 +16,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.quanhai.dingdingdemo.client.MyDingClient;
 import com.quanhai.dingdingdemo.config.DingAppConfig;
 import com.quanhai.dingdingdemo.config.msg.MsgConfig;
+import com.quanhai.dingdingdemo.controller.test.interfaceTest.intfaces.DongWu;
+import com.quanhai.dingdingdemo.controller.test.interfaceTest.intfaces.impls.Cat;
+import com.quanhai.dingdingdemo.controller.test.interfaceTest.intfaces.impls.Dog;
+import com.quanhai.dingdingdemo.controller.test.interfaceTest.service.DongWuOperation;
+
 import com.quanhai.dingdingdemo.controller.yiDa.DownloadController;
 import com.quanhai.dingdingdemo.controller.yiDa.PrcsController;
 import com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO;
@@ -86,8 +91,6 @@ public class testdemo {
         } catch (Exception _err) {
            _err.printStackTrace();
         }
-
-
     }
 
 
@@ -172,5 +175,15 @@ public class testdemo {
         //获取所有包含角色名称的物料类型
         List<ItemType> itemTypeList = itemTypeMapper.selectList(itemTypeLambdaQueryWrapper.like(ItemType::getTypeName, roleStr));
     }
+
+    @Autowired
+    private DongWuOperation operation;
+
+
+
+        @Test
+        public void testWeiFan() {
+            operation.照顾动物们();
+        }
 
 }
