@@ -1220,9 +1220,9 @@ const handlePidInput = () => {
         ElMessage.success('已自动填充物料名称和规格型号')
       }
       
-      // 调用API根据成品编号前三位查询物料类型
+      // 调用API根据成品编号前N位查询物料类型
       try {
-        const itemTypeResponse = await docProdDrawingApi.getItemTypeByPid(pidValue)
+        const itemTypeResponse = await docProdDrawingApi.getItemTypeByPid(pidValue, 3)
         if (itemTypeResponse.code === 200) {
           dialog.form.drawingType = itemTypeResponse.data.drawingType || ''
           ElMessage.success('已自动填充图纸类型')

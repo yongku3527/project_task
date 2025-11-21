@@ -55,6 +55,7 @@
                 <el-form-item label="处理措施:" class="search-form-item">
                   <el-input v-model="searchForm.permanentAction" placeholder="请输入处理措施" clearable style="width: 150px;" />
                 </el-form-item>
+                <!-- 暂时隐藏状态查询列 TODO -->
                 <!-- <el-form-item label="完成状态:" class="search-form-item">
                   <el-select v-model="searchForm.completionStatus" placeholder="请选择完成状态" clearable style="width: 120px;">
                     <el-option label="待学习" :value="0" />

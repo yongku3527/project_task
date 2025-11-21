@@ -35,9 +35,9 @@ export function deleteDocProdDrawing(id) {
   return http.delete(`/doc-prod-drawing/delete/${id}`)
 }
 
-// 根据成品编号前三位查询物料类型
-export function getItemTypeByPid(pid) {
-  return http.get('/item-type/get-type-by-pid', { pid })
+// 根据成品编号前N位查询物料类型
+export function getItemTypeByPid(pid, prefixLength = 3) {
+  return http.get('/item-type/get-type-by-pid', { pid, prefixLength })
 }
 
 // 下载文件
