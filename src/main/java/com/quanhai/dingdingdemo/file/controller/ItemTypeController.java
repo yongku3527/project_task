@@ -154,19 +154,20 @@ public class ItemTypeController {
     }
 
     /**
-     * 根据成品编号前三位查询物料类型
+     * 根据成品编号前N位查询物料类型
      * @param pid 成品编号
+     * @param prefixLength 截取位数，默认3位
      * @return 物料类型
      */
     @GetMapping("/get-type-by-pid")
-    public Result getTypeByPid(@RequestParam String pid) {
+    public Result getTypeByPid(@RequestParam String pid, @RequestParam(defaultValue = "3") Integer prefixLength) {
         try {
-            if (pid == null || pid.length() < 3) {
-                return ResultUtil.fail("成品编号长度不能少于3位");
+            if (pid == null || pid.length() < prefixLength) {
+                return ResultUtil.fail("成品编号长度不能少于" + prefixLength + "位");
             }
             
-            // 取前三位作为物料前缀
-            String itemPrefix = pid.substring(0, 3);
+            // 取前N位作为物料前缀
+            String itemPrefix = pid.substring(0, prefixLength);
             ItemType itemType = itemTypeService.getByItemPrefix(itemPrefix);
             
             Map<String, Object> data = new HashMap<>();
