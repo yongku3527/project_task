@@ -309,6 +309,7 @@ import {
   Close,
   Upload
 } from '@element-plus/icons-vue'
+import { http } from '@/utils/request'
 
 // API函数导入
 import { 
@@ -345,8 +346,8 @@ const drawingTypes = ref([
 ])
 
 // 定义不同文件类型的存储桶
-const dwgBucket = ref('dwg-files')
-const pdfBucket = ref('pdf-files')
+const dwgBucket = ref('part-dwg')
+const pdfBucket = ref('part-pdf')
 
 // 对话框
 const dialog = reactive({
@@ -433,7 +434,17 @@ const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
     
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText))
+        try {
+          // 检查响应内容是否为空或无效JSON
+          if (!xhr.responseText || xhr.responseText.trim() === '') {
+            resolve({ success: true, message: '上传成功' })
+            return
+          }
+          resolve(JSON.parse(xhr.responseText))
+        } catch (parseError) {
+          console.error('JSON解析错误:', parseError, '响应内容:', xhr.responseText)
+          resolve({ success: true, message: '上传成功，但响应格式异常' })
+        }
       } else {
         reject(new Error(`上传失败: ${xhr.status}`))
       }
@@ -791,15 +802,72 @@ const handlePdfUploadSuccess = (response, file) => {
   dialog.form.pdfFileName = file.name
 }
 
-// DWG文件移除
-const handleDwgUploadRemove = () => {
+// 通用文件删除方法（从MinIO和数据库删除文件）
+const deleteFileFromMinIO = async (fileUrl, fileType, fileId = null) => {
+  if (!fileUrl) {
+    console.warn(`文件URL为空，跳过${fileType}文件删除`)
+    return
+  }
+  
+  try {
+    // 从fileUrl中提取桶名称和对象名称
+    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      console.error(`无法从${fileType}文件URL中提取桶名称和文件名称:`, fileUrl)
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    console.log(`提取的${fileType}桶名称:`, bucketName)
+    console.log(`提取的${fileType}文件名称:`, objectName)
+    
+    // 先删除MinIO文件
+    try {
+      await http.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
+      console.log(`${fileType}文件从MinIO删除成功`)
+    } catch (minioError) {
+      console.warn(`删除${fileType}MinIO文件失败:`, minioError)
+      // MinIO删除失败也继续，不抛出错误
+    }
+    
+    // 如果提供了fileId，也删除数据库记录
+    if (fileId) {
+      try {
+        await http.delete(`/file-info/${fileId}`)
+        console.log(`${fileType}文件数据库记录删除成功`)
+      } catch (dbError) {
+        console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
+        // 数据库删除失败也继续，不抛出错误
+      }
+    }
+  } catch (error) {
+    console.error(`删除${fileType}文件时出错:`, error)
+  }
+}
+
+// DWG文件移除 - 添加删除数据库和MinIO文件的逻辑
+const handleDwgUploadRemove = async () => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (dialog.form.dwgFileId && dialog.form.dwgFileUrl) {
+    await deleteFileFromMinIO(dialog.form.dwgFileUrl, 'DWG', dialog.form.dwgFileId)
+  }
+  
+  // 重置文件信息
   dialog.form.dwgFileId = null
   dialog.form.dwgFileUrl = ''
   dialog.form.dwgFileName = ''
 }
 
-// PDF文件移除
-const handlePdfUploadRemove = () => {
+// PDF文件移除 - 添加删除数据库和MinIO文件的逻辑
+const handlePdfUploadRemove = async () => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (dialog.form.pdfFileId && dialog.form.pdfFileUrl) {
+    await deleteFileFromMinIO(dialog.form.pdfFileUrl, 'PDF', dialog.form.pdfFileId)
+  }
+  
+  // 重置文件信息
   dialog.form.pdfFileId = null
   dialog.form.pdfFileUrl = ''
   dialog.form.pdfFileName = ''
@@ -820,22 +888,57 @@ const handleDwgUpload = async (options) => {
       itemName = itemName.substring(0, leftParenIndex).trim()
     }
     
-    // 模拟成功响应（实际项目中需要调用真实的MinIO API）
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await http.post(
+      `/minio/buckets/${dwgBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
+      null,
+      {
+        code: partId,
+        name: itemName,
+        originalFileName: file.name,
+        fileSize: file.size
+      }
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 第三步：保存文件信息到数据库
+    const saveFileResponse = await http.post(`/minio/buckets/${dwgBucket.value}/files/save-info`, {
+      bucketName: dwgBucket.value,
+      objectName: formattedFileName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${dwgBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
-        id: Math.floor(Math.random() * 1000),
-        url: `/minio/buckets/${dwgBucket.value}/files/${encodeURIComponent(file.name)}`,
+        id: saveFileResponse.data?.fileId || null,
+        url: fileUrl,
         fileName: file.name
       }
     }
     
-    // 调用成功处理函数
+    // 调用原成功处理函数
     handleDwgUploadSuccess(mockResponse, file)
     onSuccess(mockResponse)
     
-    ElMessage.success(`DWG文件上传成功，文件名: ${file.name}`)
+    ElMessage.success(`DWG文件上传成功，文件名: ${formattedFileName}`)
     
   } catch (error) {
     onError(error)
@@ -858,22 +961,57 @@ const handlePdfUpload = async (options) => {
       itemName = itemName.substring(0, leftParenIndex).trim()
     }
     
-    // 模拟成功响应（实际项目中需要调用真实的MinIO API）
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await http.post(
+      `/minio/buckets/${pdfBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
+      null,
+      {
+        code: partId,
+        name: itemName,
+        originalFileName: file.name,
+        fileSize: file.size
+      }
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 第三步：保存文件信息到数据库
+    const saveFileResponse = await http.post(`/minio/buckets/${pdfBucket.value}/files/save-info`, {
+      bucketName: pdfBucket.value,
+      objectName: formattedFileName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/pdf'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${pdfBucket.value}/files/${encodeURIComponent(formattedFileName)}`
     const mockResponse = {
       code: 200,
       message: '上传成功',
       data: {
-        id: Math.floor(Math.random() * 1000),
-        url: `/minio/buckets/${pdfBucket.value}/files/${encodeURIComponent(file.name)}`,
+        id: saveFileResponse.data?.fileId || null,
+        url: fileUrl,
         fileName: file.name
       }
     }
     
-    // 调用成功处理函数
+    // 调用原成功处理函数
     handlePdfUploadSuccess(mockResponse, file)
     onSuccess(mockResponse)
     
-    ElMessage.success(`PDF文件上传成功，文件名: ${file.name}`)
+    ElMessage.success(`PDF文件上传成功，文件名: ${formattedFileName}`)
     
   } catch (error) {
     onError(error)
@@ -881,14 +1019,37 @@ const handlePdfUpload = async (options) => {
   }
 }
 
-// 下载文件
-const downloadFile = (url, fileName) => {
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+// 下载文件 - 使用预签名链接在新窗口中打开文件
+const downloadFile = async (url, fileName) => {
+  try {
+    // 提取存储桶名称和对象名称
+    const urlMatch = url.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      // 如果不是MinIO URL，直接在新窗口中打开
+      window.open(url, '_blank')
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    // 获取预签名下载URL
+    const response = await http.get(
+      `/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
+    )
+    
+    if (response.code === 200) {
+      const downloadUrl = response.data
+      
+      // 在新窗口中打开文件内容，而不是下载
+      window.open(downloadUrl, '_blank')
+      ElMessage.success('文件下载开始')
+    } else {
+      ElMessage.error('获取下载链接失败')
+    }
+  } catch (error) {
+    ElMessage.error('下载文件失败: ' + (error.response?.data?.msg || error.message))
+  }
 }
 
 // 初始化
