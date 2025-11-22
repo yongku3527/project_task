@@ -190,7 +190,26 @@
         <el-form-item v-if="partIdSearchResults.length > 0" label-width="0">
           <div class="part-search-results">
             <div class="search-results-header">
-              <span>搜索结果 ({{ partIdSearchResults.length }} 条)</span>
+              <div class="search-results-title">
+                <span>搜索结果 (共{{ partIdSearchResults.length }} 条)</span>
+
+                  <span class="stats-item">
+                    <el-tag type="success" size="small">
+                      启用 {{ getStatusCount(1) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="warning" size="small">
+                      消耗 {{ getStatusCount(2) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="danger" size="small">
+                      停用 {{ getStatusCount(0) }} 条
+                    </el-tag>
+                  </span>
+
+              </div>
               <el-button type="text" size="small" @click="clearPartIdSearchResults">
                 <el-icon><Close /></el-icon>
               </el-button>
@@ -369,10 +388,7 @@ const searchForm = reactive({
 
 // 文件类别选项
 const drawingTypes = ref([
-  { label: '工艺图纸', value: '工艺图纸' },
-  { label: '装配图纸', value: '装配图纸' },
-  { label: '机械图纸', value: '机械图纸' },
-  { label: '电气图纸', value: '电气图纸' },
+  
   { label: '其他', value: '其他' }
 ])
 
@@ -500,6 +516,11 @@ const getStatusText = (status) => {
     2: '消耗'
   }
   return statusTextMap[status] || '未知'
+}
+
+// 获取状态统计数量
+const getStatusCount = (status) => {
+  return partIdSearchResults.value.filter(item => item.status === status).length
 }
 
 // 获取行样式类名
@@ -638,7 +659,7 @@ const handlePartIdInput = () => {
       
       // 调用API根据零件编号前N位查询物料类型
       try {
-        const itemTypeResponse = await getItemTypeByPartId(partIdValue, 3)
+        const itemTypeResponse = await getItemTypeByPartId(partIdValue, 6)
         if (itemTypeResponse.code === 200) {
           dialog.form.drawingType = itemTypeResponse.data.drawingType || ''
           ElMessage.success('已自动填充图纸类型')
@@ -1299,9 +1320,11 @@ onMounted(() => {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   max-height: 250px;
   overflow: hidden;
-  margin-top: 8px;
+  margin: 8px auto 0;
   z-index: 1000;
   position: relative;
+  width: 80%;
+  max-width: 600px;
 }
 
 .search-results-header {
@@ -1364,7 +1387,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 120px;
+  /* min-width: 120px; */
+  max-width: 120px;
 }
 
 /* 搜索结果状态样式 */

@@ -188,7 +188,26 @@
           <!-- 搜索结果展示 -->
           <div v-if="pidSearchResults.length > 0" class="pid-search-results">
             <div class="search-results-header">
-              <span>搜索结果 ({{ pidSearchResults.length }} 条)</span>
+              <div class="search-results-title">
+                <span>搜索结果 (共{{ pidSearchResults.length }} 条)</span>
+                
+                  <span class="stats-item">
+                    <el-tag type="success" size="small">
+                      启用 {{ getStatusCount(1) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="warning" size="small">
+                      消耗 {{ getStatusCount(2) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="danger" size="small">
+                      停用 {{ getStatusCount(0) }} 条
+                    </el-tag>
+                  </span>
+                
+              </div>
               <el-button type="text" size="small" @click="clearPidSearchResults">
                 <el-icon><Close /></el-icon>
               </el-button>
@@ -708,6 +727,11 @@ const getStatusText = (status) => {
     default:
       return '未知'
   }
+}
+
+// 获取状态统计数量
+const getStatusCount = (status) => {
+  return pidSearchResults.value.filter(item => item.status === status).length
 }
 
 // 消耗状态处理
