@@ -73,6 +73,10 @@
           <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>成品图纸管理</span>
         </el-menu-item>
+        <el-menu-item v-permission="'partDrawing:menu'" index="/doc-part-drawing">
+          <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>零件图纸管理</span>
+        </el-menu-item>
         
       </el-sub-menu>
 
