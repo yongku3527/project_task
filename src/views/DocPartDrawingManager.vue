@@ -188,34 +188,64 @@
         
         <!-- 零件编号搜索结果 -->
         <el-form-item v-if="partIdSearchResults.length > 0" label-width="0">
-          <div class="search-results">
-            <div 
-              v-for="item in partIdSearchResults" 
-              :key="item.id"
-              class="search-result-item"
-              :class="`status-${item.status}`"
-              @click="selectPartIdItem(item)"
-            >
-              <div class="result-content">
-                <div class="result-row">
-                  <span class="result-label">零件编号：</span>
-                  <span class="result-value">{{ item.partId }}</span>
+          <div class="part-search-results">
+            <div class="search-results-header">
+              <span>搜索结果 ({{ partIdSearchResults.length }} 条)</span>
+              <el-button type="text" size="small" @click="clearPartIdSearchResults">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+            <div class="search-results-list">
+              <div 
+                v-for="item in partIdSearchResults" 
+                :key="item.id"
+                class="search-result-item"
+                :class="`status-${item.status}`"
+              >
+                <div class="result-content">
+                  <div class="result-row">
+                    <span class="result-label">零件编号：</span>
+                    <span class="result-value">{{ item.partId }}</span>
+                  </div>
+                  <div class="result-row">
+                    <span class="result-label">物料名称：</span>
+                    <span class="result-value">{{ item.itemName }}</span>
+                  </div>
+                  <div class="result-row">
+                    <span class="result-label">规格型号：</span>
+                    <span class="result-value">{{ item.model }}</span>
+                  </div>
+                  <div class="result-row">
+                    <span class="result-label">状态：</span>
+                    <span class="result-value">
+                      <el-tag :type="getStatusType(item.status)" size="small">
+                        {{ getStatusText(item.status) }}
+                      </el-tag>
+                    </span>
+                  </div>
                 </div>
-                <div class="result-row">
-                  <span class="result-label">物料名称：</span>
-                  <span class="result-value">{{ item.itemName }}</span>
-                </div>
-                <div class="result-row">
-                  <span class="result-label">规格型号：</span>
-                  <span class="result-value">{{ item.model }}</span>
-                </div>
-                <div class="result-row">
-                  <span class="result-label">状态：</span>
-                  <span class="result-value">
-                    <el-tag :type="getStatusType(item.status)" size="small">
-                      {{ getStatusText(item.status) }}
-                    </el-tag>
-                  </span>
+                <div class="status-actions">
+                  <el-button 
+                    type="primary" 
+                    size="small" 
+                    @click.stop="updateItemStatus(item, 1)"
+                  >
+                    启用
+                  </el-button>
+                  <el-button 
+                    type="warning" 
+                    size="small" 
+                    @click.stop="updateItemStatus(item, 2)"
+                  >
+                    消耗
+                  </el-button>
+                  <el-button 
+                    type="danger" 
+                    size="small" 
+                    @click.stop="updateItemStatus(item, 0)"
+                  >
+                    停用
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -318,7 +348,8 @@ import {
   addDocPartDrawing,
   updateDocPartDrawing,
   deleteDocPartDrawing,
-  getDocPartDrawingsByPartId
+  getDocPartDrawingsByPartId,
+  getItemTypeByPartId
 } from '@/api/docPartDrawing'
 
 // 响应式数据
@@ -389,14 +420,76 @@ const pdfUploadRef = ref(null)
 // 输入防抖定时器
 const inputTimers = {}
 
+// MES接口调用 - 根据零件编号查询物料信息
+const getItemInfoFromMES = async (itemCode) => {
+  try {
+    const response = await http.get(`/mes/item-info/${itemCode}`)
+    
+    if (response.code === 200) {
+      return response.data
+    } else {
+      console.warn('MES物料信息查询失败: ' + response.msg)
+      return null
+    }
+  } catch (error) {
+    console.warn('MES接口调用失败: ' + error.message)
+    return null
+  }
+}
+
+// 清除零件编号搜索结果
+const clearPartIdSearchResults = () => {
+  partIdSearchResults.value = []
+  ElMessage.info('已清除搜索结果')
+}
+
+// 实时搜索零件编号匹配的条目
+const searchPartIdItems = async (partIdValue) => {
+  try {
+    // 调用API搜索匹配的条目
+    const response = await getDocPartDrawingList({
+      partId: partIdValue,
+      page: 1,
+      size: 50 // 限制搜索结果数量
+    })
+    
+    if (response.code === 200) {
+      let results = response.data.records || response.data || []
+      
+      // 按照状态排序：启用(1) > 消耗(2) > 停用(0)
+      results = results.sort((a, b) => {
+        // 启用状态优先级最高
+        if (a.status === 1 && b.status !== 1) return -1
+        if (b.status === 1 && a.status !== 1) return 1
+        
+        // 消耗状态优先级其次
+        if (a.status === 2 && b.status === 0) return -1
+        if (b.status === 2 && a.status === 0) return 1
+        
+        // 停用状态优先级最低
+        return 0
+      })
+      
+      partIdSearchResults.value = results
+      console.log(`找到 ${results.length} 个匹配条目`)
+    } else {
+      partIdSearchResults.value = []
+      console.warn('搜索失败:', response.msg)
+    }
+  } catch (error) {
+    partIdSearchResults.value = []
+    console.error('搜索失败:', error.message)
+  }
+}
+
 // 获取状态类型
 const getStatusType = (status) => {
   const statusMap = {
-    0: 'info',
+    0: 'danger',
     1: 'success', 
     2: 'warning'
   }
-  return statusMap[status] || 'info'
+  return statusMap[status] || 'danger'
 }
 
 // 获取状态文本
@@ -411,12 +504,16 @@ const getStatusText = (status) => {
 
 // 获取行样式类名
 const getRowClassName = ({ row }) => {
-  if (row.status === 0) {
-    return 'disabled-row'
-  } else if (row.status === 2) {
-    return 'consumed-row'
+  switch (row.status) {
+    case 0:
+      return 'row-disabled' // 停用状态 - 红色背景
+    case 1:
+      return 'row-enabled' // 启用状态 - 默认背景
+    case 2:
+      return 'row-consumed' // 消耗状态 - 黄色背景
+    default:
+      return ''
   }
-  return ''
 }
 
 // 使用预签名URL上传文件
@@ -515,39 +612,91 @@ const handleCurrentChange = (val) => {
   loadData()
 }
 
-// 零件编号输入处理
-const handlePartIdInput = (value) => {
+// 零件编号输入处理（防抖）
+const handlePartIdInput = () => {
   // 清除之前的定时器
   if (inputTimers.partId) {
     clearTimeout(inputTimers.partId)
   }
   
-  // 如果为空，清除搜索结果
-  if (!value || value.trim() === '') {
-    partIdSearchResults.value = []
-    return
-  }
-  
-  // 设置新的定时器，延迟500ms后搜索
+  // 设置新的定时器
   inputTimers.partId = setTimeout(async () => {
-    try {
-      const response = await getDocPartDrawingsByPartId(value.trim())
-      if (response.code === 200) {
-        partIdSearchResults.value = response.data || []
+    const partIdValue = dialog.form.partId?.trim()
+    
+    if (partIdValue) {
+      // 实时搜索匹配的条目
+      await searchPartIdItems(partIdValue)
+      
+      // 调用MES接口根据零件编号获取物料信息
+      const itemInfo = await getItemInfoFromMES(partIdValue)
+
+      if (itemInfo) {
+        dialog.form.itemName = itemInfo.itemName || ''
+        dialog.form.model = itemInfo.itemSpec ||  ''
+        ElMessage.success('已自动填充物料名称和规格型号')
       }
-    } catch (error) {
-      console.error('搜索零件编号失败:', error)
+      
+      // 调用API根据零件编号前N位查询物料类型
+      try {
+        const itemTypeResponse = await getItemTypeByPartId(partIdValue, 3)
+        if (itemTypeResponse.code === 200) {
+          dialog.form.drawingType = itemTypeResponse.data.drawingType || ''
+          ElMessage.success('已自动填充图纸类型')
+        } else {
+          // 显示后端返回的错误信息
+          ElMessage.warning(itemTypeResponse.msg || '获取图纸类型失败')
+        }
+      } catch (error) {
+        console.warn('获取图纸类型失败: ' + error.message)
+        ElMessage.error('获取图纸类型失败: ' + error.message)
+      }
+    } else {
+      // 清除搜索结果
+      partIdSearchResults.value = []
     }
-  }, 500)
+    inputTimers.partId = null
+  }, 500) // 减少防抖时间，提高响应速度
 }
 
-// 选择零件编号搜索结果
+// 更新条目状态
+const updateItemStatus = async (item, newStatus) => {
+  try {
+    const statusText = newStatus === 1 ? '启用' : newStatus === 2 ? '消耗' : '停用'
+    
+    const response = await updateDocPartDrawing({
+      id: item.id,
+      status: newStatus
+    })
+    
+    if (response.code === 200) {
+      // 更新本地状态
+      item.status = newStatus
+      ElMessage.success(`已${statusText}该条目`)
+      
+      // 重新加载数据
+      await loadData()
+    } else {
+      ElMessage.error(response.message || `${statusText}失败`)
+    }
+  } catch (error) {
+    console.error('更新状态失败:', error)
+    ElMessage.error('更新状态失败')
+  }
+}
+
+// 选择搜索结果
 const selectPartIdItem = (item) => {
+  // 填充表单数据
   dialog.form.partId = item.partId
-  dialog.form.itemName = item.itemName
-  dialog.form.model = item.model
+  dialog.form.itemName = item.itemName || ''
+  dialog.form.model = item.model || ''
+  dialog.form.drawingType = item.drawingType || ''
+  dialog.form.status = item.status
+  
   // 清除搜索结果
   partIdSearchResults.value = []
+  
+  ElMessage.success('已填充选中条目的数据')
 }
 
 // 新增
@@ -1143,20 +1292,42 @@ onMounted(() => {
 }
 
 /* 搜索结果样式 */
-.search-results {
+.part-search-results {
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: 250px;
+  overflow: hidden;
+  margin-top: 8px;
+  z-index: 1000;
+  position: relative;
+}
+
+.search-results-header {
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #606266;
+}
+
+.search-results-list {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  background-color: #fff;
-  margin-top: 5px;
 }
 
 .search-result-item {
-  padding: 10px;
+  padding: 12px;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .search-result-item:last-child {
@@ -1168,6 +1339,7 @@ onMounted(() => {
 }
 
 .result-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1188,13 +1360,20 @@ onMounted(() => {
   color: #303133;
 }
 
+.status-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+}
+
 /* 搜索结果状态样式 */
 .search-result-item.status-0 {
-  background-color: #f0f9ff;
+  background-color: #fff1f0;
 }
 
 .search-result-item.status-0:hover {
-  background-color: #e6f7ff;
+  background-color: #ffebe6;
 }
 
 .search-result-item.status-1 {
@@ -1394,5 +1573,32 @@ onMounted(() => {
   background-color: #fafafa;
   color: #606266;
   font-weight: 600;
+}
+/* 状态行背景色 */
+:deep(.el-table .row-enabled) {
+  background-color: #ffffff !important;
+}
+
+:deep(.el-table .row-enabled td) {
+  background-color: #ffffff !important;
+  border-color: #e2e0df !important;
+}
+
+:deep(.el-table .row-disabled) {
+  background-color: #fff1f0 !important;
+}
+
+:deep(.el-table .row-disabled td) {
+  background-color: #fff1f0 !important;
+  border-color: #ffa39e !important;
+}
+
+:deep(.el-table .row-consumed) {
+  background-color: #fffbe6 !important;
+}
+
+:deep(.el-table .row-consumed td) {
+  background-color: #fffbe6 !important;
+  border-color: #ffe58f !important;
 }
 </style>
