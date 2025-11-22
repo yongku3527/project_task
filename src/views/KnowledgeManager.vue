@@ -27,14 +27,7 @@
                   </el-select>
                 </el-form-item>
                 <el-form-item label="失效模式:" class="search-form-item">
-                  <el-select v-model="searchForm.failureMode" placeholder="请选择失效模式" clearable style="width: 120px;">
-                    <el-option
-                      v-for="item in failureModeOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
+                  <el-input v-model="searchForm.failureMode" placeholder="请输入失效模式" clearable style="width: 120px;" />
                 </el-form-item>
                 <el-form-item label="问题来源:" class="search-form-item">
                   <el-select v-model="searchForm.issueSource" placeholder="请选择问题来源" clearable style="width: 120px;">
@@ -288,14 +281,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="失效模式" prop="failureMode">
-              <el-select v-model="dialog.form.failureMode" placeholder="请选择失效模式" style="width: 100%">
-                <el-option
-                  v-for="item in failureModeOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
+              <el-input v-model="dialog.form.failureMode" placeholder="请输入失效模式" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -374,9 +360,8 @@
         <el-form-item label="应用场景" prop="applicationScene">
           <el-input 
             v-model="dialog.form.applicationScene" 
-            type="textarea" 
-            :rows="2"
             placeholder="请输入应用场景"
+            
           />
         </el-form-item>
 
@@ -594,24 +579,13 @@ const loadOptionsData = async () => {
       ]
     }
     
-    // 处理问题来源选项
-    if (issueSourceRes.code === 200) {
-      // 将字符串数组转换为选项对象数组
-      issueSourceOptions.value = (issueSourceRes.data || []).map(item => ({
-        label: item,
-        value: item
-      }))
-    } else {
-      console.error('获取问题来源选项失败:', issueSourceRes.msg)
-      // 如果接口失败，使用默认选项
-      issueSourceOptions.value = [
-        { label: 'IQC', value: 'IQC' },
-        { label: '市场', value: '市场' },
-        { label: '生产线', value: '生产线' },
-        { label: '客退', value: '客退' },
-        { label: '可靠性实验', value: '可靠性实验' }
-      ]
-    }
+    // 处理问题来源选项 - 使用固定数据源
+    issueSourceOptions.value = [
+      { label: '售后三包', value: '售后三包' },
+      { label: '零公里', value: '零公里' },
+      { label: 'DV试验', value: 'DV试验' },
+      { label: '产品量产', value: '产品量产' }
+    ]
     
     // 处理产品机型选项
     if (productModelRes.code === 200) {
@@ -657,7 +631,9 @@ const loadOptionsData = async () => {
       { label: '市场', value: '市场' },
       { label: '生产线', value: '生产线' },
       { label: '客退', value: '客退' },
-      { label: '可靠性实验', value: '可靠性实验' }
+      { label: '可靠性实验', value: '可靠性实验' },
+      { label: '现场故障', value: '现场故障' },
+      { label: '内部测试', value: '内部测试' }
     ]
     
     productModelOptions.value = []
