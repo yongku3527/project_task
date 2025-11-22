@@ -60,7 +60,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
                             ,"/circuit-board/**"
                             ,"/semi-product/**"
                             ,"/doc-prod-drawing/**"
-                            ,"//knowledge-info/**"
+                            ,"/knowledge-info/**"
+
                             )
                     .check(r -> StpUtil.checkLogin());
 
