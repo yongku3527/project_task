@@ -84,6 +84,7 @@
           row-key="id"
           border
           stripe
+          :cell-style="{ 'white-space': 'pre-wrap', 'word-break': 'break-word' }"
         >
           <!-- 序号列 -->
           <el-table-column type="index" label="序号" width="60" align="center" fixed="left"></el-table-column>
@@ -108,7 +109,7 @@
           </el-table-column>
 
           <!-- 产品分类列 -->
-          <el-table-column label="产品分类" width="120">
+          <el-table-column label="产品分类" width="90">
             <template #default="{ row }">
               <el-tooltip :content="row.productCategory" placement="top">
                 <span class="field-text">{{ row.productCategory }}</span>
@@ -117,7 +118,7 @@
           </el-table-column>
 
           <!-- 失效模式列 -->
-          <el-table-column label="失效模式" width="100">
+          <el-table-column label="失效模式" width="120">
             <template #default="{ row }">
               <el-tag :type="getFailureModeTagType(row.failureMode)" size="small">
                 {{ row.failureMode }}
@@ -126,7 +127,7 @@
           </el-table-column>
 
           <!-- 问题来源列 -->
-          <el-table-column label="问题来源" width="110">
+          <el-table-column label="问题来源" width="100">
             <template #default="{ row }">
               <el-tag :type="getIssueSourceTagType(row.issueSource)" size="small">
                 {{ row.issueSource }}
@@ -135,12 +136,10 @@
           </el-table-column>
 
           <!-- 问题描述列 -->
-          <el-table-column label="问题描述" min-width="280">
+          <el-table-column label="问题描述" min-width="100">
             <template #default="{ row }">
               <div class="description-container">
-                <el-tooltip :content="row.issueDescription" placement="top">
-                  <p class="description-text">{{ row.issueDescription.length > 50 ? row.issueDescription.substring(0, 50) + '...' : row.issueDescription }}</p>
-                </el-tooltip>
+                <p class="description-text">{{ row.issueDescription }}</p>
                 <div v-if="row.issueAttachmentsFileUrl" class="attachment-container">
                   <el-icon><Paperclip /></el-icon>
                   <el-link 
@@ -158,9 +157,7 @@
           <!-- 根本原因列 -->
           <el-table-column label="根本原因" min-width="200">
             <template #default="{ row }">
-              <el-tooltip :content="row.rootCause" placement="top">
-                <span class="root-cause-text">{{ row.rootCause && row.rootCause.length > 40 ? row.rootCause.substring(0, 40) + '...' : row.rootCause }}</span>
-              </el-tooltip>
+              <div class="root-cause-text" style="white-space: pre-wrap; word-break: break-word;">{{ row.rootCause }}</div>
             </template>
           </el-table-column>
 
@@ -168,11 +165,9 @@
           <el-table-column label="处理措施" min-width="200">
             <template #default="{ row }">
               <div class="solution-container">
-                <el-tooltip :content="row.permanentAction" placement="top">
-                  <p class="solution-text">
-                    {{ row.permanentAction && row.permanentAction.length > 30 ? row.permanentAction.substring(0, 30) + '...' : row.permanentAction }}
-                  </p>
-                </el-tooltip>
+                <div class="solution-text" style="white-space: pre-wrap; word-break: break-word;">
+                  {{ row.permanentAction }}
+                </div>
                 <div v-if="row.actionAttachmentsFileUrl" class="attachment-container">
                   <el-icon><Paperclip /></el-icon>
                   <el-link 
@@ -190,14 +185,12 @@
           <!-- 应用场景列 -->
           <el-table-column label="应用场景" width="150">
             <template #default="{ row }">
-              <el-tooltip :content="row.applicationScene" placement="top">
-                <p class="scene-text">{{ row.applicationScene && row.applicationScene.length > 20 ? row.applicationScene.substring(0, 20) + '...' : row.applicationScene }}</p>
-              </el-tooltip>
+              <p class="scene-text">{{ row.applicationScene }}</p>
             </template>
           </el-table-column>
 
           <!-- 操作列 -->
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column label="操作" width="190" fixed="right">
             <template #default="{ row }">
               <div class="knowledge-actions">
                 <el-button v-permission="'knowledge_info:update'" type="primary" size="small" link @click="handleEdit(row)">
@@ -228,7 +221,7 @@
           </el-table-column>
           
           <!-- 时间信息列 -->
-          <el-table-column label="时间信息" width="180">
+          <el-table-column label="时间信息" width="170">
             <template #default="{ row }">
               <div class="time-container">
                 <div class="time-item">
@@ -264,6 +257,7 @@
       v-model="dialog.visible"
       :title="dialog.title"
       width="800px"
+      :close-on-click-modal="false"
     >
       <el-form :model="dialog.form" :rules="dialog.rules" ref="formRef" label-width="120px">
         <el-row :gutter="20">
@@ -274,7 +268,14 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="产品分类" prop="productCategory">
-              <el-input v-model="dialog.form.productCategory" placeholder="请输入产品分类" />
+              <el-select v-model="dialog.form.productCategory" placeholder="请选择产品分类" style="width: 100%">
+                <el-option
+                  v-for="item in productCategoryOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -368,7 +369,7 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialog.visible = false">取消</el-button>
+          <el-button @click="handleCancel">取消</el-button>
           <el-button type="primary" @click="saveKnowledge">保存</el-button>
         </span>
       </template>
@@ -600,18 +601,13 @@ const loadOptionsData = async () => {
       productModelOptions.value = []
     }
     
-    // 处理产品分类选项
-    if (productCategoryRes.code === 200) {
-      // 将字符串数组转换为选项对象数组
-      productCategoryOptions.value = (productCategoryRes.data || []).map(item => ({
-        label: item,
-        value: item
-      }))
-    } else {
-      console.error('获取产品分类选项失败:', productCategoryRes.msg)
-      // 如果接口失败，使用空数组
-      productCategoryOptions.value = []
-    }
+    // 处理产品分类选项 - 使用固定数据源
+    productCategoryOptions.value = [
+      { label: '多媒体', value: '多媒体' },
+      { label: '收放机', value: '收放机' },
+      { label: '仪表', value: '仪表' },
+      { label: '电器件', value: '电器件' }
+    ]
   } catch (error) {
     console.error('加载选项数据失败:', error)
     ElMessage.error('加载选项数据失败')
@@ -637,7 +633,13 @@ const loadOptionsData = async () => {
     ]
     
     productModelOptions.value = []
-    productCategoryOptions.value = []
+    // 处理产品分类选项 - 使用固定数据源
+    productCategoryOptions.value = [
+      { label: '多媒体', value: '多媒体' },
+      { label: '收放机', value: '收放机' },
+      { label: '仪表', value: '仪表' },
+      { label: '电器件', value: '电器件' }
+    ]
   }
 }
 
@@ -868,6 +870,8 @@ const saveKnowledge = async () => {
         if (res.code === 200) {
           ElMessage.success(dialog.form.id ? '更新成功' : '创建成功')
           dialog.visible = false
+          // 重置表单校验信息
+          formRef.value?.resetFields()
           loadData()
         } else {
           ElMessage.error(res.msg || '保存失败')
@@ -878,6 +882,13 @@ const saveKnowledge = async () => {
       }
     }
   })
+}
+
+// 取消操作
+const handleCancel = () => {
+  dialog.visible = false
+  // 重置表单校验信息
+  formRef.value?.resetFields()
 }
 
 // 使用预签名URL上传文件
@@ -913,8 +924,12 @@ const handleIssueUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
   try {
-    // 使用原始文件名，避免复杂的格式化逻辑
-    const objectName = file.name
+    // 格式化文件名：原名~当前时间戳.扩展名
+    const timestamp = Date.now()
+    const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'))
+    const fileExt = file.name.substring(file.name.lastIndexOf('.'))
+    const formattedFileName = `${fileNameWithoutExt}~${timestamp}${fileExt}`
+    const objectName = formattedFileName
     
     // 第一步：创建普通预上传任务
     const presignResponse = await request.post(
@@ -973,8 +988,12 @@ const handleActionUpload = async (options) => {
   const { file, onSuccess, onError, onProgress } = options
   
   try {
-    // 使用原始文件名，避免复杂的格式化逻辑
-    const objectName = file.name
+    // 格式化文件名：原名~当前时间戳.扩展名
+    const timestamp = Date.now()
+    const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'))
+    const fileExt = file.name.substring(file.name.lastIndexOf('.'))
+    const formattedFileName = `${fileNameWithoutExt}~${timestamp}${fileExt}`
+    const objectName = formattedFileName
     
     // 第一步：创建普通预上传任务
     const presignResponse = await request.post(
@@ -1384,10 +1403,8 @@ const getCompletionStatusText = (status) => {
     line-height: 1.4;
     color: #303133;
     font-size: 13px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .solution-container {
@@ -1401,10 +1418,8 @@ const getCompletionStatusText = (status) => {
     line-height: 1.4;
     color: #303133;
     font-size: 13px;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .root-cause-text {
@@ -1412,10 +1427,9 @@ const getCompletionStatusText = (status) => {
     line-height: 1.4;
     color: #303133;
     font-size: 13px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    display: block;
   }
 
   .scene-text {
@@ -1423,10 +1437,8 @@ const getCompletionStatusText = (status) => {
     line-height: 1.4;
     color: #303133;
     font-size: 13px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .attachment-container {
@@ -1447,10 +1459,11 @@ const getCompletionStatusText = (status) => {
     align-items: center;
     gap: 2px;
     font-size: 12px;
-    max-width: 120px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .time-container {
