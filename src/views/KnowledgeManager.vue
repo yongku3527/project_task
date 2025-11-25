@@ -370,6 +370,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="handleCancel">取消</el-button>
+          <el-button type="info" @click="saveDraft">存草稿</el-button>
           <el-button type="primary" @click="saveKnowledge">保存</el-button>
         </span>
       </template>
@@ -764,26 +765,45 @@ const handleCurrentChange = (val) => {
 const handleAdd = () => {
   dialog.visible = true
   dialog.title = '新增经验库'
-  dialog.form = {
-    id: null,
-    productModel: '',
-    productCategory: '',
-    failureMode: '',
-    issueSource: '',
-    issueDescription: '',
-    issueAttachmentsId: null,
-    issueAttachmentsFileName: '',
-    issueAttachmentsFileUrl: '',
-    rootCause: '',
-    permanentAction: '',
-    actionAttachmentsId: null,
-    actionAttachmentsFileName: '',
-    actionAttachmentsFileUrl: '',
-    applicationScene: '',
-    role: ''
+  
+  // 检查localStorage中是否有草稿数据
+  const draft = localStorage.getItem('knowledgeDraft')
+  if (draft) {
+    // 加载草稿数据
+    dialog.form = JSON.parse(draft)
+    // 恢复文件列表
+    dialog.issueFileList = dialog.form.issueAttachmentsFileUrl ? [{ 
+      name: dialog.form.issueAttachmentsFileName, 
+      url: dialog.form.issueAttachmentsFileUrl 
+    }] : []
+    dialog.actionFileList = dialog.form.actionAttachmentsFileUrl ? [{ 
+      name: dialog.form.actionAttachmentsFileName, 
+      url: dialog.form.actionAttachmentsFileUrl 
+    }] : []
+    ElMessage.info('已加载草稿数据')
+  } else {
+    // 初始化空表单
+    dialog.form = {
+      id: null,
+      productModel: '',
+      productCategory: '',
+      failureMode: '',
+      issueSource: '',
+      issueDescription: '',
+      issueAttachmentsId: null,
+      issueAttachmentsFileName: '',
+      issueAttachmentsFileUrl: '',
+      rootCause: '',
+      permanentAction: '',
+      actionAttachmentsId: null,
+      actionAttachmentsFileName: '',
+      actionAttachmentsFileUrl: '',
+      applicationScene: '',
+      role: ''
+    }
+    dialog.issueFileList = []
+    dialog.actionFileList = []
   }
-  dialog.issueFileList = []
-  dialog.actionFileList = []
 }
 
 // 编辑
@@ -870,6 +890,8 @@ const saveKnowledge = async () => {
         if (res.code === 200) {
           ElMessage.success(dialog.form.id ? '更新成功' : '创建成功')
           dialog.visible = false
+          // 保存成功后清除草稿数据
+          localStorage.removeItem('knowledgeDraft')
           // 重置表单校验信息
           formRef.value?.resetFields()
           loadData()
@@ -889,6 +911,18 @@ const handleCancel = () => {
   dialog.visible = false
   // 重置表单校验信息
   formRef.value?.resetFields()
+}
+
+// 存草稿
+const saveDraft = () => {
+  try {
+    // 将当前表单数据保存到localStorage
+    localStorage.setItem('knowledgeDraft', JSON.stringify(dialog.form))
+    ElMessage.success('草稿保存成功')
+  } catch (error) {
+    console.error('保存草稿失败:', error)
+    ElMessage.error('保存草稿失败')
+  }
 }
 
 // 使用预签名URL上传文件
