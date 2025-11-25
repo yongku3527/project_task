@@ -46,7 +46,14 @@ public class yiDaTask {
         for (CodeAndPrcsIns codeAndPrcsIns : prcsMapper.getAll()) {
             logger.info("当前执行参数：ItemCode: "+codeAndPrcsIns.getItemCode()+",InstanceCode: "+codeAndPrcsIns.getPrcsInstanceCode());
             //虽说这里写的是ItemNum旦其实是获取的receiveNum ！！！
-            BigDecimal itemNum = prcsService.getItemNum(codeAndPrcsIns.getItemCode());
+            BigDecimal itemNum = new BigDecimal(0);
+            try {
+                itemNum = prcsService.getItemNum(codeAndPrcsIns.getItemCode());
+            }catch (Exception e) {
+                logger.error("Mes获取项目数量失败："+e.getMessage()+"\n");
+                continue;
+            }
+
 
             if (itemNum.compareTo(new BigDecimal(0)) > 0) {
                 String interfaceId = null;
