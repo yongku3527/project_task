@@ -108,6 +108,7 @@ public class KnowledgeInfoVo {
 
     /**
      * 问题附件文件名
+     *
      */
     private String issueAttachmentsFileName;
     /**
