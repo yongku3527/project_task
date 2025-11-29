@@ -59,6 +59,23 @@
         <!-- 搜索和筛选 -->
         <div class="file-filter">
           <el-form :inline="true" size="small">
+            <el-form-item label="存储桶:">
+              <el-select 
+                v-model="selectedBucket" 
+                placeholder="全部桶" 
+                style="width: 120px"
+                clearable
+                @change="handleBucketChange"
+              >
+                <el-option label="全部桶" value="" />
+                <el-option 
+                  v-for="bucket in buckets" 
+                  :key="bucket.name" 
+                  :label="bucket.name" 
+                  :value="bucket.name"
+                />
+              </el-select>
+            </el-form-item>
             <el-form-item label="文件名:">
               <el-input 
                 v-model="searchKeyword" 
@@ -98,74 +115,112 @@
           </el-form>
         </div>
 
-        <!-- 文件列表 -->
-        <div class="file-list-container">
-          <el-table 
-            :data="files" 
-            v-loading="loading"
-            style="width: 100%"
-            @selection-change="handleSelectionChange"
-          >
-            <el-table-column type="selection" width="55" />
-            <el-table-column prop="objectName" label="文件名" min-width="200">
-              <template #default="{ row }">
-                <div class="file-name-cell">
-                  <el-icon class="file-icon">
-                    <Document v-if="row.isFile" />
-                    <Folder v-else />
-                  </el-icon>
-                  <span class="file-name" @click="handleFileClick(row)">{{ row.objectName }}</span>
+        <!-- 桶统计信息 -->
+        <div v-if="buckets.length > 0" class="bucket-stats">
+          <el-row :gutter="20" style="margin-bottom: 20px;">
+            <el-col 
+              v-for="bucket in buckets" 
+              :key="bucket.name" 
+              :span="6"
+            >
+              <el-card shadow="hover" :class="{ 'active-bucket': selectedBucket === bucket.name }">
+                <div class="bucket-stat-item">
+                  <div class="bucket-name">{{ bucket.name }}</div>
+                  <div class="bucket-count">{{ bucketFilesMap[bucket.name]?.length || 0 }} 个文件</div>
+                  <div class="bucket-size">{{ getBucketSize(bucket.name) }}</div>
                 </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="size" label="大小" width="120">
-              <template #default="{ row }">
-                {{ row.size > 0 ? formatFileSize(row.size) : '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="上传时间" width="180">
-              <template #default="{ row }">
-                {{ formatDate(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
-              <template #default="{ row }">
-                <el-button 
-                  v-permission="'file:menu'"
-                  type="primary" 
-                  size="small" 
-                  link
-                  @click="downloadFile(row)"
-                >
-                  <el-icon><Download /></el-icon>
-                  下载
-                </el-button>
-                <el-button 
-                  v-permission="'file:delete'"
-                  type="danger" 
-                  size="small" 
-                  link
-                  @click="deleteFile(row)"
-                >
-                  <el-icon><Delete /></el-icon>
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+              </el-card>
+            </el-col>
+          </el-row>
         </div>
 
-        <!-- 分页 -->
-        <div class="pagination-container">
-          <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="totalFiles"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
+        <!-- 按桶分表格显示文件列表 -->
+        <div class="bucket-files-container">
+          <div 
+            v-for="bucket in buckets" 
+            :key="bucket.name" 
+            class="bucket-table-section"
+          >
+            <div class="bucket-table-header">
+              <h3>
+                <el-icon><Folder /></el-icon>
+                {{ bucket.name }} 
+                <span class="file-count">({{ getBucketFileCount(bucket.name) }} 个文件)</span>
+              </h3>
+            </div>
+            
+            <el-table 
+              :data="getBucketFiles(bucket.name)" 
+              v-loading="loading"
+              style="width: 100%"
+              @selection-change="(selection) => handleBucketSelectionChange(selection, bucket.name)"
+              :row-key="getRowKey"
+            >
+              <el-table-column type="selection" width="55" />
+              <el-table-column prop="objectName" label="文件名" min-width="200">
+                <template #default="{ row }">
+                  <div class="file-name-cell">
+                    <el-icon class="file-icon">
+                      <Document v-if="row.isFile" />
+                      <Folder v-else />
+                    </el-icon>
+                    <span class="file-name" @click="handleFileClick(row)">{{ row.objectName }}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="size" label="大小" width="120">
+                <template #default="{ row }">
+                  {{ row.size > 0 ? formatFileSize(row.size) : '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="上传时间" width="180">
+                <template #default="{ row }">
+                  {{ formatDate(row.createTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200" fixed="right">
+                <template #default="{ row }">
+                  <el-button 
+                    v-permission="'file:menu'"
+                    type="primary" 
+                    size="small" 
+                    link
+                    @click="downloadFile(row)"
+                  >
+                    <el-icon><Download /></el-icon>
+                    下载
+                  </el-button>
+                  <el-button 
+                    v-permission="'file:delete'"
+                    type="danger" 
+                    size="small" 
+                    link
+                    @click="deleteFile(row)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <!-- 桶内分页 -->
+            <div class="bucket-pagination" v-if="getBucketFileCount(bucket.name) > 10">
+              <el-pagination
+                :current-page="bucketCurrentPages[bucket.name] || 1"
+                :page-size="10"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="getBucketFileCount(bucket.name)"
+                layout="total, prev, pager, next"
+                @current-change="(val) => handleBucketCurrentChange(val, bucket.name)"
+              />
+            </div>
+          </div>
+          
+          <!-- 空状态 -->
+          <div v-if="buckets.length === 0 && !loading" class="empty-state">
+            <el-empty description="暂无文件数据" />
+          </div>
         </div>
       </div>
     </el-card>
@@ -185,7 +240,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Folder, Download, Delete, Plus, Refresh, Upload, Search } from '@element-plus/icons-vue'
 import FileUpload from '../components/FileUpload.vue'
@@ -207,12 +262,125 @@ const searchSuffix = ref('')
 const totalSize = ref('0 B') // 总文件大小
 const pdfCount = ref(0) // PDF文件数量
 const imageCount = ref(0) // 图片文件数量
+const selectedBucket = ref('') // 当前选中的桶
+const buckets = ref([]) // 所有桶列表
+const bucketFilesMap = ref({}) // 桶到文件的映射
+const bucketCurrentPages = ref({}) // 每个桶的当前页数
+const bucketSelectionMaps = ref({}) // 每个桶的选中项映射
 
 // 生命周期
 onMounted(() => {
   loadFiles()
   loadStatistics()
+  loadBuckets()
 })
+
+// 加载所有桶信息
+const loadBuckets = async () => {
+  try {
+    // 从文件列表中提取所有桶名
+    const bucketSet = new Set()
+    files.value.forEach(file => {
+      if (file.bucketName && file.bucketName !== 'unknown') {
+        bucketSet.add(file.bucketName)
+      }
+    })
+    
+    // 转换为桶对象数组
+    buckets.value = Array.from(bucketSet).map(name => ({
+      name: name,
+      displayName: name
+    }))
+    
+    console.log('发现的桶:', buckets.value)
+  } catch (error) {
+    console.error('加载桶信息失败:', error)
+  }
+}
+
+// 按桶组织文件
+const organizeFilesByBucket = () => {
+  const bucketMap = {}
+  
+  files.value.forEach(file => {
+    const bucketName = file.bucketName || 'unknown'
+    if (!bucketMap[bucketName]) {
+      bucketMap[bucketName] = []
+    }
+    bucketMap[bucketName].push(file)
+  })
+  
+  bucketFilesMap.value = bucketMap
+  
+  // 刷新桶列表
+  loadBuckets()
+}
+
+// 处理桶选择变化
+const handleBucketChange = (bucketName) => {
+  selectedBucket.value = bucketName
+  if (bucketName) {
+    // 过滤显示指定桶的文件
+    files.value = bucketFilesMap.value[bucketName] || []
+  } else {
+    // 显示所有文件
+    loadFiles()
+  }
+}
+
+// 获取桶的总大小
+const getBucketSize = (bucketName) => {
+  const bucketFiles = bucketFilesMap.value[bucketName] || []
+  let totalBytes = 0
+  
+  bucketFiles.forEach(file => {
+    if (file.fileSize && file.fileSize > 0) {
+      totalBytes += file.fileSize
+    }
+  })
+  
+  return formatFileSize(totalBytes)
+}
+
+// 获取指定桶的文件数量
+const getBucketFileCount = (bucketName) => {
+  return bucketFilesMap.value[bucketName]?.length || 0
+}
+
+// 获取指定桶的文件（带分页）
+const getBucketFiles = (bucketName) => {
+  const bucketFiles = bucketFilesMap.value[bucketName] || []
+  const currentPage = bucketCurrentPages.value[bucketName] || 1
+  const start = (currentPage - 1) * pageSize.value
+  const end = start + pageSize.value
+  return bucketFiles.slice(start, end)
+}
+
+// 获取桶的当前页数
+const getBucketCurrentPage = (bucketName) => {
+  return bucketCurrentPages.value[bucketName] || 1
+}
+
+// 桶级别的选择变化处理
+const handleBucketSelectionChange = (selection, bucketName) => {
+  bucketSelectionMaps.value[bucketName] = selection
+}
+
+// 桶级别的分页处理
+const handleBucketSizeChange = (val, bucketName) => {
+  pageSize.value = val
+  // 可以选择重新加载数据或重新计算分页
+}
+
+// 桶级别的页码变化处理
+const handleBucketCurrentChange = (val, bucketName) => {
+  bucketCurrentPages.value[bucketName] = val
+}
+
+// 获取表格行key
+const getRowKey = (row) => {
+  return row.id || row.objectName
+}
 
 // 加载文件统计信息
 const loadStatistics = async () => {
@@ -268,22 +436,35 @@ const loadFiles = async () => {
     if (response.data?.code === 200) {
       const data = response.data?.data
       // 将数据库的文件信息转换为文件列表格式
-      files.value = data?.list?.map(item => ({
-        ...item,
-        objectName: item.fileName || item.originalName, // 使用文件名作为显示名称
-        name: item.fileName || item.originalName,
-        size: item.fileSize || 0, // 使用数据库中的文件大小信息
-        lastModified: item.createTime, // 使用创建时间作为修改时间
-        isFile: true, // 数据库中的记录都是文件
-        id: item.id, // 添加数据库ID
-        fileUrl: item.fileUrl // 添加文件URL
-      }))
+      // 将数据库的文件信息转换为文件列表格式
+      const allFiles = data?.list?.map(item => {
+        // 从文件URL中提取桶名
+        const urlMatch = item.fileUrl?.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+        const bucketName = urlMatch ? urlMatch[1] : 'unknown'
+        
+        return {
+          ...item,
+          bucketName: bucketName,
+          objectName: item.fileName || item.originalName, // 使用文件名作为显示名称
+          name: item.fileName || item.originalName,
+          size: item.fileSize || 0, // 使用数据库中的文件大小信息
+          lastModified: item.createTime, // 使用创建时间作为修改时间
+          isFile: true, // 数据库中的记录都是文件
+          id: item.id, // 添加数据库ID
+          fileUrl: item.fileUrl // 添加文件URL
+        }
+      }) || []
+      
+      files.value = allFiles
       totalFiles.value = data.total
       
       // 加载完成后更新统计信息
-      loadStatistics()
-      
-      ElMessage.success('文件列表加载成功')
+       loadStatistics()
+       
+       // 按桶组织文件
+       organizeFilesByBucket()
+       
+       ElMessage.success('文件列表加载成功')
     } else {
       ElMessage.error('获取文件列表失败')
     }
@@ -551,6 +732,105 @@ const formatDate = (date) => {
   .bucket-selector .el-form-item {
     display: block;
     margin-bottom: 10px;
+  }
+}
+
+.bucket-stats {
+  margin-bottom: 20px;
+}
+
+.bucket-stat-item {
+  text-align: center;
+  padding: 10px;
+}
+
+.bucket-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 5px;
+}
+
+.bucket-count {
+  font-size: 14px;
+  color: #409EFF;
+  margin-bottom: 5px;
+}
+
+.bucket-size {
+  font-size: 12px;
+  color: #909399;
+}
+
+.active-bucket {
+  border: 2px solid #409EFF;
+  background-color: #ecf5ff;
+}
+
+/* 按桶分表格样式 */
+.bucket-files-container {
+  margin-bottom: 20px;
+}
+
+.bucket-table-section {
+  margin-bottom: 30px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bucket-table-header {
+  background-color: #f8f9fa;
+  color: #333;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.bucket-table-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bucket-table-header .file-count {
+  font-size: 13px;
+  font-weight: normal;
+  color: #6c757d;
+}
+
+.bucket-pagination {
+  padding: 15px 20px;
+  background-color: #fafafa;
+  border-top: 1px solid #ebeef5;
+  display: flex;
+  justify-content: center;
+}
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .bucket-table-header {
+    padding: 12px 15px;
+  }
+  
+  .bucket-table-header h3 {
+    font-size: 14px;
+  }
+  
+  .bucket-pagination {
+    padding: 10px;
+  }
+  
+  .bucket-table-section {
+    margin-bottom: 20px;
   }
 }
 </style>
