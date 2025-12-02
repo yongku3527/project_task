@@ -56,8 +56,8 @@
         <el-table-column prop="materialId" label="原材料ID" min-width="120" />
         <el-table-column prop="drawingType" label="文件类别" min-width="100" />
         <el-table-column prop="itemName" label="物料名称" min-width="150" />
-        <el-table-column prop="model" label="规格型号" min-width="120" />
-        <el-table-column prop="fileName" label="文件名称" min-width="200">
+        <el-table-column prop="model" label="规格型号" min-width="180" />
+        <el-table-column prop="fileName" label="文件资料" min-width="200">
           <template #default="scope">
             <el-link 
               v-if="scope.row.fileUrl" 
@@ -70,28 +70,37 @@
             <span v-else class="no-file">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" />
-        <el-table-column prop="createTime" label="创建时间" min-width="160" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="scope">
+            <el-tag :type="getStatusType(scope.row.status)">
+              {{ getStatusText(scope.row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <!-- <el-table-column prop="createTime" label="创建时间" min-width="160" /> -->
         <el-table-column prop="updateTime" label="更新时间" min-width="160" />
-        <el-table-column label="操作" min-width="250" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
             <div class="action-buttons">
-              <el-button type="primary" size="small" @click="handleEdit(scope.row)">
-                <el-icon><Edit /></el-icon>
-                编辑
+              <el-button type="primary" size="small" link @click="handleEdit(scope.row)">
+                <el-icon><Edit /></el-icon>编辑
+              </el-button>
+              <el-button type="danger" size="small" link @click="handleDelete(scope.row.id)">
+                <el-icon><Delete /></el-icon>删除
               </el-button>
               <el-button 
                 :type="scope.row.status === 1 ? 'warning' : 'success'" 
                 size="small" 
+                link 
                 @click="handleToggleStatus(scope.row)"
                 v-if="scope.row.status !== 2"
               >
-                <el-icon><Switch /></el-icon>
-                {{ scope.row.status === 1 ? '停用' : '启用' }}
+                <el-icon><Switch /></el-icon>{{ scope.row.status === 1 ? '停用' : '启用' }}
               </el-button>
               <el-button 
                 type="info" 
                 size="small" 
+                link 
                 @click="handleConsumeStatus(scope.row)"
                 v-if="scope.row.status !== 2"
               >
@@ -100,14 +109,11 @@
               <el-button 
                 type="danger" 
                 size="small" 
+                link 
                 @click="handleDisableStatus(scope.row)"
                 v-if="scope.row.status === 2"
               >
                 <el-icon><Switch /></el-icon>停用
-              </el-button>
-              <el-button type="danger" size="small" @click="handleDelete(scope.row.id)">
-                <el-icon><Delete /></el-icon>
-                删除
               </el-button>
             </div>
           </template>
@@ -177,14 +183,15 @@
         <el-form-item label="文件上传">
           <el-upload
             ref="fileUploadRef"
-            :action="uploadUrl"
-            :headers="uploadHeaders"
-            :file-list="dialog.fileList"
+            :action="`/minio/upload/${specificationBucket}`"
+            :limit="1"
             :on-success="handleFileUploadSuccess"
             :on-remove="handleFileRemove"
+            :file-list="dialog.fileList"
+            :before-upload="beforeFileUpload"
+            :http-request="handleFileUpload"
             :auto-upload="true"
             accept=".pdf,.doc,.docx,.dwg"
-            :limit="1"
           >
             <el-button type="primary">
               <el-icon><Upload /></el-icon>
@@ -220,11 +227,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Plus, Edit, Delete, SwitchButton, Upload, 
-  Close, Document
+import {
+  Plus, Edit, Delete, Upload,
+  Switch
 } from '@element-plus/icons-vue'
 import * as specificationApi from '@/api/specification'
 import { http } from '@/utils/request'
@@ -242,7 +249,7 @@ const tableData = ref([])
 const loading = ref(false)
 const total = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(50)
 const multipleSelection = ref([])
 
 // 文件类别选项
@@ -282,14 +289,48 @@ const dialog = reactive({
 const formRef = ref(null)
 const fileUploadRef = ref(null)
 
-// 上传配置
-const uploadUrl = '/api/file/upload'
-const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('token') || ''
-  return {
-    'Authorization': `Bearer ${token}`
+// 定义存储桶名称
+const specificationBucket = ref('specification')
+
+// 使用预签名URL上传文件
+const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    
+    // 监听上传进度
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentCompleted = Math.round((event.loaded * 100) / event.total)
+        onProgress({ percent: percentCompleted })
+      }
+    }
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        resolve()
+      } else {
+        reject(new Error(`上传失败: ${xhr.status} ${xhr.statusText}`))
+      }
+    }
+    
+    xhr.onerror = () => reject(new Error('网络错误'))
+    
+    xhr.open('PUT', presignedUrl, true)
+    xhr.send(file)
+  })
+}
+
+// 文件上传前的验证
+const beforeFileUpload = (file) => {
+  const isLt100M = file.size / 1024 / 1024 < 100
+  
+  if (!isLt100M) {
+    ElMessage.error('上传文件大小不能超过100MB!')
+    return false
   }
-})
+  
+  return true
+}
 
 // 加载数据
 const loadData = async () => {
@@ -446,16 +487,24 @@ const handleSubmit = async () => {
 // 删除
 const handleDelete = async (id) => {
   try {
+    // 先获取要删除的规格书信息，包括文件URL和ID
+    const row = tableData.value.find(item => item.id === id)
+    
     await ElMessageBox.confirm('确定要删除这条记录吗？', '删除确认', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
+    // 如果有文件，先删除MinIO文件
+    if (row && row.fileUrl) {
+      await deleteFileFromMinIO(row.fileUrl, '规格书', row.fileId)
+    }
+    
     const response = await specificationApi.deleteSpecification(id)
     
     if (response.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功，已同时删除关联的文件')
       loadData()
     } else {
       ElMessage.error(response.msg || '删除失败')
@@ -607,23 +656,152 @@ const updateItemStatus = async (item, newStatus) => {
   }
 }
 
+// 自定义文件上传
+const handleFileUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    // 获取当前规格书信息用于生成格式化文件名
+    const materialId = dialog.form.materialId || 'UNKNOWN'
+    let itemName = dialog.form.itemName || '规格书文件'
+    
+    // 处理物料名称字段，当文本中包含括号时截取括号前的文本
+    const leftParenIndex = itemName.search(/[（(]/)
+    if (leftParenIndex > -1) {
+      itemName = itemName.substring(0, leftParenIndex).trim()
+    }
+    
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await http.post(
+      `/minio/buckets/${specificationBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
+      null,
+      {
+        code: materialId,
+        name: itemName,
+        originalFileName: file.name,
+        fileSize: file.size
+      }
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 第三步：保存文件信息到数据库
+    const saveFileResponse = await http.post(`/minio/buckets/${specificationBucket.value}/files/save-info`, {
+      bucketName: specificationBucket.value,
+      objectName: formattedFileName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${specificationBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        id: saveFileResponse.data?.fileId || null,
+        fileUrl: fileUrl,
+        fileName: file.name
+      }
+    }
+    
+    // 调用原成功处理函数
+    handleFileUploadSuccess(mockResponse, file)
+    onSuccess(mockResponse)
+    
+    ElMessage.success(`文件上传成功，文件名: ${formattedFileName}`)
+    
+  } catch (error) {
+    onError(error)
+    ElMessage.error('文件上传失败: ' + error.message)
+  }
+}
+
 // 文件上传成功
 const handleFileUploadSuccess = (response, uploadFile) => {
   if (response.code === 200) {
     dialog.form.fileId = response.data.id
     dialog.form.fileUrl = response.data.fileUrl
     dialog.form.fileName = response.data.fileName
-    ElMessage.success('文件上传成功')
+    // 更新文件列表
+    dialog.fileList = [{
+      name: response.data.fileName,
+      url: response.data.fileUrl
+    }]
   } else {
     ElMessage.error('文件上传失败: ' + response.msg)
   }
 }
 
+// 通用文件删除方法（从MinIO和数据库删除文件）
+const deleteFileFromMinIO = async (fileUrl, fileType = '规格书', fileId = null) => {
+  if (!fileUrl) {
+    console.warn(`文件URL为空，跳过${fileType}文件删除`)
+    return
+  }
+  
+  try {
+    // 从fileUrl中提取桶名称和对象名称
+    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      console.error(`无法从${fileType}文件URL中提取桶名称和文件名称:`, fileUrl)
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    console.log(`提取的${fileType}桶名称:`, bucketName)
+    console.log(`提取的${fileType}文件名称:`, objectName)
+    
+    // 先删除MinIO文件
+    try {
+      await http.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
+      console.log(`${fileType}文件从MinIO删除成功`)
+    } catch (minioError) {
+      console.warn(`删除${fileType}MinIO文件失败:`, minioError)
+      // MinIO删除失败也继续，不抛出错误
+    }
+    
+    // 如果提供了fileId，也删除数据库记录
+    if (fileId) {
+      try {
+        await http.delete(`/file-info/${fileId}`)
+        console.log(`${fileType}文件数据库记录删除成功`)
+      } catch (dbError) {
+        console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
+        // 数据库删除失败也继续，不抛出错误
+      }
+    }
+  } catch (error) {
+    console.error(`删除${fileType}文件时出错:`, error)
+  }
+}
+
 // 文件移除
-const handleFileRemove = () => {
+const handleFileRemove = async () => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (dialog.form.fileId && dialog.form.fileUrl) {
+    await deleteFileFromMinIO(dialog.form.fileUrl, '规格书', dialog.form.fileId)
+  }
+  
+  // 重置文件信息
   dialog.form.fileId = null
   dialog.form.fileUrl = ''
   dialog.form.fileName = ''
+  dialog.fileList = []
 }
 
 // 输入防抖定时器
@@ -803,7 +981,8 @@ onMounted(() => {
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
 .no-file {
