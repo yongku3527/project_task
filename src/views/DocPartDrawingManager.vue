@@ -785,7 +785,7 @@ const handleEdit = (row) => {
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除零件编号为"${row.partId}"的图纸吗？`,
+      `确定要删除零件编号为"${row.partId}"的图纸吗？\n此操作将一并删除相关的DWG和PDF附件文件。`,
       '提示',
       {
         confirmButtonText: '确定',
@@ -794,9 +794,20 @@ const handleDelete = async (row) => {
       }
     )
     
+    // 先删除DWG文件
+    if (row.dwgFileId && row.dwgFileUrl) {
+      await deleteFileFromMinIO(row.dwgFileUrl, 'DWG', row.dwgFileId)
+    }
+    
+    // 再删除PDF文件  
+    if (row.pdfFileId && row.pdfFileUrl) {
+      await deleteFileFromMinIO(row.pdfFileUrl, 'PDF', row.pdfFileId)
+    }
+    
+    // 最后删除数据库记录
     const response = await deleteDocPartDrawing(row.id)
     if (response.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功，附件已一并删除')
       loadData()
     } else {
       ElMessage.error(response.message || '删除失败')
