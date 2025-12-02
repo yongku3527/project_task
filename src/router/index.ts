@@ -10,6 +10,7 @@ import FileManager from '../views/FileManager.vue';
 import CircuitBoardManager from '../views/CircuitBoardManager.vue';
 import DocProdDrawingManager from '../views/DocProdDrawingManager.vue';
 import DocPartDrawingManager from '../views/DocPartDrawingManager.vue';
+import SpecificationManager from '../views/SpecificationManager.vue';
 import Login from '../views/Login.vue';
 import TestLogin from '../views/TestLogin.vue';
 import CookieTest from '../views/CookieTest.vue';
@@ -73,6 +74,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/doc-part-drawing',
     name: 'DocPartDrawingManager',
     component: DocPartDrawingManager
+  },
+  {
+    path: '/specification',
+    name: 'SpecificationManager',
+    component: SpecificationManager
   },
   {
     path: '/test-login',
