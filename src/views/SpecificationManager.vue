@@ -152,7 +152,81 @@
             v-model="dialog.form.materialId" 
             placeholder="请输入原材料ID"
             @input="handleMaterialIdInput"
+            clearable
+            style="width: 100%;"
           />
+          <!-- 搜索结果展示 -->
+          <div v-if="materialIdSearchResults.length > 0" class="material-id-search-results">
+            <div class="search-results-header">
+              <div class="search-results-title">
+                <span>搜索结果 (共{{ materialIdSearchResults.length }} 条)</span>
+                
+                  <span class="stats-item">
+                    <el-tag type="success" size="small">
+                      启用 {{ getStatusCount(1) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="warning" size="small">
+                      消耗 {{ getStatusCount(2) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="danger" size="small">
+                      停用 {{ getStatusCount(0) }} 条
+                    </el-tag>
+                  </span>
+                
+              </div>
+              <el-button type="text" size="small" @click="clearMaterialIdSearchResults">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+            <div class="search-results-list">
+              <div 
+                v-for="item in materialIdSearchResults" 
+                :key="item.id"
+                :class="`search-result-item status-${item.status}`"
+              >
+                <div class="result-main">
+                  <div class="result-material-id">{{ item.materialId }}</div>
+                  <div class="result-item-name">{{ item.itemName }}</div>
+                  <div class="result-model">{{ item.model }}</div>
+                </div>
+                <div class="result-status">
+                  <el-tag :type="getStatusType(item.status)" size="small">
+                    {{ getStatusText(item.status) }}
+                  </el-tag>
+                  <div class="status-actions">
+                    <el-button 
+                      v-if="item.status === 0" 
+                      type="primary" 
+                      size="small" 
+                      @click="updateItemStatus(item, 1)"
+                    >
+                      启用
+                    </el-button>
+                    <el-button 
+                      v-if="item.status === 1" 
+                      type="warning" 
+                      size="small" 
+                      @click="updateItemStatus(item, 2)"
+                    >
+                      消耗
+                    </el-button>
+                    <el-button 
+                      v-if="item.status === 2" 
+                      type="primary" 
+                      size="small" 
+                      @click="updateItemStatus(item, 0)"
+                    >
+                      停用
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="文件类别" prop="drawingType">
           <el-select 
@@ -231,7 +305,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Plus, Edit, Delete, Upload,
-  Switch
+  Switch, Close
 } from '@element-plus/icons-vue'
 import * as specificationApi from '@/api/specification'
 import { http } from '@/utils/request'
@@ -284,6 +358,9 @@ const dialog = reactive({
   },
   fileList: []
 })
+
+// 响应式数据
+const materialIdSearchResults = ref([]) // 原材料ID搜索结果
 
 // 表单引用
 const formRef = ref(null)
@@ -630,31 +707,7 @@ const handleDisableStatus = async (row) => {
   }
 }
 
-// 更新条目状态
-const updateItemStatus = async (item, newStatus) => {
-  try {
-    const statusText = newStatus === 1 ? '启用' : '停用'
-    
-    const response = await specificationApi.updateSpecification({
-      id: item.id,
-      status: newStatus
-    })
-    
-    if (response.code === 200) {
-      // 更新本地状态
-      item.status = newStatus
-      ElMessage.success(`已${statusText}该条目`)
-      
-      // 重新加载数据
-      await loadData()
-    } else {
-      ElMessage.error(response.message || `${statusText}失败`)
-    }
-  } catch (error) {
-    console.error('更新状态失败:', error)
-    ElMessage.error('更新状态失败')
-  }
-}
+
 
 // 自定义文件上传
 const handleFileUpload = async (options) => {
@@ -839,6 +892,98 @@ const getItemTypeByMaterialId = async (materialId, prefixLength = 6) => {
   }
 }
 
+// 实时搜索原材料ID匹配的条目
+const searchMaterialIdItems = async (materialIdValue) => {
+  try {
+    // 调用API搜索匹配的条目
+    const response = await specificationApi.getSpecificationList({
+      materialId: materialIdValue,
+      page: 1,
+      size: 50 // 限制搜索结果数量
+    })
+    
+    if (response.code === 200) {
+      let results = response.data.records || response.data || []
+      
+      // 按照状态排序：启用(1) > 消耗(2) > 停用(0)
+      results = results.sort((a, b) => {
+        // 启用状态优先级最高
+        if (a.status === 1 && b.status !== 1) return -1
+        if (b.status === 1 && a.status !== 1) return 1
+        
+        // 消耗状态优先级其次
+        if (a.status === 2 && b.status === 0) return -1
+        if (b.status === 2 && a.status === 0) return 1
+        
+        // 停用状态优先级最低
+        return 0
+      })
+      
+      materialIdSearchResults.value = results
+      console.log(`找到 ${results.length} 个匹配条目`)
+    } else {
+      materialIdSearchResults.value = []
+      console.warn('搜索失败:', response.msg)
+    }
+  } catch (error) {
+    materialIdSearchResults.value = []
+    console.error('搜索失败:', error.message)
+  }
+}
+
+// 清除搜索结果
+const clearMaterialIdSearchResults = () => {
+  materialIdSearchResults.value = []
+  ElMessage.info('已清除搜索结果')
+}
+
+// 获取状态统计数量
+const getStatusCount = (status) => {
+  return materialIdSearchResults.value.filter(item => item.status === status).length
+}
+
+// 更新条目状态
+const updateItemStatus = async (item, newStatus) => {
+  try {
+    const statusText = getStatusText(newStatus)
+    
+    await ElMessageBox.confirm(`确认将条目"${item.materialId} - ${item.itemName}"状态修改为"${statusText}"吗？`, '状态修改确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 调用API更新状态
+    const response = await specificationApi.updateSpecification({
+      id: item.id,
+      status: newStatus
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success(`状态已更新为"${statusText}"`)
+      
+      // 更新本地搜索结果中的状态
+      const index = materialIdSearchResults.value.findIndex(result => result.id === item.id)
+      if (index !== -1) {
+        materialIdSearchResults.value[index].status = newStatus
+      }
+      
+      // 更新表格数据中的状态
+      const tableIndex = tableData.value.findIndex(tableItem => tableItem.id === item.id)
+      if (tableIndex !== -1) {
+        tableData.value[tableIndex].status = newStatus
+      }
+    } else {
+      ElMessage.error(response.msg || '状态更新失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('状态更新失败:', error)
+      ElMessage.error('状态更新失败: ' + error.message)
+    }
+  }
+}
+
 // 原材料ID输入处理
 const handleMaterialIdInput = (value) => {
   const materialIdValue = value?.trim()
@@ -851,6 +996,9 @@ const handleMaterialIdInput = (value) => {
   // 设置新的定时器
   inputTimers.materialId = setTimeout(async () => {
     if (materialIdValue) {
+      // 实时搜索匹配的条目
+      await searchMaterialIdItems(materialIdValue)
+      
       // 调用MES接口根据原材料ID获取物料信息
       const itemInfo = await getItemInfoFromMES(materialIdValue)
 
@@ -874,6 +1022,9 @@ const handleMaterialIdInput = (value) => {
         console.warn('获取文件类别失败: ' + error.message)
         ElMessage.error('获取文件类别失败: ' + error.message)
       }
+    } else {
+      // 清除搜索结果
+      materialIdSearchResults.value = []
     }
     inputTimers.materialId = null
   }, 500) // 500毫秒防抖
@@ -899,7 +1050,7 @@ const getStatusText = (status) => {
   return statusTextMap[status] || '未知'
 }
 
-// 文件下载
+// 文件打开
 const downloadFile = async (url, fileName) => {
   try {
     // 提取存储桶名称和对象名称
@@ -913,26 +1064,22 @@ const downloadFile = async (url, fileName) => {
     const bucketName = urlMatch[1]
     const objectName = urlMatch[2]
     
-    // 获取预签名下载URL
+    // 获取预签名打开URL
     const response = await http.get(
       `/minio/buckets/${bucketName}/files/${objectName}/presigned-url`
     )
     
     if (response.code === 200) {
-      const presignedUrl = response.data.presignedUrl
-      // 使用预签名URL下载文件
-      const link = document.createElement('a')
-      link.href = presignedUrl
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      const presignedUrl = response.data
+      // 使用预签名URL直接在新窗口中打开文件
+      window.open(presignedUrl, '_blank')
+      ElMessage.success('文件已在新窗口中打开')
     } else {
-      ElMessage.error('获取下载链接失败: ' + response.msg)
+      ElMessage.error('获取打开链接失败: ' + response.msg)
     }
   } catch (error) {
-    console.error('下载文件失败:', error)
-    ElMessage.error('下载文件失败: ' + error.message)
+    console.error('打开文件失败:', error)
+    ElMessage.error('打开文件失败: ' + error.message)
   }
 }
 
@@ -1038,5 +1185,113 @@ onMounted(() => {
 
 :deep(.el-table__body tr.row-enabled:hover > td) {
   background-color: #ffffff !important;
+}
+
+/* 搜索结果区域 */
+.material-id-search-results {
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: 250px;
+  overflow: hidden;
+  margin-top: 8px;
+  z-index: 1000;
+  position: relative;
+}
+
+.search-results-header {
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #606266;
+}
+
+.search-results-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  padding: 12px;
+  border-bottom: 1px solid #f0f2f5;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-result-item:hover {
+  background-color: #f5f7fa;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.result-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-material-id {
+  font-weight: 500;
+  color: #303133;
+  font-size: 14px;
+}
+
+.result-item-name {
+  color: #606266;
+  font-size: 13px;
+}
+
+.result-model {
+  color: #909399;
+  font-size: 12px;
+}
+
+.result-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.status-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* 不同状态的背景色 */
+.search-result-item.status-0 {
+  background-color: #fff1f0;
+}
+
+.search-result-item.status-0:hover {
+  background-color: #ffebe6;
+}
+
+.search-result-item.status-1 {
+  background-color: #f0f9ff;
+}
+
+.search-result-item.status-1:hover {
+  background-color: #e6f7ff;
+}
+
+.search-result-item.status-2 {
+  background-color: #fffbe6;
+}
+
+.search-result-item.status-2:hover {
+  background-color: #fff1b8;
 }
 </style>
