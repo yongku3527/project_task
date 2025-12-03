@@ -81,6 +81,10 @@
           <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>规格书管理</span>
         </el-menu-item>
+        <el-menu-item v-permission="'countersignDrawing:menu'" index="/countersign-drawing">
+          <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <span>会签图纸管理</span>
+        </el-menu-item>
         
       </el-sub-menu>
 

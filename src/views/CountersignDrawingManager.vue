@@ -1,22 +1,22 @@
 <template>
-  <div class="specification-manager">
+  <div class="countersign-drawing-manager">
     <el-card>
       <template #header>
         <div class="card-header">
           <div class="header-actions">
             <div class="search-bar-inline">
               <el-form :inline="true" size="small">
-                <el-form-item label="原材料ID:">
-                  <el-input v-model="searchForm.materialId" placeholder="请输入原材料ID" clearable />
+                <el-form-item label="图纸来源:">
+                  <el-input v-model="searchForm.drawingSource" placeholder="请输入图纸来源" clearable />
                 </el-form-item>
-                <el-form-item label="物料名称:">
-                  <el-input v-model="searchForm.itemName" placeholder="请输入物料名称" clearable />
+                <el-form-item label="产品类别:">
+                  <el-input v-model="searchForm.productCategory" placeholder="请输入产品类别" clearable />
                 </el-form-item>
-                <el-form-item label="规格型号:">
-                  <el-input v-model="searchForm.model" placeholder="请输入规格型号" clearable />
+                <el-form-item label="产品名称:">
+                  <el-input v-model="searchForm.prodName" placeholder="请输入产品名称" clearable />
                 </el-form-item>
-                <el-form-item label="文件类别:">
-                  <el-input v-model="searchForm.drawingType" placeholder="请输入文件类别" clearable style="width: 150px;" />
+                <el-form-item label="零部件号:">
+                  <el-input v-model="searchForm.partNo" placeholder="请输入零部件号" clearable style="width: 150px;" />
                 </el-form-item>
                 <el-form-item>
                   <el-button type="primary" @click="handleSearch">查询</el-button>
@@ -46,19 +46,20 @@
       >
 
         <el-table-column type="index" label="序号" width="80" />
-        <el-table-column prop="materialId" label="原材料ID" min-width="120" />
-        <el-table-column prop="drawingType" label="文件类别" min-width="100" />
-        <el-table-column prop="itemName" label="物料名称" min-width="150" />
-        <el-table-column prop="model" label="规格型号" min-width="180" />
-        <el-table-column prop="fileName" label="文件资料" min-width="200">
+        <el-table-column prop="productCategory" label="产品类别" min-width="100" />
+        <el-table-column prop="drawingSource" label="图纸来源" min-width="120" />
+        
+        <el-table-column prop="prodName" label="产品名称" min-width="150" />
+        <el-table-column prop="partNo" label="零部件号" min-width="180" />
+        <el-table-column prop="dwgFileName" label="图纸文件" min-width="200">
           <template #default="scope">
             <el-link 
-              v-if="scope.row.fileUrl" 
+              v-if="scope.row.dwgFileUrl" 
               type="primary" 
-              @click="downloadFile(scope.row.fileUrl, scope.row.fileName)"
+              @click="downloadFile(scope.row.dwgFileUrl, scope.row.dwgFileName)"
               style="word-break: break-all; display: inline-block; max-width: 100%;"
             >
-              {{ scope.row.fileName }}
+              {{ scope.row.dwgFileName }}
             </el-link>
             <span v-else class="no-file">-</span>
           </template>
@@ -70,7 +71,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <!-- <el-table-column prop="createTime" label="创建时间" min-width="160" /> -->
         <el-table-column prop="updateTime" label="更新时间" min-width="160" />
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
@@ -140,118 +140,47 @@
         :rules="dialog.rules"
         label-width="120px"
       >
-        <el-form-item label="原材料ID" prop="materialId">
+        <el-form-item label="图纸来源" prop="drawingSource">
           <el-input 
-            v-model="dialog.form.materialId" 
-            placeholder="请输入原材料ID"
-            @input="handleMaterialIdInput"
+            v-model="dialog.form.drawingSource" 
+            placeholder="请输入图纸来源"
+            @input="handleDrawingSourceInput"
             clearable
             style="width: 100%;"
           />
-          <!-- 搜索结果展示 -->
-          <div v-if="materialIdSearchResults.length > 0" class="material-id-search-results">
-            <div class="search-results-header">
-              <div class="search-results-title">
-                <span>搜索结果 (共{{ materialIdSearchResults.length }} 条)</span>
-                
-                  <span class="stats-item">
-                    <el-tag type="success" size="small">
-                      启用 {{ getStatusCount(1) }} 条
-                    </el-tag>
-                  </span>
-                  <span class="stats-item">
-                    <el-tag type="warning" size="small">
-                      消耗 {{ getStatusCount(2) }} 条
-                    </el-tag>
-                  </span>
-                  <span class="stats-item">
-                    <el-tag type="danger" size="small">
-                      停用 {{ getStatusCount(0) }} 条
-                    </el-tag>
-                  </span>
-                
-              </div>
-              <el-button type="text" size="small" @click="clearMaterialIdSearchResults">
-                <el-icon><Close /></el-icon>
-              </el-button>
-            </div>
-            <div class="search-results-list">
-              <div 
-                v-for="item in materialIdSearchResults" 
-                :key="item.id"
-                :class="`search-result-item status-${item.status}`"
-              >
-                <div class="result-main">
-                  <div class="result-material-id">{{ item.materialId }}</div>
-                  <div class="result-item-name">{{ item.itemName }}</div>
-                  <div class="result-model">{{ item.model }}</div>
-                </div>
-                <div class="result-status">
-                  <el-tag :type="getStatusType(item.status)" size="small">
-                    {{ getStatusText(item.status) }}
-                  </el-tag>
-                  <div class="status-actions">
-                    <el-button 
-                      v-if="item.status === 0" 
-                      type="primary" 
-                      size="small" 
-                      @click="updateItemStatus(item, 1)"
-                    >
-                      启用
-                    </el-button>
-                    <el-button 
-                      v-if="item.status === 1" 
-                      type="warning" 
-                      size="small" 
-                      @click="updateItemStatus(item, 2)"
-                    >
-                      消耗
-                    </el-button>
-                    <el-button 
-                      v-if="item.status === 2" 
-                      type="primary" 
-                      size="small" 
-                      @click="updateItemStatus(item, 0)"
-                    >
-                      停用
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </el-form-item>
-        <el-form-item label="文件类别" prop="drawingType">
+        <el-form-item label="产品类别" prop="productCategory">
           <el-input 
-            v-model="dialog.form.drawingType" 
-            placeholder="请输入文件类别"
+            v-model="dialog.form.productCategory" 
+            placeholder="请输入产品类别"
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="物料名称" prop="itemName">
+        <el-form-item label="产品名称" prop="prodName">
           <el-input 
-            v-model="dialog.form.itemName" 
-            placeholder="请输入物料名称"
+            v-model="dialog.form.prodName" 
+            placeholder="请输入产品名称"
+            style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="规格型号" prop="model">
+        <el-form-item label="零部件号" prop="partNo">
           <el-input 
-            v-model="dialog.form.model" 
-            placeholder="请输入规格型号"
+            v-model="dialog.form.partNo" 
+            placeholder="请输入零部件号"
+            style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="文件上传">
+        <el-form-item label="文件">
           <el-upload
             ref="fileUploadRef"
-            :action="`/minio/upload/${specificationBucket}`"
+            :action="`/minio/upload/${countersignBucket}`"
             :limit="1"
             :on-success="handleFileUploadSuccess"
-            :on-remove="handleFileRemove"
+            :on-remove="handleFileUploadRemove"
             :file-list="dialog.fileList"
             :before-upload="beforeFileUpload"
             :http-request="handleFileUpload"
             :auto-upload="true"
-            accept=".pdf,.doc,.docx,.dwg"
           >
             <el-button type="primary">
               <el-icon><Upload /></el-icon>
@@ -259,7 +188,7 @@
             </el-button>
             <template #tip>
               <div class="el-upload__tip">
-                支持上传PDF、Word、DWG文件，单个文件大小不超过100MB
+                文件大小不超过100MB
               </div>
             </template>
           </el-upload>
@@ -293,15 +222,15 @@ import {
   Plus, Edit, Delete, Upload,
   Switch, Close
 } from '@element-plus/icons-vue'
-import * as specificationApi from '@/api/specification'
+import * as countersignDrawingApi from '@/api/countersignDrawing'
 import { http } from '@/utils/request'
 
 // 搜索表单
 const searchForm = reactive({
-  materialId: '',
-  drawingType: '',
-  itemName: '',
-  model: ''
+  drawingSource: '',
+  productCategory: '',
+  prodName: '',
+  partNo: ''
 })
 
 // 表格数据
@@ -312,42 +241,37 @@ const currentPage = ref(1)
 const pageSize = ref(50)
 const multipleSelection = ref([])
 
-
-
-// 对话框
-const dialog = reactive({
-  visible: false,
-  title: '新增规格书',
-  form: {
-    id: null,
-    materialId: '',
-    drawingType: '',
-    itemName: '',
-    model: '',
-    fileId: null,
-    fileUrl: '',
-    fileName: '',
-    status: 1
-  },
-  rules: {
-    materialId: [{ required: true, message: '请输入原材料ID', trigger: 'blur' }],
-    drawingType: [{ required: true, message: '请选择文件类别', trigger: 'change' }],
-    itemName: [{ required: true, message: '请输入物料名称', trigger: 'blur' }],
-    model: [{ required: true, message: '请输入规格型号', trigger: 'blur' }],
-    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-  },
-  fileList: []
-})
-
-// 响应式数据
-const materialIdSearchResults = ref([]) // 原材料ID搜索结果
+// 定义存储桶名称
+const countersignBucket = ref('countersign')
 
 // 表单引用
 const formRef = ref(null)
 const fileUploadRef = ref(null)
 
-// 定义存储桶名称
-const specificationBucket = ref('specification')
+// 对话框
+const dialog = reactive({
+  visible: false,
+  title: '新增会签图纸',
+  form: {
+    id: null,
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
+    status: 1
+  },
+  rules: {
+    drawingSource: [{ required: true, message: '请输入图纸来源', trigger: 'blur' }],
+    productCategory: [{ required: true, message: '请输入产品类别', trigger: 'blur' }],
+    prodName: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
+    partNo: [{ required: true, message: '请输入零部件号', trigger: 'blur' }],
+    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  },
+  fileList: []
+})
 
 // 使用预签名URL上传文件
 const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
@@ -399,7 +323,7 @@ const loadData = async () => {
       ...searchForm
     }
     
-    const response = await specificationApi.getSpecificationList(params)
+    const response = await countersignDrawingApi.getCountersignDrawingList(params)
     
     if (response.code === 200) {
       tableData.value = response.data.records || response.data
@@ -448,16 +372,16 @@ const handleSelectionChange = (val) => {
 
 // 新增
 const handleAdd = () => {
-  dialog.title = '新增规格书'
+  dialog.title = '新增会签图纸'
   dialog.form = {
     id: null,
-    materialId: '',
-    drawingType: '',
-    itemName: '',
-    model: '',
-    fileId: null,
-    fileUrl: '',
-    fileName: '',
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
     status: 1
   }
   dialog.fileList = []
@@ -466,25 +390,25 @@ const handleAdd = () => {
 
 // 编辑
 const handleEdit = (row) => {
-  dialog.title = '编辑规格书'
+  dialog.title = '编辑会签图纸'
   dialog.form = {
     id: row.id,
-    materialId: row.materialId,
-    drawingType: row.drawingType,
-    itemName: row.itemName,
-    model: row.model,
-    fileId: row.fileId,
-    fileUrl: row.fileUrl,
-    fileName: row.fileName,
+    drawingSource: row.drawingSource,
+    productCategory: row.productCategory,
+    prodName: row.prodName,
+    partNo: row.partNo,
+    dwgFileId: row.dwgFileId,
+    dwgFileUrl: row.dwgFileUrl,
+    dwgFileName: row.dwgFileName,
     status: row.status
   }
   
   // 设置文件列表
   dialog.fileList = []
-  if (row.fileUrl && row.fileName) {
+  if (row.dwgFileUrl && row.dwgFileName) {
     dialog.fileList.push({
-      name: row.fileName,
-      url: row.fileUrl
+      name: row.dwgFileName,
+      url: row.dwgFileUrl
     })
   }
   
@@ -495,13 +419,13 @@ const handleEdit = (row) => {
 const handleDialogClose = () => {
   dialog.form = {
     id: null,
-    materialId: '',
-    drawingType: '',
-    itemName: '',
-    model: '',
-    fileId: null,
-    fileUrl: '',
-    fileName: '',
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
     status: 1
   }
   dialog.fileList = []
@@ -522,10 +446,10 @@ const handleSubmit = async () => {
     let response
     if (data.id) {
       // 更新
-      response = await specificationApi.updateSpecification(data)
+      response = await countersignDrawingApi.updateCountersignDrawing(data)
     } else {
       // 新增
-      response = await specificationApi.addSpecification(data)
+      response = await countersignDrawingApi.addCountersignDrawing(data)
     }
     
     if (response.code === 200) {
@@ -544,7 +468,7 @@ const handleSubmit = async () => {
 // 删除
 const handleDelete = async (id) => {
   try {
-    // 先获取要删除的规格书信息，包括文件URL和ID
+    // 先获取要删除的会签图纸信息，包括文件URL和ID
     const row = tableData.value.find(item => item.id === id)
     
     await ElMessageBox.confirm('确定要删除这条记录吗？', '删除确认', {
@@ -553,12 +477,12 @@ const handleDelete = async (id) => {
       type: 'warning'
     })
     
-    // 如果有文件，先删除MinIO文件
-    if (row && row.fileUrl) {
-      await deleteFileFromMinIO(row.fileUrl, '规格书', row.fileId)
+    // 如果有DWG文件，先删除MinIO文件
+    if (row && row.dwgFileUrl) {
+      await deleteFileFromMinIO(row.dwgFileUrl, 'DWG', row.dwgFileId)
     }
     
-    const response = await specificationApi.deleteSpecification(id)
+    const response = await countersignDrawingApi.deleteCountersignDrawing(id)
     
     if (response.code === 200) {
       ElMessage.success('删除成功，已同时删除关联的文件')
@@ -594,13 +518,13 @@ const handleToggleStatus = async (row) => {
   const statusText = newStatus === 1 ? '启用' : '停用'
   
   try {
-    await ElMessageBox.confirm(`确定要${statusText}该规格书吗？`, '提示', {
+    await ElMessageBox.confirm(`确定要${statusText}该会签图纸吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
-    const response = await specificationApi.updateSpecification({
+    const response = await countersignDrawingApi.updateCountersignDrawing({
       id: row.id,
       status: newStatus
     })
@@ -608,7 +532,7 @@ const handleToggleStatus = async (row) => {
     if (response.code === 200) {
       // 更新本地状态
       row.status = newStatus
-      ElMessage.success(`已${statusText}该规格书`)
+      ElMessage.success(`已${statusText}该会签图纸`)
       
       // 重新加载数据
       await loadData()
@@ -626,13 +550,13 @@ const handleToggleStatus = async (row) => {
 // 消耗状态处理
 const handleConsumeStatus = async (row) => {
   try {
-    await ElMessageBox.confirm('确认将该规格书状态变更为消耗吗？', '提示', {
+    await ElMessageBox.confirm('确认将该会签图纸状态变更为消耗吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
-    const response = await specificationApi.updateSpecification({
+    const response = await countersignDrawingApi.updateCountersignDrawing({
       id: row.id,
       status: 2 // 2表示消耗状态
     })
@@ -658,13 +582,13 @@ const handleConsumeStatus = async (row) => {
 // 停用状态处理（用于消耗状态切换为停用）
 const handleDisableStatus = async (row) => {
   try {
-    await ElMessageBox.confirm('确认将该规格书状态变更为停用吗？', '提示', {
+    await ElMessageBox.confirm('确认将该会签图纸状态变更为停用吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
-    const response = await specificationApi.updateSpecification({
+    const response = await countersignDrawingApi.updateCountersignDrawing({
       id: row.id,
       status: 0 // 0表示停用状态
     })
@@ -687,326 +611,22 @@ const handleDisableStatus = async (row) => {
   }
 }
 
-
-
-// 自定义文件上传
-const handleFileUpload = async (options) => {
-  const { file, onSuccess, onError, onProgress } = options
-  
-  try {
-    // 获取当前规格书信息用于生成格式化文件名
-    const materialId = dialog.form.materialId || 'UNKNOWN'
-    let itemName = dialog.form.itemName || '规格书文件'
-    
-    // 处理物料名称字段，当文本中包含括号时截取括号前的文本
-    const leftParenIndex = itemName.search(/[（(]/)
-    if (leftParenIndex > -1) {
-      itemName = itemName.substring(0, leftParenIndex).trim()
-    }
-    
-    // 第一步：创建格式化文件名预上传任务
-    const presignResponse = await http.post(
-      `/minio/buckets/${specificationBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
-      null,
-      {
-        code: materialId,
-        name: itemName,
-        originalFileName: file.name,
-        fileSize: file.size
-      }
-    )
-    
-    if (presignResponse.code !== 200) {
-      throw new Error(presignResponse.msg || '创建预上传任务失败')
-    }
-    
-    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
-    
-    // 第二步：使用预签名URL直接上传文件到MinIO
-    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
-    
-    // 第三步：保存文件信息到数据库
-    const saveFileResponse = await http.post(`/minio/buckets/${specificationBucket.value}/files/save-info`, {
-      bucketName: specificationBucket.value,
-      objectName: formattedFileName,
-      originalName: file.name,
-      fileSize: file.size,
-      contentType: file.type || 'application/octet-stream'
-    })
-    
-    if (saveFileResponse.code !== 200) {
-      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
-    }
-    
-    // 模拟原上传成功回调格式
-    const fileUrl = `/minio/buckets/${specificationBucket.value}/files/${encodeURIComponent(formattedFileName)}`
-    const mockResponse = {
-      code: 200,
-      message: '上传成功',
-      data: {
-        id: saveFileResponse.data?.fileId || null,
-        fileUrl: fileUrl,
-        fileName: file.name
-      }
-    }
-    
-    // 调用原成功处理函数
-    handleFileUploadSuccess(mockResponse, file)
-    onSuccess(mockResponse)
-    
-    ElMessage.success(`文件上传成功，文件名: ${formattedFileName}`)
-    
-  } catch (error) {
-    onError(error)
-    ElMessage.error('文件上传失败: ' + error.message)
-  }
-}
-
-// 文件上传成功
-const handleFileUploadSuccess = (response, uploadFile) => {
-  if (response.code === 200) {
-    dialog.form.fileId = response.data.id
-    dialog.form.fileUrl = response.data.fileUrl
-    dialog.form.fileName = response.data.fileName
-    // 更新文件列表
-    dialog.fileList = [{
-      name: response.data.fileName,
-      url: response.data.fileUrl
-    }]
-  } else {
-    ElMessage.error('文件上传失败: ' + response.msg)
-  }
-}
-
-// 通用文件删除方法（从MinIO和数据库删除文件）
-const deleteFileFromMinIO = async (fileUrl, fileType = '规格书', fileId = null) => {
-  if (!fileUrl) {
-    console.warn(`文件URL为空，跳过${fileType}文件删除`)
-    return
-  }
-  
-  try {
-    // 从fileUrl中提取桶名称和对象名称
-    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
-    if (!urlMatch) {
-      console.error(`无法从${fileType}文件URL中提取桶名称和文件名称:`, fileUrl)
-      return
-    }
-    
-    const bucketName = urlMatch[1]
-    const objectName = urlMatch[2]
-    
-    console.log(`提取的${fileType}桶名称:`, bucketName)
-    console.log(`提取的${fileType}文件名称:`, objectName)
-    
-    // 先删除MinIO文件
-    try {
-      await http.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
-      console.log(`${fileType}文件从MinIO删除成功`)
-    } catch (minioError) {
-      console.warn(`删除${fileType}MinIO文件失败:`, minioError)
-      // MinIO删除失败也继续，不抛出错误
-    }
-    
-    // 如果提供了fileId，也删除数据库记录
-    if (fileId) {
-      try {
-        await http.delete(`/file-info/${fileId}`)
-        console.log(`${fileType}文件数据库记录删除成功`)
-      } catch (dbError) {
-        console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
-        // 数据库删除失败也继续，不抛出错误
-      }
-    }
-  } catch (error) {
-    console.error(`删除${fileType}文件时出错:`, error)
-  }
-}
-
-// 文件移除
-const handleFileRemove = async () => {
-  // 如果有文件ID和URL，先删除数据库和MinIO文件
-  if (dialog.form.fileId && dialog.form.fileUrl) {
-    await deleteFileFromMinIO(dialog.form.fileUrl, '规格书', dialog.form.fileId)
-  }
-  
-  // 重置文件信息
-  dialog.form.fileId = null
-  dialog.form.fileUrl = ''
-  dialog.form.fileName = ''
-  dialog.fileList = []
-}
-
 // 输入防抖定时器
 const inputTimers = {}
 
-// MES接口调用 - 根据原材料ID查询物料信息
-const getItemInfoFromMES = async (itemCode) => {
-  try {
-    const response = await http.get(`/mes/item-info/${itemCode}`)
-    
-    if (response.code === 200) {
-      return response.data
-    } else {
-      console.warn('MES物料信息查询失败: ' + response.msg)
-      return null
-    }
-  } catch (error) {
-    console.warn('MES接口调用失败: ' + error.message)
-    return null
-  }
-}
-
-// 根据原材料ID前N位查询物料类型
-const getItemTypeByMaterialId = async (materialId, prefixLength = 6) => {
-  try {
-    // 调用现有的根据pid查询物料类型的接口，因为逻辑是通用的
-    const response = await http.get('/item-type/get-type-by-pid', {
-      pid: materialId,
-      prefixLength
-    })
-    return response
-  } catch (error) {
-    console.warn('获取物料类型失败: ' + error.message)
-    throw error
-  }
-}
-
-// 实时搜索原材料ID匹配的条目
-const searchMaterialIdItems = async (materialIdValue) => {
-  try {
-    // 调用API搜索匹配的条目
-    const response = await specificationApi.getSpecificationList({
-      materialId: materialIdValue,
-      page: 1,
-      size: 50 // 限制搜索结果数量
-    })
-    
-    if (response.code === 200) {
-      let results = response.data.records || response.data || []
-      
-      // 按照状态排序：启用(1) > 消耗(2) > 停用(0)
-      results = results.sort((a, b) => {
-        // 启用状态优先级最高
-        if (a.status === 1 && b.status !== 1) return -1
-        if (b.status === 1 && a.status !== 1) return 1
-        
-        // 消耗状态优先级其次
-        if (a.status === 2 && b.status === 0) return -1
-        if (b.status === 2 && a.status === 0) return 1
-        
-        // 停用状态优先级最低
-        return 0
-      })
-      
-      materialIdSearchResults.value = results
-      console.log(`找到 ${results.length} 个匹配条目`)
-    } else {
-      materialIdSearchResults.value = []
-      console.warn('搜索失败:', response.msg)
-    }
-  } catch (error) {
-    materialIdSearchResults.value = []
-    console.error('搜索失败:', error.message)
-  }
-}
-
-// 清除搜索结果
-const clearMaterialIdSearchResults = () => {
-  materialIdSearchResults.value = []
-  ElMessage.info('已清除搜索结果')
-}
-
-// 获取状态统计数量
-const getStatusCount = (status) => {
-  return materialIdSearchResults.value.filter(item => item.status === status).length
-}
-
-// 更新条目状态
-const updateItemStatus = async (item, newStatus) => {
-  try {
-    const statusText = getStatusText(newStatus)
-    
-    await ElMessageBox.confirm(`确认将条目"${item.materialId} - ${item.itemName}"状态修改为"${statusText}"吗？`, '状态修改确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    // 调用API更新状态
-    const response = await specificationApi.updateSpecification({
-      id: item.id,
-      status: newStatus
-    })
-    
-    if (response.code === 200) {
-      ElMessage.success(`状态已更新为"${statusText}"`)
-      
-      // 更新本地搜索结果中的状态
-      const index = materialIdSearchResults.value.findIndex(result => result.id === item.id)
-      if (index !== -1) {
-        materialIdSearchResults.value[index].status = newStatus
-      }
-      
-      // 更新表格数据中的状态
-      const tableIndex = tableData.value.findIndex(tableItem => tableItem.id === item.id)
-      if (tableIndex !== -1) {
-        tableData.value[tableIndex].status = newStatus
-      }
-    } else {
-      ElMessage.error(response.msg || '状态更新失败')
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('状态更新失败:', error)
-      ElMessage.error('状态更新失败: ' + error.message)
-    }
-  }
-}
-
-// 原材料ID输入处理
-const handleMaterialIdInput = (value) => {
-  const materialIdValue = value?.trim()
+// 图纸来源输入处理
+const handleDrawingSourceInput = (value) => {
+  const drawingSourceValue = value?.trim()
   
   // 清除之前的定时器
-  if (inputTimers.materialId) {
-    clearTimeout(inputTimers.materialId)
+  if (inputTimers.drawingSource) {
+    clearTimeout(inputTimers.drawingSource)
   }
   
   // 设置新的定时器
-  inputTimers.materialId = setTimeout(async () => {
-    if (materialIdValue) {
-      // 实时搜索匹配的条目
-      await searchMaterialIdItems(materialIdValue)
-      
-      // 调用MES接口根据原材料ID获取物料信息
-      const itemInfo = await getItemInfoFromMES(materialIdValue)
-
-      if (itemInfo) {
-        dialog.form.itemName = itemInfo.itemName || ''
-        dialog.form.model = itemInfo.itemSpec || ''
-        ElMessage.success('已自动填充物料名称和规格型号')
-      }
-      
-      // 调用API根据原材料ID前N位查询物料类型
-      try {
-        const itemTypeResponse = await getItemTypeByMaterialId(materialIdValue, 6)
-        if (itemTypeResponse.code === 200) {
-          dialog.form.drawingType = itemTypeResponse.data.drawingType || ''
-          ElMessage.success('已自动填充文件类别')
-        } else {
-          // 显示后端返回的错误信息
-          ElMessage.warning(itemTypeResponse.msg || '获取文件类别失败')
-        }
-      } catch (error) {
-        console.warn('获取文件类别失败: ' + error.message)
-        ElMessage.error('获取文件类别失败: ' + error.message)
-      }
-    } else {
-      // 清除搜索结果
-      materialIdSearchResults.value = []
-    }
-    inputTimers.materialId = null
+  inputTimers.drawingSource = setTimeout(async () => {
+    // 可以在这里添加搜索逻辑
+    inputTimers.drawingSource = null
   }, 500) // 500毫秒防抖
 }
 
@@ -1063,6 +683,154 @@ const downloadFile = async (url, fileName) => {
   }
 }
 
+// 自定义文件上传
+const handleFileUpload = async (options) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    // 获取当前会签图纸信息用于生成格式化文件名
+    const partNo = dialog.form.partNo || 'UNKNOWN'
+    let prodName = dialog.form.prodName || '会签文件'
+    
+    // 处理产品名称字段，当文本中包含括号时截取括号前的文本
+    const leftParenIndex = prodName.search(/[（(]/)
+    if (leftParenIndex > -1) {
+      prodName = prodName.substring(0, leftParenIndex).trim()
+    }
+    
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await http.post(
+      `/minio/buckets/${countersignBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
+      null,
+      {
+        code: partNo,
+        name: prodName,
+        originalFileName: file.name,
+        fileSize: file.size
+      }
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 第三步：保存文件信息到数据库
+    const saveFileResponse = await http.post(`/minio/buckets/${countersignBucket.value}/files/save-info`, {
+      bucketName: countersignBucket.value,
+      objectName: formattedFileName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${countersignBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功',
+      data: {
+        id: saveFileResponse.data?.fileId || null,
+        fileUrl: fileUrl,
+        fileName: file.name
+      }
+    }
+    
+    // 调用原成功处理函数
+    handleFileUploadSuccess(mockResponse, file)
+    onSuccess(mockResponse)
+    
+    ElMessage.success(`文件上传成功，文件名: ${formattedFileName}`)
+    
+  } catch (error) {
+    onError(error)
+    ElMessage.error('文件上传失败: ' + error.message)
+  }
+}
+
+// 文件上传成功
+const handleFileUploadSuccess = (response, uploadFile) => {
+  if (response.code === 200) {
+    dialog.form.dwgFileId = response.data.id
+    dialog.form.dwgFileUrl = response.data.fileUrl
+    dialog.form.dwgFileName = response.data.fileName
+    // 更新文件列表
+    dialog.fileList = [{
+      name: response.data.fileName,
+      url: response.data.fileUrl
+    }]
+  } else {
+    ElMessage.error('文件上传失败: ' + response.msg)
+  }
+}
+
+// 通用文件删除方法（从MinIO和数据库删除文件）
+const deleteFileFromMinIO = async (fileUrl, fileType = '会签文件', fileId = null) => {
+  if (!fileUrl) {
+    console.warn(`文件URL为空，跳过${fileType}文件删除`)
+    return
+  }
+  
+  try {
+    // 从fileUrl中提取桶名称和对象名称
+    const urlMatch = fileUrl.match(/\/minio\/buckets\/([^\/]+)\/files\/(.+)/)
+    if (!urlMatch) {
+      console.error(`无法从${fileType}文件URL中提取桶名称和文件名称:`, fileUrl)
+      return
+    }
+    
+    const bucketName = urlMatch[1]
+    const objectName = urlMatch[2]
+    
+    console.log(`提取的${fileType}桶名称:`, bucketName)
+    console.log(`提取的${fileType}文件名称:`, objectName)
+    
+    // 先删除MinIO文件
+    try {
+      await http.delete(`/minio/buckets/${bucketName}/files/${objectName}`)
+      console.log(`${fileType}文件从MinIO删除成功`)
+    } catch (minioError) {
+      console.warn(`删除${fileType}MinIO文件失败:`, minioError)
+      // MinIO删除失败也继续，不抛出错误
+    }
+    
+    // 如果提供了fileId，也删除数据库记录
+    if (fileId) {
+      try {
+        await http.delete(`/file-info/${fileId}`)
+        console.log(`${fileType}文件数据库记录删除成功`)
+      } catch (dbError) {
+        console.warn(`删除${fileType}文件数据库记录失败:`, dbError)
+        // 数据库删除失败也继续，不抛出错误
+      }
+    }
+  } catch (error) {
+    console.error(`删除${fileType}文件时出错:`, error)
+  }
+}
+
+// 文件移除
+const handleFileUploadRemove = async () => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (dialog.form.dwgFileId && dialog.form.dwgFileUrl) {
+    await deleteFileFromMinIO(dialog.form.dwgFileUrl, '会签文件', dialog.form.dwgFileId)
+  }
+  
+  // 重置文件信息
+  dialog.form.dwgFileId = null
+  dialog.form.dwgFileUrl = ''
+  dialog.form.dwgFileName = ''
+  dialog.fileList = []
+}
+
 // 页面加载时初始化
 onMounted(() => {
   loadData()
@@ -1070,9 +838,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.specification-manager {
+.countersign-drawing-manager {
   padding: 20px;
-
   margin: 0 auto;
 }
 
@@ -1165,113 +932,5 @@ onMounted(() => {
 
 :deep(.el-table__body tr.row-enabled:hover > td) {
   background-color: #ffffff !important;
-}
-
-/* 搜索结果区域 */
-.material-id-search-results {
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  max-height: 250px;
-  overflow: hidden;
-  margin-top: 8px;
-  z-index: 1000;
-  position: relative;
-}
-
-.search-results-header {
-  padding: 8px 12px;
-  background: #f5f7fa;
-  border-bottom: 1px solid #e4e7ed;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: #606266;
-}
-
-.search-results-list {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.search-result-item {
-  padding: 12px;
-  border-bottom: 1px solid #f0f2f5;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.search-result-item:hover {
-  background-color: #f5f7fa;
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.result-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.result-material-id {
-  font-weight: 500;
-  color: #303133;
-  font-size: 14px;
-}
-
-.result-item-name {
-  color: #606266;
-  font-size: 13px;
-}
-
-.result-model {
-  color: #909399;
-  font-size: 12px;
-}
-
-.result-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  min-width: 120px;
-}
-
-.status-actions {
-  display: flex;
-  gap: 4px;
-}
-
-/* 不同状态的背景色 */
-.search-result-item.status-0 {
-  background-color: #fff1f0;
-}
-
-.search-result-item.status-0:hover {
-  background-color: #ffebe6;
-}
-
-.search-result-item.status-1 {
-  background-color: #f0f9ff;
-}
-
-.search-result-item.status-1:hover {
-  background-color: #e6f7ff;
-}
-
-.search-result-item.status-2 {
-  background-color: #fffbe6;
-}
-
-.search-result-item.status-2:hover {
-  background-color: #fff1b8;
 }
 </style>
