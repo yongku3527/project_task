@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quanhai.dingdingdemo.file.mapper.CountersignDrawingMapper">
+
+    <!-- 会签图纸结果映射 -->
+    <resultMap id="CountersignDrawingResultMap" type="com.quanhai.dingdingdemo.file.dto.CountersignDrawingDTO">
+        <id property="id" column="id"/>
+        <result property="drawingSource" column="drawing_source"/>
+        <result property="productCategory" column="product_category"/>
+        <result property="prodName" column="prod_name"/>
+        <result property="partNo" column="part_no"/>
+        <result property="dwgFileId" column="dwg_file_id"/>
+        <result property="dwgFileUrl" column="dwg_file_url"/>
+        <result property="dwgFileName" column="dwg_file_name"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 根据ID查询会签图纸及其文件信息 -->
+    <select id="selectCountersignDrawingById" parameterType="java.lang.Long" resultMap="CountersignDrawingResultMap">
+        SELECT 
+            cd.id,
+            cd.drawing_source,
+            cd.product_category,
+            cd.prod_name,
+            cd.part_no,
+            cd.dwg_file_id,
+            cd.status,
+            cd.create_time,
+            cd.update_time,
+            f.file_url as dwg_file_url,
+            f.file_name as dwg_file_name
+        FROM 
+            doc_countersign_drawing cd
+        LEFT JOIN 
+            file_info f ON cd.dwg_file_id = f.id
+        WHERE 
+            cd.id = #{id}
+    </select>
+
+    <!-- 根据零部件号查询会签图纸列表 -->
+    <select id="selectCountersignDrawingsByPartNo" parameterType="java.lang.String" resultMap="CountersignDrawingResultMap">
+        SELECT 
+            cd.id,
+            cd.drawing_source,
+            cd.product_category,
+            cd.prod_name,
+            cd.part_no,
+            cd.dwg_file_id,
+            cd.status,
+            cd.create_time,
+            cd.update_time,
+            f.file_url as dwg_file_url,
+            f.file_name as dwg_file_name
+        FROM 
+            doc_countersign_drawing cd
+        LEFT JOIN 
+            file_info f ON cd.dwg_file_id = f.id
+        WHERE 
+            cd.part_no = #{partNo}
+    </select>
+
+    <!-- 查询所有会签图纸及其文件信息 -->
+    <select id="selectAllCountersignDrawingsWithFiles" resultMap="CountersignDrawingResultMap">
+        SELECT 
+            cd.id,
+            cd.drawing_source,
+            cd.product_category,
+            cd.prod_name,
+            cd.part_no,
+            cd.dwg_file_id,
+            cd.status,
+            cd.create_time,
+            cd.update_time,
+            f.file_url as dwg_file_url,
+            f.file_name as dwg_file_name
+        FROM 
+            doc_countersign_drawing cd
+        LEFT JOIN 
+            file_info f ON cd.dwg_file_id = f.id
+    </select>
+</mapper>

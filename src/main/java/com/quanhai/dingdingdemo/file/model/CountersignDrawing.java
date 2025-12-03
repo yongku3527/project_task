@@ -1,13 +1,15 @@
 package com.quanhai.dingdingdemo.file.model;
 
+
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-@TableName("doc_specification")
-public class Specification {
+@TableName("doc_countersign_drawing")
+public class CountersignDrawing {
+
 
     /**
      * 主键ID
@@ -17,51 +19,52 @@ public class Specification {
 
 
     /**
-     * 原材料id
+     * 图纸来源
      */
-    @TableField("material_id")
-    private String materialId;
+    @TableField("drawing_source")
+    private String DrawingSource;
 
     /**
-     * 文件类别
+     * 产品类别
      */
-    @TableField("drawing_type")
-    private String drawingType;
+    @TableField("product_category")
+    private String ProductCategory;
 
     /**
-     * 物料名称
+     * 产品名称
      */
-    @TableField("item_name")
-    private String itemName;
+    @TableField("prod_name")
+    private String prodName;
 
     /**
-     * 规格型号
+     * 零部件号
      */
-    @TableField("model")
-    private String model;
+    @TableField("part_no")
+    private String partNo;
 
     /**
-     * 文件ID
+     * 图纸文件ID
      */
-    @TableField("file_id")
-    private Long fileId;
+    @TableField("dwg_file_id")
+    private Long dwgFileId;
 
 
     /**
-     * 文件URL
+     * 图纸文件URL
      */
     @TableField(exist = false)
-    private String fileUrl;
+    private String dwgFileUrl;
 
     /**
-     * 文件名称
+     * 图纸文件名称
      */
     @TableField(exist = false)
-    private String fileName;
+    private String dwgFileName;
 
     /**
-     * 状态（0：停用，1：启用）
+     * 状态（0：禁用，1：启用）
      */
+    @TableField("status")
     private Integer status;
 
     /**
