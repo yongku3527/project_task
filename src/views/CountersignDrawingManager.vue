@@ -25,7 +25,7 @@
               </el-form>
             </div>
             <div class="header-buttons">
-              <el-button type="primary" @click="handleAdd">
+              <el-button type="primary" @click="handleAdd" v-permission="'countersignDrawing:add'">
                 <el-icon><Plus /></el-icon>
                 新增
               </el-button>
@@ -75,13 +75,14 @@
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
             <div class="action-buttons">
-              <el-button type="primary" size="small" link @click="handleEdit(scope.row)">
+              <el-button type="primary" size="small" link @click="handleEdit(scope.row)" v-permission="'countersignDrawing:update'">
                 <el-icon><Edit /></el-icon>编辑
               </el-button>
-              <el-button type="danger" size="small" link @click="handleDelete(scope.row.id)">
+              <el-button type="danger" size="small" link @click="handleDelete(scope.row.id)" v-permission="'countersignDrawing:delete'">
                 <el-icon><Delete /></el-icon>删除
               </el-button>
               <el-button 
+                v-permission="'countersignDrawing:update'"
                 :type="scope.row.status === 1 ? 'warning' : 'success'" 
                 size="small" 
                 link 
@@ -91,6 +92,7 @@
                 <el-icon><Switch /></el-icon>{{ scope.row.status === 1 ? '停用' : '启用' }}
               </el-button>
               <el-button 
+                v-permission="'countersignDrawing:update'"
                 type="info" 
                 size="small" 
                 link 
@@ -105,6 +107,7 @@
                 link 
                 @click="handleDisableStatus(scope.row)"
                 v-if="scope.row.status === 2"
+                v-permission="'countersignDrawing:update'"
               >
                 <el-icon><Switch /></el-icon>停用
               </el-button>

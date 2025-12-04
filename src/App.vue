@@ -62,7 +62,7 @@
           <span>开发材料</span>
         </template>
         <el-menu-item v-permission="'file:menu'" index="/file-manager">
-          <Folder style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <Files style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>文件管理</span>
         </el-menu-item>
         <el-menu-item v-permission="'circuitBoard:menu'" index="/circuit-board">
@@ -74,15 +74,16 @@
           <span>成品图纸管理</span>
         </el-menu-item>
         <el-menu-item v-permission="'partDrawing:menu'" index="/doc-part-drawing">
-          <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <Memo style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>零件图纸管理</span>
         </el-menu-item>
         <el-menu-item v-permission="'specification:menu'" index="/specification">
-          <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <Tickets style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>规格书管理</span>
+          
         </el-menu-item>
         <el-menu-item v-permission="'countersignDrawing:menu'" index="/countersign-drawing">
-          <Document style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
+          <DocumentChecked style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>会签图纸管理</span>
         </el-menu-item>
         
@@ -138,7 +139,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { House, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key, List, Reading } from '@element-plus/icons-vue';
+import { House,Memo,Tickets, Menu as MenuIcon, Grid, Folder, Cpu, Document, Calendar, Clock, User, Files, ArrowDown, Setting, Key, List, Reading, DocumentChecked } from '@element-plus/icons-vue';
 import PermissionManager from './utils/permission';
 
 const route = useRoute();
