@@ -144,13 +144,16 @@
         label-width="120px"
       >
         <el-form-item label="图纸来源" prop="drawingSource">
-          <el-input 
+          <el-select 
             v-model="dialog.form.drawingSource" 
-            placeholder="请输入图纸来源"
-            @input="handleDrawingSourceInput"
-            clearable
+            placeholder="请选择图纸来源"
             style="width: 100%;"
-          />
+          >
+
+            <el-option label="客户工程师" value="客户工程师" />
+            <el-option label="业务经理" value="业务经理" />
+            <el-option label="平台下载" value="平台下载" />
+          </el-select>
         </el-form-item>
         <el-form-item label="产品类别" prop="productCategory">
           <el-input 

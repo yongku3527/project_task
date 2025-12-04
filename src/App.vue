@@ -80,7 +80,6 @@
         <el-menu-item v-permission="'specification:menu'" index="/specification">
           <Tickets style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>规格书管理</span>
-          
         </el-menu-item>
         <el-menu-item v-permission="'countersignDrawing:menu'" index="/countersign-drawing">
           <DocumentChecked style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
