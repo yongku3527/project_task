@@ -43,6 +43,12 @@ public class CountersignDrawing {
     private String partNo;
 
     /**
+     * 客户名称
+     */
+    @TableField("customer_name")
+    private String customerName;
+
+    /**
      * 图纸文件ID
      */
     @TableField("dwg_file_id")

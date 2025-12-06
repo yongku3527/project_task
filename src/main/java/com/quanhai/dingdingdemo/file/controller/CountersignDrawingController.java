@@ -157,4 +157,21 @@ public class CountersignDrawingController {
             return ResultUtil.fail("删除会签图纸失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 批量新增会签图纸
+     */
+    @PostMapping("/save-batch")
+    public Result saveBatch(@RequestBody List<CountersignDrawing> countersignDrawings) {
+        try {
+            boolean success = countersignDrawingService.saveBatch(countersignDrawings);
+            if (success) {
+                return ResultUtil.success("批量新增会签图纸成功");
+            } else {
+                return ResultUtil.fail("批量新增会签图纸失败");
+            }
+        } catch (Exception e) {
+            return ResultUtil.fail("批量新增会签图纸失败: " + e.getMessage());
+        }
+    }
 }

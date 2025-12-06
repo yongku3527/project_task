@@ -35,6 +35,11 @@ public class CountersignDrawingDTO {
     private String partNo;
 
     /**
+     * 客户名称
+     */
+    private String customerName;
+
+    /**
      * 图纸文件ID
      */
     private Long dwgFileId;

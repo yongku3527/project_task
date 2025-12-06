@@ -9,6 +9,7 @@
         <result property="productCategory" column="product_category"/>
         <result property="prodName" column="prod_name"/>
         <result property="partNo" column="part_no"/>
+        <result property="customerName" column="customer_name"/>
         <result property="dwgFileId" column="dwg_file_id"/>
         <result property="dwgFileUrl" column="dwg_file_url"/>
         <result property="dwgFileName" column="dwg_file_name"/>
@@ -25,6 +26,7 @@
             cd.product_category,
             cd.prod_name,
             cd.part_no,
+            cd.customer_name,
             cd.dwg_file_id,
             cd.status,
             cd.create_time,
@@ -47,6 +49,7 @@
             cd.product_category,
             cd.prod_name,
             cd.part_no,
+            cd.customer_name,
             cd.dwg_file_id,
             cd.status,
             cd.create_time,
@@ -69,6 +72,7 @@
             cd.product_category,
             cd.prod_name,
             cd.part_no,
+            cd.customer_name,
             cd.dwg_file_id,
             cd.status,
             cd.create_time,
