@@ -136,6 +136,8 @@
       :title="dialog.title"
       width="600px"
       @close="handleDialogClose"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
     >
       <el-form
         ref="formRef"
@@ -150,7 +152,7 @@
             @input="handleMaterialIdInput"
             clearable
             style="width: 100%;"
-          />
+          />      
           <!-- 搜索结果展示 -->
           <div v-if="materialIdSearchResults.length > 0" class="material-id-search-results">
             <div class="search-results-header">

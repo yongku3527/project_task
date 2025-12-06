@@ -12,12 +12,16 @@
                 <el-form-item label="产品类别:">
                   <el-input v-model="searchForm.productCategory" placeholder="请输入产品类别" clearable />
                 </el-form-item>
+                <el-form-item label="客户名称:">
+                  <el-input v-model="searchForm.customerName" placeholder="请输入客户名称" clearable />
+                </el-form-item>
                 <el-form-item label="产品名称:">
                   <el-input v-model="searchForm.prodName" placeholder="请输入产品名称" clearable />
                 </el-form-item>
                 <el-form-item label="零部件号:">
                   <el-input v-model="searchForm.partNo" placeholder="请输入零部件号" clearable style="width: 150px;" />
                 </el-form-item>
+                
                 <el-form-item>
                   <el-button type="primary" @click="handleSearch">查询</el-button>
                   <el-button @click="handleReset">重置</el-button>
@@ -28,6 +32,10 @@
               <el-button type="primary" @click="handleAdd" v-permission="'countersignDrawing:add'">
                 <el-icon><Plus /></el-icon>
                 新增
+              </el-button>
+              <el-button type="success" @click="handleBatchAdd" v-permission="'countersignDrawing:add'">
+                <el-icon><Plus /></el-icon>
+                多条新建
               </el-button>
             </div>
           </div>
@@ -51,6 +59,7 @@
         
         <el-table-column prop="prodName" label="产品名称" min-width="150" />
         <el-table-column prop="partNo" label="零部件号" min-width="180" />
+        <el-table-column prop="customerName" label="客户名称" min-width="150" />
         <el-table-column prop="dwgFileName" label="图纸文件" min-width="200">
           <template #default="scope">
             <el-link 
@@ -136,6 +145,8 @@
       :title="dialog.title"
       width="600px"
       @close="handleDialogClose"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
     >
       <el-form
         ref="formRef"
@@ -173,6 +184,13 @@
           <el-input 
             v-model="dialog.form.partNo" 
             placeholder="请输入零部件号"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="客户名称" prop="customerName">
+          <el-input 
+            v-model="dialog.form.customerName" 
+            placeholder="请输入客户名称"
             style="width: 100%"
           />
         </el-form-item>
@@ -218,6 +236,178 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 多条新建对话框 -->
+    <el-dialog
+      v-model="batchDialog.visible"
+      :title="batchDialog.title"
+      width="1200px"
+      @close="handleBatchDialogClose"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+    >
+      <div class="batch-form-container">
+        <div class="batch-header">
+          <el-button 
+            type="primary" 
+            size="small" 
+            @click="addBatchItem"
+            style="margin-bottom: 20px;"
+          >
+            <el-icon><Plus /></el-icon>
+            添加一行
+          </el-button>
+          <el-button 
+            type="danger" 
+            size="small" 
+            @click="removeSelectedBatchItems"
+            :disabled="!selectedBatchItems.length"
+            style="margin-bottom: 20px; margin-left: 10px;"
+          >
+            <el-icon><Delete /></el-icon>
+            删除选中行
+          </el-button>
+        </div>
+        <el-scrollbar style="height: 500px;">
+          <el-table 
+            :data="batchDialog.formList" 
+            border 
+            size="small"
+            style="width: 100%;"
+            @selection-change="handleBatchSelectionChange"
+            :row-key="(row, index) => index"
+          >
+            <el-table-column type="selection" width="55" />
+            <el-table-column label="序号" type="index" width="60" />
+            
+            <el-table-column prop="drawingSource" label="图纸来源" min-width="120">
+              <template #default="scope">
+                <el-select 
+                  v-model="batchDialog.formList[scope.$index].drawingSource" 
+                  placeholder="请选择"
+                  style="width: 100%;"
+                >
+                  <el-option label="客户工程师" value="客户工程师" />
+                  <el-option label="业务经理" value="业务经理" />
+                  <el-option label="平台下载" value="平台下载" />
+                </el-select>
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="productCategory" label="产品类别" min-width="120">
+              <template #default="scope">
+                <el-input 
+                  v-model="batchDialog.formList[scope.$index].productCategory" 
+                  placeholder="请输入"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="prodName" label="产品名称" min-width="150">
+              <template #default="scope">
+                <el-input 
+                  v-model="batchDialog.formList[scope.$index].prodName" 
+                  placeholder="请输入"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="partNo" label="零部件号" min-width="180">
+              <template #default="scope">
+                <el-input 
+                  v-model="batchDialog.formList[scope.$index].partNo" 
+                  placeholder="请输入"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="customerName" label="客户名称" min-width="150">
+              <template #default="scope">
+                <el-input 
+                  v-model="batchDialog.formList[scope.$index].customerName" 
+                  placeholder="请输入"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="scope">
+                <el-select 
+                  v-model="batchDialog.formList[scope.$index].status" 
+                  placeholder="请选择"
+                  style="width: 100%;"
+                  size="small"
+                >
+                  <el-option label="启用" value="1" />
+                  <el-option label="停用" value="0" />
+                  <el-option label="消耗" value="2" />
+                </el-select>
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="dwgFileName" label="图纸文件" min-width="200">
+              <template #default="scope">
+                <div class="file-upload-cell">
+                  <el-upload
+                    :action="`/minio/upload/${countersignBucket}`"
+                    :limit="1"
+                    :on-success="(response, file) => handleBatchFileUploadSuccess(response, file, scope.$index)"
+                    :on-remove="() => handleBatchFileRemove(scope.$index)"
+                    :file-list="batchDialog.formList[scope.$index].fileList"
+                    :before-upload="beforeFileUpload"
+                    :http-request="(options) => handleBatchFileUpload(options, scope.$index)"
+                    :auto-upload="true"
+                    :show-file-list="false"
+                  >
+                    <el-button type="primary" size="small" v-if="!batchDialog.formList[scope.$index].dwgFileName">
+                      <el-icon><Upload /></el-icon>
+                      选择文件
+                    </el-button>
+                    <el-link 
+                      v-else 
+                      type="primary" 
+                      :underline="false"
+                      size="small"
+                    >
+                      {{ batchDialog.formList[scope.$index].dwgFileName }}
+                    </el-link>
+                  </el-upload>
+                  <el-button 
+                    type="danger" 
+                    size="small" 
+                    icon="Delete" 
+                    v-if="batchDialog.formList[scope.$index].dwgFileName"
+                    @click.stop="handleBatchFileRemove(scope.$index)"
+                    style="margin-left: 5px;"
+                  />
+                </div>
+              </template>
+            </el-table-column>
+            
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="scope">
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  icon="Delete"
+                  @click="removeBatchItem(scope.$index)"
+                />
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-scrollbar>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="batchDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="handleBatchSubmit">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -236,7 +426,8 @@ const searchForm = reactive({
   drawingSource: '',
   productCategory: '',
   prodName: '',
-  partNo: ''
+  partNo: '',
+  customerName: ''
 })
 
 // 表格数据
@@ -264,6 +455,7 @@ const dialog = reactive({
     productCategory: '',
     prodName: '',
     partNo: '',
+    customerName: '',
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
@@ -274,10 +466,56 @@ const dialog = reactive({
     productCategory: [{ required: true, message: '请输入产品类别', trigger: 'blur' }],
     prodName: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
     partNo: [{ required: true, message: '请输入零部件号', trigger: 'blur' }],
+    customerName: [{ required: true, message: '请输入客户名称', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   },
   fileList: []
 })
+
+// 多条新建对话框
+const batchDialog = reactive({
+  visible: false,
+  title: '多条新建会签图纸',
+  formList: [{
+    id: null,
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    customerName: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
+    status: 1,
+    fileList: []
+  }]
+})
+
+// 选中的批量项
+const selectedBatchItems = ref([])
+
+// 批量选择变化
+const handleBatchSelectionChange = (selection) => {
+  selectedBatchItems.value = selection
+}
+
+// 删除选中行
+const removeSelectedBatchItems = () => {
+  // 按索引从大到小删除，避免索引错乱
+  const indexes = selectedBatchItems.value.map(item => batchDialog.formList.indexOf(item)).sort((a, b) => b - a)
+  
+  for (const index of indexes) {
+    // 如果有文件，先删除文件
+    const item = batchDialog.formList[index]
+    if (item.dwgFileId && item.dwgFileUrl) {
+      deleteFileFromMinIO(item.dwgFileUrl, '会签文件', item.dwgFileId)
+    }
+    batchDialog.formList.splice(index, 1)
+  }
+  
+  // 清空选择
+  selectedBatchItems.value = []
+}
 
 // 使用预签名URL上传文件
 const uploadFileWithPresignedUrl = async (file, presignedUrl, onProgress) => {
@@ -385,6 +623,7 @@ const handleAdd = () => {
     productCategory: '',
     prodName: '',
     partNo: '',
+    customerName: '',
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
@@ -392,6 +631,52 @@ const handleAdd = () => {
   }
   dialog.fileList = []
   dialog.visible = true
+}
+
+// 多条新建
+const handleBatchAdd = () => {
+  batchDialog.title = '多条新建会签图纸'
+  batchDialog.formList = [{
+    id: null,
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    customerName: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
+    status: 1,
+    fileList: []
+  }]
+  batchDialog.visible = true
+}
+
+// 添加批量项
+const addBatchItem = () => {
+  batchDialog.formList.push({
+    id: null,
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    customerName: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
+    status: 1,
+    fileList: []
+  })
+}
+
+// 删除批量项
+const removeBatchItem = (index) => {
+  // 如果有文件，先删除文件
+  const item = batchDialog.formList[index]
+  if (item.dwgFileId && item.dwgFileUrl) {
+    deleteFileFromMinIO(item.dwgFileUrl, '会签文件', item.dwgFileId)
+  }
+  batchDialog.formList.splice(index, 1)
 }
 
 // 编辑
@@ -403,6 +688,7 @@ const handleEdit = (row) => {
     productCategory: row.productCategory,
     prodName: row.prodName,
     partNo: row.partNo,
+    customerName: row.customerName,
     dwgFileId: row.dwgFileId,
     dwgFileUrl: row.dwgFileUrl,
     dwgFileName: row.dwgFileName,
@@ -429,6 +715,7 @@ const handleDialogClose = () => {
     productCategory: '',
     prodName: '',
     partNo: '',
+    customerName: '',
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
@@ -762,6 +1049,170 @@ const handleFileUpload = async (options) => {
   }
 }
 
+// 批量自定义文件上传
+const handleBatchFileUpload = async (options, index) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  try {
+    // 获取当前批量项的会签图纸信息用于生成格式化文件名
+    const partNo = batchDialog.formList[index].partNo || 'UNKNOWN'
+    let prodName = batchDialog.formList[index].prodName || '会签文件'
+    
+    // 处理产品名称字段，当文本中包含括号时截取括号前的文本
+    const leftParenIndex = prodName.search(/[（(]/)
+    if (leftParenIndex > -1) {
+      prodName = prodName.substring(0, leftParenIndex).trim()
+    }
+    
+    // 第一步：创建格式化文件名预上传任务
+    const presignResponse = await http.post(
+      `/minio/buckets/${countersignBucket.value}/files/formatted-presigned-upload-for-doc-prod-drawing`,
+      null,
+      {
+        code: partNo,
+        name: prodName,
+        originalFileName: file.name,
+        fileSize: file.size
+      }
+    )
+    
+    if (presignResponse.code !== 200) {
+      throw new Error(presignResponse.msg || '创建预上传任务失败')
+    }
+    
+    const { presignedUrl, objectName: formattedFileName } = presignResponse.data
+    
+    // 第二步：使用预签名URL直接上传文件到MinIO
+    await uploadFileWithPresignedUrl(file, presignedUrl, onProgress)
+    
+    // 第三步：保存文件信息到数据库
+    const saveFileResponse = await http.post(`/minio/buckets/${countersignBucket.value}/files/save-info`, {
+      bucketName: countersignBucket.value,
+      objectName: formattedFileName,
+      originalName: file.name,
+      fileSize: file.size,
+      contentType: file.type || 'application/octet-stream'
+    })
+    
+    if (saveFileResponse.code !== 200) {
+      throw new Error('保存文件信息失败: ' + saveFileResponse.msg)
+    }
+    
+    // 模拟原上传成功回调格式
+    const fileUrl = `/minio/buckets/${countersignBucket.value}/files/${encodeURIComponent(formattedFileName)}`
+    const mockResponse = {
+      code: 200,
+      message: '上传成功', 
+      data: {
+        id: saveFileResponse.data?.fileId || null,
+        fileUrl: fileUrl,
+        fileName: file.name
+      }
+    }
+    
+    // 调用批量上传成功处理函数
+    handleBatchFileUploadSuccess(mockResponse, file, index)
+    onSuccess(mockResponse)
+    
+    ElMessage.success(`第 ${index + 1} 行文件上传成功，文件名: ${formattedFileName}`)
+    
+  } catch (error) {
+    onError(error)
+    ElMessage.error(`第 ${index + 1} 行文件上传失败: ` + error.message)
+  }
+}
+
+// 批量提交表单
+const handleBatchSubmit = async () => {
+  try {
+    let successCount = 0
+    let failCount = 0
+    const validItems = []
+    
+    // 验证所有字段
+    for (let i = 0; i < batchDialog.formList.length; i++) {
+      const item = batchDialog.formList[i]
+      let isValid = true
+      
+      // 验证必填字段
+      if (!item.drawingSource) {
+        ElMessage.error(`第 ${i + 1} 行：图纸来源不能为空`)
+        isValid = false
+      }
+      if (!item.productCategory) {
+        ElMessage.error(`第 ${i + 1} 行：产品类别不能为空`)
+        isValid = false
+      }
+      if (!item.prodName) {
+        ElMessage.error(`第 ${i + 1} 行：产品名称不能为空`)
+        isValid = false
+      }
+      if (!item.partNo) {
+        ElMessage.error(`第 ${i + 1} 行：零部件号不能为空`)
+        isValid = false
+      }
+      if (!item.customerName) {
+        ElMessage.error(`第 ${i + 1} 行：客户名称不能为空`)
+        isValid = false
+      }
+      if (!item.status) {
+        ElMessage.error(`第 ${i + 1} 行：状态不能为空`)
+        isValid = false
+      }
+      
+      if (isValid) {
+        validItems.push(item)
+      } else {
+        failCount++
+      }
+    }
+    
+    // 如果没有有效记录，直接返回
+    if (validItems.length === 0) {
+      return
+    }
+    
+    // 使用批量接口提交数据
+    const response = await countersignDrawingApi.batchAddCountersignDrawing(validItems)
+    
+    if (response.code === 200) {
+      successCount = validItems.length
+      ElMessage.success(`成功提交 ${successCount} 条记录`)
+      batchDialog.visible = false
+      loadData()
+    } else {
+      failCount += validItems.length
+      ElMessage.error('批量提交失败: ' + (response.msg || '未知错误'))
+    }
+    
+    // 显示最终结果
+    if (successCount > 0 && failCount > 0) {
+      ElMessage.warning(`批量提交完成：成功 ${successCount} 条，失败 ${failCount} 条`)
+    }
+    
+  } catch (error) {
+    console.error('批量提交失败:', error)
+    ElMessage.error('批量提交失败: ' + error.message)
+  }
+}
+
+// 批量对话框关闭
+const handleBatchDialogClose = () => {
+  batchDialog.formList = [{
+    id: null,
+    drawingSource: '',
+    productCategory: '',
+    prodName: '',
+    partNo: '',
+    customerName: '',
+    dwgFileId: null,
+    dwgFileUrl: '',
+    dwgFileName: '',
+    status: 1,
+    fileList: []
+  }]
+}
+
 // 文件上传成功
 const handleFileUploadSuccess = (response, uploadFile) => {
   if (response.code === 200) {
@@ -776,6 +1227,36 @@ const handleFileUploadSuccess = (response, uploadFile) => {
   } else {
     ElMessage.error('文件上传失败: ' + response.msg)
   }
+}
+
+// 批量文件上传成功
+const handleBatchFileUploadSuccess = (response, file, index) => {
+  if (response.code === 200) {
+    batchDialog.formList[index].dwgFileId = response.data.id
+    batchDialog.formList[index].dwgFileUrl = response.data.fileUrl
+    batchDialog.formList[index].dwgFileName = response.data.fileName
+    // 更新文件列表
+    batchDialog.formList[index].fileList = [{
+      name: response.data.fileName,
+      url: response.data.fileUrl
+    }]
+  } else {
+    ElMessage.error('文件上传失败: ' + response.msg)
+  }
+}
+
+// 批量文件删除
+const handleBatchFileRemove = async (index) => {
+  // 如果有文件ID和URL，先删除数据库和MinIO文件
+  if (batchDialog.formList[index].dwgFileId && batchDialog.formList[index].dwgFileUrl) {
+    await deleteFileFromMinIO(batchDialog.formList[index].dwgFileUrl, '会签文件', batchDialog.formList[index].dwgFileId)
+  }
+  
+  // 重置文件信息
+  batchDialog.formList[index].dwgFileId = null
+  batchDialog.formList[index].dwgFileUrl = ''
+  batchDialog.formList[index].dwgFileName = ''
+  batchDialog.formList[index].fileList = []
 }
 
 // 通用文件删除方法（从MinIO和数据库删除文件）
@@ -938,5 +1419,58 @@ onMounted(() => {
 
 :deep(.el-table__body tr.row-enabled:hover > td) {
   background-color: #ffffff !important;
+}
+
+/* 多条新建表格样式 */
+.batch-form-container {
+  padding: 10px 0;
+}
+
+.batch-header {
+  display: flex;
+  align-items: center;
+}
+
+.el-scrollbar {
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+}
+
+/* 文件上传单元格样式 */
+.file-upload-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+:deep(.el-table .el-table__cell) {
+  padding: 8px 12px;
+}
+
+/* 表格行操作按钮样式 */
+:deep(.el-table .el-button--small) {
+  padding: 4px 8px;
+}
+
+/* 确保表格在滚动时表头固定 */
+:deep(.el-table__header-wrapper) {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #fff;
+}
+
+/* 调整表格中输入框和选择框的高度 */
+:deep(.el-table .el-input__wrapper) {
+  box-sizing: border-box;
+}
+
+:deep(.el-table .el-select .el-input__wrapper) {
+  box-sizing: border-box;
+}
+
+/* 调整表格中按钮的对齐方式 */
+:deep(.el-table .el-button) {
+  vertical-align: middle;
 }
 </style>

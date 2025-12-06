@@ -35,6 +35,11 @@ export function deleteCountersignDrawing(id) {
   return http.delete(`/countersign-drawing/delete/${id}`)
 }
 
+// 批量新增会签图纸
+export function batchAddCountersignDrawing(data) {
+  return http.post('/countersign-drawing/save-batch', data)
+}
+
 // 下载文件
 export function downloadFile(url, fileName) {
   // 创建一个隐藏的a标签来下载文件
