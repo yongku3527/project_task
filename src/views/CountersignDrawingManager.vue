@@ -500,7 +500,7 @@ const handleBatchSelectionChange = (selection) => {
 }
 
 // 删除选中行
-const removeSelectedBatchItems = () => {
+const removeSelectedBatchItems = async () => {
   // 按索引从大到小删除，避免索引错乱
   const indexes = selectedBatchItems.value.map(item => batchDialog.formList.indexOf(item)).sort((a, b) => b - a)
   
@@ -508,7 +508,7 @@ const removeSelectedBatchItems = () => {
     // 如果有文件，先删除文件
     const item = batchDialog.formList[index]
     if (item.dwgFileId && item.dwgFileUrl) {
-      deleteFileFromMinIO(item.dwgFileUrl, '会签文件', item.dwgFileId)
+      await deleteFileFromMinIO(item.dwgFileUrl, '会签文件', item.dwgFileId)
     }
     batchDialog.formList.splice(index, 1)
   }
@@ -577,6 +577,7 @@ const loadData = async () => {
     }
   } catch (error) {
     ElMessage.error('加载数据失败: ' + error.message)
+  
   } finally {
     loading.value = false
   }
@@ -670,11 +671,11 @@ const addBatchItem = () => {
 }
 
 // 删除批量项
-const removeBatchItem = (index) => {
+const removeBatchItem = async (index) => {
   // 如果有文件，先删除文件
   const item = batchDialog.formList[index]
   if (item.dwgFileId && item.dwgFileUrl) {
-    deleteFileFromMinIO(item.dwgFileUrl, '会签文件', item.dwgFileId)
+    await deleteFileFromMinIO(item.dwgFileUrl, '会签文件', item.dwgFileId)
   }
   batchDialog.formList.splice(index, 1)
 }

@@ -50,7 +50,7 @@ const refreshUserInfo = () => {
 
 .user-details strong {
   display: inline-block;
-  width: 80px;
+  width: 80px;  
   text-align: right;
   margin-right: 10px;
 }
