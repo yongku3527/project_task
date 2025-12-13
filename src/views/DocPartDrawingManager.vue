@@ -574,6 +574,7 @@ import {
   getDocPartDrawingsByPartId,
   getItemTypeByPartId
 } from '@/api/docPartDrawing'
+import * as itemTypeApi from '@/api/itemType'
 
 // 响应式数据
 const loading = ref(false)
@@ -591,10 +592,7 @@ const searchForm = reactive({
 })
 
 // 文件类别选项
-const drawingTypes = ref([
-  
-  { label: '其他', value: '其他' }
-])
+const drawingTypes = ref([])
 
 // 定义不同文件类型的存储桶
 const dwgBucket = ref('part-dwg')
@@ -1806,6 +1804,28 @@ const handleDwgUpload = async (options) => {
     ElMessage.error('DWG文件上传失败: ' + error.message)
   }
 }
+
+// 加载文件类别选项
+const loadDrawingTypes = async () => {
+  try {
+    const response = await itemTypeApi.getItemTypeList({ page: 1, size: 1000 })
+    if (response.code === 200) {
+      // 提取所有物料类型的typeName作为文件类别选项
+      drawingTypes.value = response.data.records.map(item => ({
+        label: item.typeName,
+        value: item.typeName
+      }))
+    }
+  } catch (error) {
+    console.error('加载文件类别失败:', error)
+  }
+}
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadData()
+  loadDrawingTypes()
+})
 
 // 自定义PDF文件上传
 const handlePdfUpload = async (options) => {

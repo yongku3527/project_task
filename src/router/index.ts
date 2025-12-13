@@ -34,7 +34,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'TaskInfo',
-    component: TaskInfo
+    component: KnowledgeManager
   },
   {
     path: '/new-feature',
@@ -129,7 +129,7 @@ router.beforeEach((to, from, next) => {
   
   // 如果访问登录页且有token，跳转到首页
   if (to.path === '/login' && token) {
-    next('/');
+    next('/knowledge');
     return;
   }
 
