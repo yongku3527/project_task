@@ -12,7 +12,7 @@
       router
     >
       <!-- 项目管理类 -->
-      <el-sub-menu  index="project-management">
+      <el-sub-menu v-permission="'project:model'" index="project-management">
         <template #title>
           <Files style="width: 18px; height: 18px; font-size: 18px; margin-right: 4px;" />
           <span>项目管理</span>
