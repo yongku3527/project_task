@@ -227,7 +227,7 @@ public class MinioController {
             @PathVariable String objectName,
             @RequestParam(value = "expiry", defaultValue = "60") int expiry) {
         
-        log.info("生成预签名下载URL: {}，过期时间: {}分钟", bucketName, expiry);
+//        log.info("生成预签名下载URL: {}，过期时间: {}分钟", bucketName, expiry);
         return minioService.generatePresignedUrl(bucketName, objectName, expiry, io.minio.http.Method.GET);
     }
 
