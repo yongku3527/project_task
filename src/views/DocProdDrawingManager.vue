@@ -62,14 +62,14 @@
           :row-class-name="getRowClassName"
         >
           <!-- 序号列 -->
-          <el-table-column type="index" label="序号" width="40" align="center">
+          <el-table-column type="index" label="序号" width="70" align="center">
             <template #default="{ $index }">
               {{ $index + 1 }}
             </template>
           </el-table-column>
           
           <el-table-column prop="drawingType" label="产品类别" min-width="70" />
-          <el-table-column prop="pid" label="成品编号" min-width="90" />
+          <el-table-column prop="pid" label="成品编号" min-width="60" />
           
           <el-table-column prop="itemName" label="物料名称" min-width="90" />
           <el-table-column prop="model" label="规格型号" min-width="110" />
