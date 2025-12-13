@@ -17,8 +17,20 @@ import com.quanhai.dingdingdemo.client.MyDingClient;
 import com.quanhai.dingdingdemo.config.DingAppConfig;
 
 import com.quanhai.dingdingdemo.controller.TaskController;
+import com.quanhai.dingdingdemo.controller.mes.MesController;
+import com.quanhai.dingdingdemo.file.controller.FileInfoController;
+import com.quanhai.dingdingdemo.file.dto.DocProdDrawingDTO;
+import com.quanhai.dingdingdemo.file.model.DocPartDrawing;
+import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.file.model.docProdDrawing;
+import com.quanhai.dingdingdemo.file.service.DocPartDrawingService;
+import com.quanhai.dingdingdemo.file.service.DocProdDrawingService;
+import com.quanhai.dingdingdemo.file.service.FileInfoService;
+import com.quanhai.dingdingdemo.file.service.ItemTypeService;
 import com.quanhai.dingdingdemo.mapper.MeetingMapper;
 import com.quanhai.dingdingdemo.model.Project;
+import com.quanhai.dingdingdemo.model.Resp.Result;
+import com.quanhai.dingdingdemo.model.Resp.ResultEnum;
 import com.quanhai.dingdingdemo.model.TaskVo;
 import com.quanhai.dingdingdemo.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +43,13 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -388,16 +404,242 @@ class DingdingDemoApplicationTests {
         return name;
     }
 
+
+    @Autowired
+    private MesController mesController;
+    @Autowired
+    private FileInfoService fileInfoService;
+    @Autowired
+    private DocProdDrawingService docProdDrawingService;
+    @Autowired
+    private ItemTypeService itemTypeService;
+
     @Test
-    void EXTest() {
-        //获取所有reids键，输出他们的值和过期时间
-        Set<String> keys = redisTemplate.keys("*");
-        for (String key : keys) {
-            Object value = redisTemplate.opsForValue().get(key);
-            Long expire = redisTemplate.getExpire(key, TimeUnit.HOURS);
-            System.out.println(key + " = " + value + " 过期时间：" + expire + "小时");
+    void batchInsertProdDrawing() throws IOException {
+
+        //获取图纸类型
+        HashMap<String, String> itemTypeMap = new HashMap<>();
+        itemTypeMap.put("CPX", "线束");
+        itemTypeMap.put("DAQ", "电器");
+        itemTypeMap.put("DMT", "多媒体");
+        itemTypeMap.put("QTA", "其他");
+        itemTypeMap.put("SFJ", "收放机");
+        itemTypeMap.put("SXT", "摄像头");
+        itemTypeMap.put("TAX", "天线");
+        itemTypeMap.put("YIB", "仪表");
+        itemTypeMap.put("YSQ", "扬声器");
+        itemTypeMap.put("ZSJ", "注塑成品");
+        itemTypeMap.put("LED", "倒车雷达");
+
+        ArrayList<String> failList = new ArrayList<>();
+
+        List<String> fileList = Files.list(Path.of("C:\\Users\\Administrator\\Desktop\\新建文件夹 (2)"))                 // 当前一级目录
+                .filter(Files::isRegularFile) // 只保留普通文件
+                .filter(p -> p.toString()
+                        .toLowerCase()
+                        .endsWith(".pdf"))
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .collect(Collectors.toList());
+
+        for (String s : fileList) {
+            //去掉文件后缀
+            String prodCode = s.substring(0, s.indexOf("."));
+
+            Result<Map<String, Object>> itemInfo = mesController.getItemInfo(prodCode);
+            //接口返回失败, 记录失败列表
+            if (itemInfo.getCode() != ResultEnum.SUCCESS.code){
+                failList.add(prodCode);
+                continue;
+            }
+            Map<String, Object> itemInfoData = itemInfo.getData();
+
+            //创建pdf文件信息，拼接，得到文件ID
+            FileInfo fileInfo = new FileInfo();
+            fileInfo.setFileName(s);
+            fileInfo.setOriginalName(s);
+            fileInfo.setFileSuffix(".pdf");
+            fileInfo.setFileSize(165600L);
+            fileInfo.setFileUrl("/minio/buckets/pdf-files/files/" + s);
+            fileInfo.setCreateTime(LocalDateTime.now());
+            fileInfo.setStatus(1);
+            fileInfoService.saveOrUpdate(fileInfo);
+            //创建dwg文件
+            FileInfo dwgFileInfo = new FileInfo();
+            dwgFileInfo.setFileName(prodCode+".dwg");
+            dwgFileInfo.setOriginalName(prodCode+".dwg");
+            dwgFileInfo.setFileSuffix(".dwg");
+            dwgFileInfo.setFileSize(165600L);
+            dwgFileInfo.setFileUrl("/minio/buckets/dwg-files/files/" + prodCode+".dwg");
+            dwgFileInfo.setCreateTime(LocalDateTime.now());
+            dwgFileInfo.setStatus(1);
+            fileInfoService.saveOrUpdate(dwgFileInfo);
+
+
+            Long pdfFileId = fileInfo.getId();
+            Long dwgFileId = dwgFileInfo.getId();
+
+            //获取图纸类型
+            //获取编号的前三个字符
+            String itemType = itemTypeMap.get(prodCode.substring(0,3));
+            if (itemType == null){
+                failList.add(prodCode);
+                continue;
+            }
+
+            //根据物料信息创建成品信息
+            docProdDrawing docProdDrawing = new docProdDrawing();
+            docProdDrawing.setPid(prodCode);
+            docProdDrawing.setDrawingType(itemType);
+            docProdDrawing.setItemName((String) itemInfoData.get("itemName"));
+            docProdDrawing.setModel((String) itemInfoData.get("itemSpec"));
+            docProdDrawing.setPdfFileId(pdfFileId);
+            docProdDrawing.setPdfFileUrl(fileInfo.getFileUrl());
+            docProdDrawing.setPdfFileName(fileInfo.getOriginalName());
+            docProdDrawing.setDwgFileId(dwgFileId);
+            docProdDrawing.setDwgFileUrl(dwgFileInfo.getFileUrl());
+            docProdDrawing.setDwgFileName(dwgFileInfo.getOriginalName());
+            docProdDrawing.setStatus(1);
+            docProdDrawing.setCreateTime(LocalDateTime.now());
+            docProdDrawing.setUpdateTime(LocalDateTime.now());
+            docProdDrawingService.saveOrUpdate(docProdDrawing);
+
+
+            System.out.println(itemInfoData);
         }
+
+        //输出失败列表
+        System.out.println(failList);
+
     }
+
+
+    @Autowired
+    private DocPartDrawingService docPartDrawingService;
+
+    @Test
+    void batchInsertPartDrawing() throws IOException {
+
+
+        // 2. 数字编码映射
+         Map<String, String> itemTypeMap   = new HashMap<>();
+
+        // 数字编码
+        itemTypeMap.put("002001", "辅料类");
+        itemTypeMap.put("003005", "注塑半成品");
+        itemTypeMap.put("003006", "喷涂半成品");
+        itemTypeMap.put("003009", "电器类半成品");
+        itemTypeMap.put("003008", "壳体加工半成品");
+        itemTypeMap.put("036011", "机尾线类");
+        itemTypeMap.put("036012", "机尾线类");
+        itemTypeMap.put("036013", "机尾线类");
+        itemTypeMap.put("036021", "机尾线类");
+        itemTypeMap.put("037011", "机尾线类");
+        itemTypeMap.put("001015", "机芯传感器类");
+        itemTypeMap.put("001017", "塑胶类");
+        itemTypeMap.put("001018", "五金螺丝类");
+        itemTypeMap.put("001019", "橡胶类");
+        itemTypeMap.put("001023", "包材类");
+        itemTypeMap.put("001029", "喇叭类");
+
+
+        ArrayList<String> failList = new ArrayList<>();
+
+        List<String> fileList = Files.list(Path.of("C:\\Users\\Administrator\\Desktop\\新建文件夹 (2)"))                 // 当前一级目录
+                .filter(Files::isRegularFile) // 只保留普通文件
+                .filter(p -> p.toString()
+                        .toLowerCase()
+                        .endsWith(".pdf"))
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .collect(Collectors.toList());
+
+        for (String s : fileList) {
+            //去掉文件后缀
+            String prodCode = s.substring(0, s.indexOf("."));
+
+            Result<Map<String, Object>> itemInfo = mesController.getItemInfo(prodCode);
+            //接口返回失败, 记录失败列表
+            if (itemInfo.getCode() != ResultEnum.SUCCESS.code){
+                failList.add(prodCode);
+                continue;
+            }
+            Map<String, Object> itemInfoData = itemInfo.getData();
+
+            //创建pdf文件信息，拼接，得到文件ID
+            FileInfo fileInfo = new FileInfo();
+            fileInfo.setFileName(s);
+            fileInfo.setOriginalName(s);
+            fileInfo.setFileSuffix(".pdf");
+            fileInfo.setFileSize(165600L);
+            fileInfo.setFileUrl("/minio/buckets/part-pdf/files/" + s);
+            fileInfo.setCreateTime(LocalDateTime.now());
+            fileInfo.setStatus(1);
+            fileInfoService.saveOrUpdate(fileInfo);
+            //创建dwg文件
+            FileInfo dwgFileInfo = new FileInfo();
+            dwgFileInfo.setFileName(prodCode+".dwg");
+            dwgFileInfo.setOriginalName(prodCode+".dwg");
+            dwgFileInfo.setFileSuffix(".dwg");
+            dwgFileInfo.setFileSize(165600L);
+            dwgFileInfo.setFileUrl("/minio/buckets/part-dwg/files/" + prodCode+".dwg");
+            dwgFileInfo.setCreateTime(LocalDateTime.now());
+            dwgFileInfo.setStatus(1);
+            fileInfoService.saveOrUpdate(dwgFileInfo);
+
+            Long pdfFileId = fileInfo.getId();
+            Long dwgFileId = dwgFileInfo.getId();
+
+            //获取图纸类型
+            //获取编号的前三个字符
+            String itemType = itemTypeMap.get(prodCode.substring(0,6));
+            if (itemType == null){
+                failList.add(prodCode);
+                continue;
+            }
+
+            //根据物料信息创建零件信息
+            DocPartDrawing docPartDrawing = new DocPartDrawing();
+            docPartDrawing.setPartId(prodCode);
+            docPartDrawing.setDrawingType(itemType);
+            docPartDrawing.setItemName((String) itemInfoData.get("itemName"));
+            docPartDrawing.setModel((String) itemInfoData.get("itemSpec"));
+            docPartDrawing.setPdfFileId(pdfFileId);
+            docPartDrawing.setPdfFileUrl(fileInfo.getFileUrl());
+            docPartDrawing.setPdfFileName(fileInfo.getOriginalName());
+            docPartDrawing.setDwgFileId(dwgFileId);
+            docPartDrawing.setDwgFileUrl(dwgFileInfo.getFileUrl());
+            docPartDrawing.setDwgFileName(dwgFileInfo.getOriginalName());
+            docPartDrawing.setStatus(1);
+            docPartDrawing.setCreateTime(LocalDateTime.now());
+            docPartDrawing.setUpdateTime(LocalDateTime.now());
+            docPartDrawingService.saveOrUpdate(docPartDrawing);
+
+
+
+            System.out.println(itemInfoData);
+        }
+        //输出失败列表
+        System.out.println(failList);
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     @Autowired

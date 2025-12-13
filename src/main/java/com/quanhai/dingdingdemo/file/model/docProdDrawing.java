@@ -3,6 +3,7 @@ package com.quanhai.dingdingdemo.file.model;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("doc_prod_drawing")
+@NoArgsConstructor
 public class docProdDrawing  {
 
     /**

@@ -163,8 +163,7 @@ public class MesController {
             itemInfo.put("unit", "PCS");
             itemInfo.put("status", "ACTIVE");
             
-            log.info("调用真实MES接口成功，物料编号: {}, 物料名称: {}", 
-                    itemCode, mesResult.get("itemName"));
+//            log.info("调用真实MES接口成功，物料编号: {}, 物料名称: {}", itemCode, mesResult.get("itemName"));
             return ResultUtil.success(itemInfo);
             
         } catch (Exception e) {
