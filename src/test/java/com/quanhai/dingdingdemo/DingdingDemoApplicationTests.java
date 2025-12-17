@@ -22,11 +22,9 @@ import com.quanhai.dingdingdemo.file.controller.FileInfoController;
 import com.quanhai.dingdingdemo.file.dto.DocProdDrawingDTO;
 import com.quanhai.dingdingdemo.file.model.DocPartDrawing;
 import com.quanhai.dingdingdemo.file.model.FileInfo;
+import com.quanhai.dingdingdemo.file.model.Specification;
 import com.quanhai.dingdingdemo.file.model.docProdDrawing;
-import com.quanhai.dingdingdemo.file.service.DocPartDrawingService;
-import com.quanhai.dingdingdemo.file.service.DocProdDrawingService;
-import com.quanhai.dingdingdemo.file.service.FileInfoService;
-import com.quanhai.dingdingdemo.file.service.ItemTypeService;
+import com.quanhai.dingdingdemo.file.service.*;
 import com.quanhai.dingdingdemo.mapper.MeetingMapper;
 import com.quanhai.dingdingdemo.model.Project;
 import com.quanhai.dingdingdemo.model.Resp.Result;
@@ -625,6 +623,107 @@ class DingdingDemoApplicationTests {
     }
 
 
+@Autowired
+    private SpecificationService specificationService;
+
+
+    @Test
+    void batchInsertSpecificationDoc() throws IOException {
+
+
+        // 2. 数字编码映射
+        Map<String, String> itemTypeMap   = new HashMap<>();
+
+        // 数字编码
+
+        itemTypeMap.put("001001", "IC类");
+        itemTypeMap.put("001002", "二极管类");
+        itemTypeMap.put("001003", "三极管类");
+        itemTypeMap.put("001004", "电阻类");
+        itemTypeMap.put("001005", "电容类");
+        itemTypeMap.put("001006", "电感类");
+        itemTypeMap.put("001007", "电位器类");
+        itemTypeMap.put("001008", "晶振类");
+        itemTypeMap.put("001009", "线路板类");
+        itemTypeMap.put("001010", "开关类");
+        itemTypeMap.put("001011", "插座类");
+        itemTypeMap.put("001012", "显示类");
+        itemTypeMap.put("001013", "灯类");
+        itemTypeMap.put("001014", "保险丝类");
+        itemTypeMap.put("001015", "机芯传感器类");
+        itemTypeMap.put("001016", "天线类");
+        itemTypeMap.put("001018", "五金螺丝类");
+        itemTypeMap.put("001019", "橡胶类");
+        itemTypeMap.put("001022", "线材类");
+        itemTypeMap.put("001029", "喇叭类");
+        itemTypeMap.put("002001", "辅料类");
+
+
+
+        ArrayList<String> failList = new ArrayList<>();
+
+        List<String> fileList = Files.list(Path.of("C:\\Users\\Administrator\\Desktop\\规格书\\已完成"))                 // 当前一级目录
+                .filter(Files::isRegularFile) // 只保留普通文件
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .collect(Collectors.toList());
+
+        for (String s : fileList) {
+            String substring = s.substring(s.indexOf('.'));
+            String itemCode = s.split("-")[0];
+
+            Result<Map<String, Object>> itemInfo = mesController.getItemInfo(itemCode);
+            //接口返回失败, 记录失败列表
+            if (itemInfo.getCode() != ResultEnum.SUCCESS.code){
+                failList.add(s);
+                continue;
+            }
+            Map<String, Object> itemInfoData = itemInfo.getData();
+
+            //创建pdf文件信息，拼接，得到文件ID
+            FileInfo fileInfo = new FileInfo();
+            fileInfo.setFileName(s);
+            fileInfo.setOriginalName(s);
+            fileInfo.setFileSuffix(substring);
+            fileInfo.setFileSize(365600L);
+            fileInfo.setFileUrl("/minio/buckets/specification/files/" + s);
+            fileInfo.setCreateTime(LocalDateTime.now());
+            fileInfo.setStatus(1);
+            fileInfoService.saveOrUpdate(fileInfo);
+
+            //获取图纸类型
+            //获取编号的前6个字符
+            String itemType = itemTypeMap.get(itemCode.substring(0,6));
+            if (itemType == null){
+                failList.add(s);
+                continue;
+            }
+
+            Specification specification = new Specification();
+
+            specification.setMaterialId(itemCode);
+            specification.setDrawingType(itemType);
+            specification.setItemName((String) itemInfoData.get("itemName"));
+            specification.setModel((String) itemInfoData.get("itemSpec"));
+            specification.setFileId(fileInfo.getId());
+
+            specification.setStatus(1);
+            specification.setCreateTime(LocalDateTime.now());
+            specification.setUpdateTime(LocalDateTime.now());
+            specificationService.saveOrUpdate(specification);
+
+
+            System.out.println(itemInfoData);
+        }
+        //输出失败列表
+        System.out.println(failList);
+
+    }
+
+
+
+
+
 
 
 
@@ -674,7 +773,7 @@ class DingdingDemoApplicationTests {
             com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsRequest getTaskByIdsRequest = new com.aliyun.dingtalkproject_1_0.models.GetTaskByIdsRequest()
                     .setTaskId(joinTaskIds);
 
-            try {
+                try {
                 GetTaskByIdsResponse taskByIdsResponse = client.getTaskByIdsWithOptions("011965232633828543", getTaskByIdsRequest, getTaskByIdsHeaders, new RuntimeOptions());
                 List<GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult> taskByIdsResponseData = taskByIdsResponse.getBody().getResult();
                 for (GetTaskByIdsResponseBody.GetTaskByIdsResponseBodyResult taskInfo : taskByIdsResponseData) {
@@ -736,7 +835,7 @@ class DingdingDemoApplicationTests {
             for (LocalDate date : dateRange) {
                 dailyTasks.put(date, new ArrayList<>());
             }
-            
+
             // 计算每个任务在日期范围内的天数，并记录具体任务
             for (TaskVo task : executorTasks) {
                 LocalDate taskStartDate = task.getStartDate() != null ? task.getStartDate() : startDate;
