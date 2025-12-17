@@ -154,6 +154,88 @@
         :rules="dialog.rules"
         label-width="120px"
       >
+        <el-form-item label="零部件号" prop="partNo">
+          <el-input 
+            v-model="dialog.form.partNo" 
+            placeholder="请输入零部件号"
+            style="width: 100%"
+            @input="handlePartNoInput"
+            clearable
+          />
+          <!-- 搜索结果展示 -->
+          <div v-if="partNoSearchResults.length > 0" class="part-no-search-results">
+            <div class="search-results-header">
+              <div class="search-results-title">
+                <span>搜索结果 (共{{ partNoSearchResults.length }} 条)</span>
+                
+                  <span class="stats-item">
+                    <el-tag type="success" size="small">
+                      启用 {{ getStatusCount(1) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="warning" size="small">
+                      消耗 {{ getStatusCount(2) }} 条
+                    </el-tag>
+                  </span>
+                  <span class="stats-item">
+                    <el-tag type="danger" size="small">
+                      停用 {{ getStatusCount(0) }} 条
+                    </el-tag>
+                  </span>
+                
+              </div>
+              <el-button type="text" size="small" @click="clearPartNoSearchResults">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+            <div class="search-results-list">
+              <div 
+                v-for="item in partNoSearchResults" 
+                :key="item.id"
+                :class="`search-result-item status-${item.status}`"
+              >
+                <div class="result-main">
+                  <div class="result-part-no">{{ item.partNo }}</div>
+                  <div class="result-prod-name">{{ item.prodName }}</div>
+                  <div class="result-customer-name">{{ item.customerName }}</div>
+              
+                </div>
+                <div class="result-status">
+                  <el-tag :type="getStatusType(item.status)" size="small">
+                    {{ getStatusText(item.status) }}
+                  </el-tag>
+                  <div class="status-actions">
+                    <el-button 
+                      v-if="item.status === 0" 
+                      type="primary" 
+                      size="small" 
+                      @click="updateItemStatus(item, 1)"
+                    >
+                      启用
+                    </el-button>
+                    <el-button 
+                      v-if="item.status === 1" 
+                      type="warning" 
+                      size="small" 
+                      @click="updateItemStatus(item, 2)"
+                    >
+                      消耗
+                    </el-button>
+                    <el-button 
+                      v-if="item.status === 2" 
+                      type="danger" 
+                      size="small" 
+                      @click="updateItemStatus(item, 0)"
+                    >
+                      停用
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-form-item>
         <el-form-item label="图纸来源" prop="drawingSource">
           <el-select 
             v-model="dialog.form.drawingSource" 
@@ -177,13 +259,6 @@
           <el-input 
             v-model="dialog.form.prodName" 
             placeholder="请输入产品名称"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="零部件号" prop="partNo">
-          <el-input 
-            v-model="dialog.form.partNo" 
-            placeholder="请输入零部件号"
             style="width: 100%"
           />
         </el-form-item>
@@ -320,6 +395,7 @@
                   v-model="batchDialog.formList[scope.$index].partNo" 
                   placeholder="请输入"
                   size="small"
+                  @input="handleBatchPartNoInput(scope.$index)"
                 />
               </template>
             </el-table-column>
@@ -723,6 +799,8 @@ const handleDialogClose = () => {
     status: 1
   }
   dialog.fileList = []
+  // 清除搜索结果
+  clearPartNoSearchResults()
   if (formRef.value) {
     formRef.value.resetFields()
   }
@@ -908,6 +986,9 @@ const handleDisableStatus = async (row) => {
 // 输入防抖定时器
 const inputTimers = {}
 
+// 零部件号搜索结果
+const partNoSearchResults = ref([])
+
 // 图纸来源输入处理
 const handleDrawingSourceInput = (value) => {
   const drawingSourceValue = value?.trim()
@@ -922,6 +1003,148 @@ const handleDrawingSourceInput = (value) => {
     // 可以在这里添加搜索逻辑
     inputTimers.drawingSource = null
   }, 500) // 500毫秒防抖
+}
+
+// 实时搜索零部件号匹配的条目
+const searchPartNoItems = async (partNoValue) => {
+  try {
+    // 调用API搜索匹配的条目
+    const response = await countersignDrawingApi.getCountersignDrawingList({
+      partNo: partNoValue,
+      page: 1,
+      size: 50 // 限制搜索结果数量
+    })
+    
+    if (response.code === 200) {
+      let results = response.data.records || response.data || []
+      
+      // 按照状态排序：启用(1) > 消耗(2) > 停用(0)
+      results = results.sort((a, b) => {
+        const statusOrder = { 1: 3, 2: 2, 0: 1 }
+        return statusOrder[b.status] - statusOrder[a.status]
+      })
+      
+      partNoSearchResults.value = results
+    } else {
+      console.warn('搜索零部件号失败: ' + response.msg)
+    }
+  } catch (error) {
+    console.warn('搜索零部件号失败: ' + error.message)
+  }
+}
+
+// 获取特定状态的搜索结果数量
+const getStatusCount = (status) => {
+  return partNoSearchResults.value.filter(item => item.status === status).length
+}
+
+// 清除搜索结果
+const clearPartNoSearchResults = () => {
+  partNoSearchResults.value = []
+}
+
+// 更新搜索结果中条目的状态
+const updateItemStatus = async (item, newStatus) => {
+  try {
+    const statusText = getStatusText(newStatus)
+    
+    await ElMessageBox.confirm(`确定要将状态更新为"${statusText}"吗？`, '状态更新确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 调用API更新状态
+    const response = await countersignDrawingApi.updateCountersignDrawing({
+      id: item.id,
+      status: newStatus
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success(`状态已更新为"${statusText}"`)
+      
+      // 更新本地搜索结果中的状态
+      const index = partNoSearchResults.value.findIndex(result => result.id === item.id)
+      if (index !== -1) {
+        partNoSearchResults.value[index].status = newStatus
+      }
+      
+      // 更新表格数据中的状态
+      const tableIndex = tableData.value.findIndex(tableItem => tableItem.id === item.id)
+      if (tableIndex !== -1) {
+        tableData.value[tableIndex].status = newStatus
+      }
+    } else {
+      ElMessage.error(response.msg || '状态更新失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('状态更新失败: ' + error.message)
+    }
+  }
+}
+
+// 零部件号输入处理（防抖）
+const handlePartNoInput = () => {
+  // 清除之前的定时器
+  if (inputTimers.partNo) {
+    clearTimeout(inputTimers.partNo)
+  }
+  
+  // 设置新的定时器
+  inputTimers.partNo = setTimeout(async () => {
+    const partNoValue = dialog.form.partNo?.trim()
+    
+    if (partNoValue) {
+      // 实时搜索匹配的条目
+      await searchPartNoItems(partNoValue)
+      
+      // 检查是否有启用状态的重复记录
+      const hasEnabledDuplicate = partNoSearchResults.value.some(item => item.status === 1)
+      if (hasEnabledDuplicate) {
+        ElMessage.warning(`零部件号 "${partNoValue}" 在数据库中已存在（启用状态）`)
+      }
+    } else {
+      // 清除搜索结果
+      partNoSearchResults.value = []
+    }
+    inputTimers.partNo = null
+  }, 500) // 500ms防抖
+}
+
+// 批量新增表单的零部件号输入处理（防抖）
+const handleBatchPartNoInput = (index) => {
+  // 清除之前的定时器
+  if (inputTimers[`batchPartNo_${index}`]) {
+    clearTimeout(inputTimers[`batchPartNo_${index}`])
+  }
+  
+  // 设置新的定时器
+  inputTimers[`batchPartNo_${index}`] = setTimeout(async () => {
+    const partNoValue = batchDialog.formList[index].partNo?.trim()
+    const currentItem = batchDialog.formList[index]
+    
+    if (partNoValue) {
+      // 检查当前批次中是否有重复的零部件号（仅检查启用状态）
+      const duplicateInBatch = batchDialog.formList.some((item, idx) => {
+        return idx !== index && item.partNo?.trim() === partNoValue && item.status === 1
+      })
+      
+      if (duplicateInBatch) {
+        ElMessage.warning(`第 ${index + 1} 行：零部件号 "${partNoValue}" 在当前批次中已存在（启用状态）`)
+      }
+      
+      // 实时搜索数据库中是否有重复的零部件号
+      await searchPartNoItems(partNoValue)
+      
+      // 检查数据库中是否有启用状态的重复记录
+      const hasEnabledDuplicate = partNoSearchResults.value.some(item => item.status === 1)
+      if (hasEnabledDuplicate) {
+        ElMessage.warning(`第 ${index + 1} 行：零部件号 "${partNoValue}" 在数据库中已存在（启用状态）`)
+      }
+    }
+    inputTimers[`batchPartNo_${index}`] = null
+  }, 500) // 500ms防抖
 }
 
 // 获取状态类型
@@ -1468,6 +1691,106 @@ onMounted(() => {
 
 :deep(.el-table .el-select .el-input__wrapper) {
   box-sizing: border-box;
+}
+
+/* 搜索结果样式 */
+.part-no-search-results {
+  margin-top: 10px;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.search-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.search-results-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.stats-item {
+  margin-left: 10px;
+}
+
+.search-results-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: #f5f7fa;
+}
+
+.result-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-part-no {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.result-prod-name {
+  font-size: 13px;
+  color: #606266;
+}
+
+.result-customer-name {
+  font-size: 13px;
+  color: #909399;
+}
+
+.result-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-actions {
+  display: flex;
+  gap: 5px;
+}
+
+/* 状态样式 */
+.status-0 {
+  border-left: 3px solid #f56c6c;
+}
+
+.status-1 {
+  border-left: 3px solid #67c23a;
+}
+
+.status-2 {
+  border-left: 3px solid #e6a23c;
 }
 
 /* 调整表格中按钮的对齐方式 */
