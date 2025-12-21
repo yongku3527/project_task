@@ -13,6 +13,7 @@
         <result property="fileUrl" column="file_url"/>
         <result property="fileName" column="file_name"/>
         <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
@@ -27,6 +28,7 @@
             s.model,
             s.file_id,
             s.status,
+            s.remark,
             s.create_time,
             s.update_time,
             f.file_url as file_url,
@@ -49,6 +51,7 @@
             s.model,
             s.file_id,
             s.status,
+            s.remark,
             s.create_time,
             s.update_time,
             f.file_url as file_url,
@@ -71,6 +74,7 @@
             s.model,
             s.file_id,
             s.status,
+            s.remark,
             s.create_time,
             s.update_time,
             f.file_url as file_url,

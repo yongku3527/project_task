@@ -54,6 +54,12 @@ public class CountersignDrawing {
     @TableField("dwg_file_id")
     private Long dwgFileId;
 
+    /**
+     * 备注
+     */
+    @TableField("remark")
+    private String remark;
+
 
     /**
      * 图纸文件URL

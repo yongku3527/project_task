@@ -46,6 +46,11 @@ public class Specification {
     @TableField("file_id")
     private Long fileId;
 
+    /**
+     * 备注
+     */
+    @TableField("remark")
+    private String remark;
 
     /**
      * 文件URL
