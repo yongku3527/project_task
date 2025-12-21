@@ -60,6 +60,7 @@
         <el-table-column prop="prodName" label="产品名称" min-width="150" />
         <el-table-column prop="partNo" label="零部件号" min-width="180" />
         <el-table-column prop="customerName" label="客户名称" min-width="150" />
+        
         <el-table-column prop="dwgFileName" label="图纸文件" min-width="200">
           <template #default="scope">
             <el-link 
@@ -71,6 +72,13 @@
               {{ scope.row.dwgFileName }}
             </el-link>
             <span v-else class="no-file">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip="false">
+          <template #default="scope">
+            <div class="remark-content">
+              {{ scope.row.remark || '-' }}
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
@@ -269,6 +277,15 @@
             style="width: 100%"
           />
         </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input 
+            v-model="dialog.form.remark" 
+            placeholder="请输入备注"
+            style="width: 100%"
+            type="textarea"
+            :rows="3"
+          />
+        </el-form-item>
         <el-form-item label="文件">
           <el-upload
             ref="fileUploadRef"
@@ -410,6 +427,18 @@
               </template>
             </el-table-column>
             
+            <el-table-column prop="remark" label="备注" min-width="200">
+              <template #default="scope">
+                <el-input 
+                  v-model="batchDialog.formList[scope.$index].remark" 
+                  placeholder="请输入"
+                  size="small"
+                  type="textarea"
+                  :rows="2"
+                />
+              </template>
+            </el-table-column>
+            
             <el-table-column prop="status" label="状态" width="100">
               <template #default="scope">
                 <el-select 
@@ -535,6 +564,7 @@ const dialog = reactive({
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
+    remark: '',
     status: 1
   },
   rules: {
@@ -562,6 +592,7 @@ const batchDialog = reactive({
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
+    remark: '',
     status: 1,
     fileList: []
   }]
@@ -704,6 +735,7 @@ const handleAdd = () => {
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
+    remark: '',
     status: 1
   }
   dialog.fileList = []
@@ -769,6 +801,7 @@ const handleEdit = (row) => {
     dwgFileId: row.dwgFileId,
     dwgFileUrl: row.dwgFileUrl,
     dwgFileName: row.dwgFileName,
+    remark: row.remark,
     status: row.status
   }
   
@@ -796,6 +829,7 @@ const handleDialogClose = () => {
     dwgFileId: null,
     dwgFileUrl: '',
     dwgFileName: '',
+    remark: '',
     status: 1
   }
   dialog.fileList = []
@@ -1594,6 +1628,25 @@ onMounted(() => {
   color: #999;
 }
 
+/* 备注内容样式 */
+.remark-content {
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+/* 表单中的备注textarea样式 */
+:deep(.el-input__textarea) {
+  resize: vertical;
+}
+
+:deep(.el-textarea__inner) {
+  resize: vertical;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -1626,6 +1679,15 @@ onMounted(() => {
 :deep(.el-table .row-consumed td) {
   background-color: #fffbe6 !important;
   border-color: #ffe58f !important;
+}
+
+/* 省略号样式 */
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: 100%;
 }
 
 /* 禁用悬停效果变化 */

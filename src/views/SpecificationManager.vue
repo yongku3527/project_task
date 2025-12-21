@@ -49,8 +49,10 @@
         <el-table-column prop="materialId" label="原材料ID" min-width="120" />
         <el-table-column prop="drawingType" label="文件类别" min-width="100" />
         <el-table-column prop="itemName" label="物料名称" min-width="150" />
-        <el-table-column prop="model" label="规格型号" min-width="180" />
-        <el-table-column prop="fileName" label="文件资料" min-width="200">
+        <el-table-column prop="model" label="规格型号" min-width="150" />
+        
+        <el-table-column prop="fileName" label="文件名称" min-width="200">
+          
           <template #default="scope">
             <el-link 
               v-if="scope.row.fileUrl" 
@@ -61,6 +63,15 @@
               {{ scope.row.fileName }}
             </el-link>
             <span v-else class="no-file">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" min-width="150">
+          <template #default="scope">
+            <el-tooltip :content="scope.row.remark" placement="top" effect="dark">
+              <span :class="{'ellipsis': scope.row.remark && scope.row.remark.length > 50}">
+                {{ scope.row.remark || '-' }}
+              </span>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
@@ -245,6 +256,15 @@
             placeholder="请输入规格型号"
           />
         </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input 
+            v-model="dialog.form.remark" 
+            placeholder="请输入备注"
+            style="width: 100%"
+            type="textarea"
+            :rows="3"
+          />
+        </el-form-item>
         <el-form-item label="文件上传">
           <el-upload
             ref="fileUploadRef"
@@ -332,6 +352,7 @@ const dialog = reactive({
     fileId: null,
     fileUrl: '',
     fileName: '',
+    remark: '',
     status: 1
   },
   rules: {
@@ -481,6 +502,7 @@ const handleEdit = (row) => {
     fileId: row.fileId,
     fileUrl: row.fileUrl,
     fileName: row.fileName,
+    remark: row.remark || '',
     status: row.status
   }
   
@@ -507,6 +529,7 @@ const handleDialogClose = () => {
     fileId: null,
     fileUrl: '',
     fileName: '',
+    remark: '',
     status: 1
   }
   dialog.fileList = []
