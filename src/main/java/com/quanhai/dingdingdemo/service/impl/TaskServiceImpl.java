@@ -103,7 +103,6 @@ public class TaskServiceImpl implements TaskService {
                     List<String> deptNameList = getDeptInfo(taskVo.getDeptIdList());
                     taskVo.setDeptNameList(deptNameList);
 
-//
                     //根据状态id获取状态名
                     String statusName = getStatusName(project.getProjectId(), taskResp.getTaskflowstatusId());
                     taskVo.setTaskStatus(statusName);

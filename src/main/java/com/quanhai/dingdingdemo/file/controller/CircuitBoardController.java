@@ -90,17 +90,15 @@ public class CircuitBoardController {
      * 线路板之类的需要逻辑删除吗？
      * 还是只逻辑删除文件？
      * 文件即使物理删除，也还是保存到了minio中
-     * TODO 要修改文件上传的逻辑，将不同类型的文件上传到不同的桶中或者是不同的目录中
      *
      */
     @DeleteMapping("/delete/{id}")
     public Result deleteCircuitBoard(@PathVariable Long id) {
         try {
             LambdaUpdateWrapper<CircuitBoard> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(CircuitBoard::getId, id)
-                        .set(CircuitBoard::getDeleted, 1)
-                        .set(CircuitBoard::getUpdateTime, LocalDateTime.now());
-            boolean result = circuitBoardService.update(updateWrapper);
+            updateWrapper.eq(CircuitBoard::getId, id);
+
+            boolean result = circuitBoardService.removeById(updateWrapper);
             return result ? ResultUtil.success("删除成功") : ResultUtil.fail("删除失败");
         } catch (Exception e) {
             return ResultUtil.fail("删除失败：" + e.getMessage());

@@ -179,7 +179,7 @@ public class SemiProductController {
             }
             if (status != null) {
                 queryWrapper.eq(SemiProduct::getStatus, status);
-            }
+        }
             
             queryWrapper.orderByDesc(SemiProduct::getCreateTime);
             Page<SemiProduct> pageResult = semiProductService.page(pageParam, queryWrapper);
