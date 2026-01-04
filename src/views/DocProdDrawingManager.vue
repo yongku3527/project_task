@@ -295,7 +295,7 @@
             </el-button>
             <template #tip>
               <div class="el-upload__tip">
-                文件大小不超过50MB
+                文件大小不超过100MB
               </div>
             </template>
           </el-upload>
@@ -316,7 +316,7 @@
             </el-button>
             <template #tip>
               <div class="el-upload__tip">
-                文件大小不超过50MB
+                文件大小不超过100MB
               </div>
             </template>
           </el-upload>

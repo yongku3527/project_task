@@ -307,7 +307,7 @@
             </el-button>
             <template #tip>
               <div class="el-upload__tip">
-                文件大小不超过50MB
+                文件大小不超过100MB
               </div>
             </template>
           </el-upload>
@@ -328,7 +328,7 @@
             </el-button>
             <template #tip>
               <div class="el-upload__tip">
-                文件大小不超过50MB
+                文件大小不超过100MB
               </div>
             </template>
           </el-upload>
@@ -1625,10 +1625,10 @@ const handleCancel = () => {
 
 // DWG文件上传前的验证
 const beforeDwgUpload = (file) => {
-  const isLt50M = file.size / 1024 / 1024 < 50
+  const isLt50M = file.size / 1024 / 1024 < 100
   
   if (!isLt50M) {
-    ElMessage.error('上传文件大小不能超过50MB!')
+    ElMessage.error('上传文件大小不能超过100MB!')
     return false
   }
   
@@ -1637,10 +1637,10 @@ const beforeDwgUpload = (file) => {
 
 // PDF文件上传前的验证
 const beforePdfUpload = (file) => {
-  const isLt50M = file.size / 1024 / 1024 < 50
+  const isLt50M = file.size / 1024 / 1024 < 100
   
   if (!isLt50M) {
-    ElMessage.error('上传文件大小不能超过50MB!')
+    ElMessage.error('上传文件大小不能超过100MB!')
     return false
   }
   

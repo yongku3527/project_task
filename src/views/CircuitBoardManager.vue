@@ -268,6 +268,17 @@
       </div>
 
       <!-- 分页 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
       
     </el-card>
 
@@ -474,7 +485,7 @@ import PermissionManager from '@/utils/permission'
 const loading = ref(false)
 const tableData = ref([])
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(20)
 const total = ref(0)
 
 // 定义不同文件类型的存储桶
@@ -625,15 +636,21 @@ const loadData = async () => {
       }
     } else {
       // 使用获取所有数据的接口（包含嵌套数据）
-      const response = await request.get(`/circuit-board/all-with-details`)
+      const params = {
+        page: currentPage.value,
+        size: pageSize.value
+      }
+      const response = await request.get(`/circuit-board/all-with-details`, params)
  
       if (response.code === 200) {
+        // 分页查询接口返回的是分页数据对象
+        const pageData = response.data
         // 按创建时间降序排序，最新的数据排在前面
-        const sortedData = response.data.sort((a, b) => {
+        const sortedList = pageData.list.sort((a, b) => {
           return new Date(b.createTime) - new Date(a.createTime)
         })
-        tableData.value = sortedData
-        total.value = sortedData.length
+        tableData.value = sortedList
+        total.value = pageData.total
       } else {
         ElMessage.error('加载数据失败: ' + response.msg)
       }
