@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO;
+import com.quanhai.dingdingdemo.file.mapper.CircuitBoardMapper;
 import com.quanhai.dingdingdemo.file.model.CircuitBoard;
 import com.quanhai.dingdingdemo.file.model.FileInfo;
 import com.quanhai.dingdingdemo.file.model.SemiProduct;
@@ -92,14 +93,19 @@ public class CircuitBoardController {
      * 文件即使物理删除，也还是保存到了minio中
      *
      */
+
+    @Autowired
+    private CircuitBoardMapper circuitBoardMapper;
     @DeleteMapping("/delete/{id}")
     public Result deleteCircuitBoard(@PathVariable Long id) {
         try {
-            LambdaUpdateWrapper<CircuitBoard> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(CircuitBoard::getId, id);
+//            LambdaUpdateWrapper<CircuitBoard> updateWrapper = new LambdaUpdateWrapper<>();
 
-            boolean result = circuitBoardService.removeById(updateWrapper);
-            return result ? ResultUtil.success("删除成功") : ResultUtil.fail("删除失败");
+//            updateWrapper.eq(CircuitBoard::getId, id);
+
+//            boolean result = circuitBoardService.removeById(updateWrapper);
+             int result =  circuitBoardMapper.deleteByBoardId(id);
+            return result > 0 ? ResultUtil.success("删除成功") : ResultUtil.fail("删除失败");
         } catch (Exception e) {
             return ResultUtil.fail("删除失败：" + e.getMessage());
         }
@@ -251,13 +257,15 @@ public class CircuitBoardController {
     }
 
     /**
-     * 获取所有线路板及其嵌套数据（用于前端表格展示）
+     * 获取所有线路板及其嵌套数据（用于前端表格展示）- 带分页
      */
     @GetMapping("/all-with-details")
-    public Result getAllCircuitBoardsWithDetails() {
+    public Result getAllCircuitBoardsWithDetails(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
         try {
-            List<CircuitBoardDTO> circuitBoardList = circuitBoardService.getAllCircuitBoardsWithDetails();
-            return ResultUtil.success(circuitBoardList);
+            Map<String, Object> result = circuitBoardService.getAllCircuitBoardsWithDetails(page, size);
+            return ResultUtil.success(result);
         } catch (Exception e) {
             return ResultUtil.fail("查询失败：" + e.getMessage());
         }

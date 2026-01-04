@@ -5,6 +5,7 @@ import com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO;
 import com.quanhai.dingdingdemo.file.dto.LedBoardPluginSemiProductDTO;
 import com.quanhai.dingdingdemo.file.dto.SemiProductDTO;
 import com.quanhai.dingdingdemo.file.model.CircuitBoard;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -40,4 +41,11 @@ public interface CircuitBoardMapper extends BaseMapper<CircuitBoard> {
      * 根据文件ID查询文件名称
      */
     String selectFileNameById(@Param("fileId") Long fileId);
+
+ 
+    /**
+     * 根据文件ID删除线路板、半成品、灯板插件关联记录
+     */
+    @Delete("DELETE FROM circuit_board WHERE id = #{id}")
+    Integer deleteByBoardId(@Param("id") Long id);
 }

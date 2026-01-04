@@ -1,5 +1,7 @@
 package com.quanhai.dingdingdemo.file.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.quanhai.dingdingdemo.file.dto.CircuitBoardDTO;
 import com.quanhai.dingdingdemo.file.dto.LedBoardPluginSemiProductDTO;
@@ -10,7 +12,10 @@ import com.quanhai.dingdingdemo.file.service.CircuitBoardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 线路板Service实现类
@@ -23,10 +28,8 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
 
     @Override
     public CircuitBoardDTO getCircuitBoardWithDetails(Long id) {
-        // 获取线路板基本信息
         CircuitBoardDTO circuitBoardDTO = circuitBoardMapper.selectCircuitBoardById(id);
         if (circuitBoardDTO != null) {
-            // 获取半成品列表及其灯板插件
             List<SemiProductDTO> semiProducts = circuitBoardMapper.selectSemiProductByBoardId(id);
             for (SemiProductDTO semiProduct : semiProducts) {
                 List<LedBoardPluginSemiProductDTO> ledPlugins = circuitBoardMapper.selectLedPluginBySemiId(semiProduct.getId());
@@ -38,16 +41,27 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
     }
 
     @Override
-    public List<CircuitBoardDTO> getAllCircuitBoardsWithDetails() {
-        // 获取所有线路板
-        List<CircuitBoard> circuitBoards = list();
-        List<CircuitBoardDTO> result = new java.util.ArrayList<>();
-        
-        for (CircuitBoard circuitBoard : circuitBoards) {
+    public Map<String, Object> getAllCircuitBoardsWithDetails(Integer page, Integer size) {
+        Page<CircuitBoard> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<CircuitBoard> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(CircuitBoard::getCreateTime);
+
+        Page<CircuitBoard> pageResult = this.page(pageParam, queryWrapper);
+
+        List<CircuitBoardDTO> dtoList = new ArrayList<>();
+        for (CircuitBoard circuitBoard : pageResult.getRecords()) {
             CircuitBoardDTO dto = getCircuitBoardWithDetails(circuitBoard.getId());
-            result.add(dto);
+            if (dto != null) {
+                dtoList.add(dto);
+            }
         }
-        
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", dtoList);
+        result.put("total", pageResult.getTotal());
+        result.put("page", page);
+        result.put("size", size);
+
         return result;
     }
 }

@@ -27,14 +27,16 @@ public class CountersignDrawingController {
      */
     @GetMapping("/list")
     public Result list(@RequestParam(defaultValue = "1") Integer page,
-                      @RequestParam(defaultValue = "10") Integer size,
-                      @RequestParam(required = false) String drawingSource,
-                      @RequestParam(required = false) String productCategory,
-                      @RequestParam(required = false) String prodName,
-                      @RequestParam(required = false) String partNo) {
+                       @RequestParam(defaultValue = "10") Integer size,
+                       @RequestParam(required = false) String drawingSource,
+                       @RequestParam(required = false) String productCategory,
+                       @RequestParam(required = false) String prodName,
+                       @RequestParam(required = false) String partNo,
+                       @RequestParam(required = false) String customerName
+    ) {
         try {
             List<CountersignDrawingDTO> list = countersignDrawingService.getAllCountersignDrawingsWithFiles();
-            
+
             // 如果有筛选条件，进行过滤
             if (drawingSource != null && !drawingSource.trim().isEmpty()) {
                 list = list.stream().filter(item -> item.getDrawingSource() != null && item.getDrawingSource().contains(drawingSource)).collect(java.util.stream.Collectors.toList());
@@ -48,20 +50,23 @@ public class CountersignDrawingController {
             if (partNo != null && !partNo.trim().isEmpty()) {
                 list = list.stream().filter(item -> item.getPartNo() != null && item.getPartNo().contains(partNo)).collect(java.util.stream.Collectors.toList());
             }
+            if (customerName != null && !customerName.trim().isEmpty()) {
+                list = list.stream().filter(item -> item.getCustomerName() != null && item.getCustomerName().contains(customerName)).collect(java.util.stream.Collectors.toList());
+            }
             
             // 分页处理
             int total = list.size();
             int start = (page - 1) * size;
             int end = Math.min(start + size, total);
             List<CountersignDrawingDTO> pageList = list.subList(start, end);
-            
+
             Map<String, Object> data = new HashMap<>();
             data.put("records", pageList);
             data.put("total", total);
             data.put("size", size);
             data.put("current", page);
             data.put("pages", (int) Math.ceil((double) total / size));
-            
+
             return ResultUtil.success(data);
         } catch (Exception e) {
             return ResultUtil.fail("获取会签图纸列表失败: " + e.getMessage());

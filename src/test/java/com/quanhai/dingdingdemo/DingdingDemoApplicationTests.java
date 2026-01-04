@@ -662,7 +662,7 @@ class DingdingDemoApplicationTests {
 
         ArrayList<String> failList = new ArrayList<>();
 
-        List<String> fileList = Files.list(Path.of("C:\\Users\\Administrator\\Desktop\\规格书\\已完成"))                 // 当前一级目录
+        List<String> fileList = Files.list(Path.of("C:\\Users\\Administrator\\Desktop\\012 显示类"))                 // 当前一级目录
                 .filter(Files::isRegularFile) // 只保留普通文件
                 .map(Path::getFileName)
                 .map(Path::toString)
@@ -679,6 +679,7 @@ class DingdingDemoApplicationTests {
                 continue;
             }
             Map<String, Object> itemInfoData = itemInfo.getData();
+            //TODO 加一个判断 判断是pdf文件还是dwg文件
 
             //创建pdf文件信息，拼接，得到文件ID
             FileInfo fileInfo = new FileInfo();
@@ -690,7 +691,7 @@ class DingdingDemoApplicationTests {
             fileInfo.setCreateTime(LocalDateTime.now());
             fileInfo.setStatus(1);
             fileInfoService.saveOrUpdate(fileInfo);
-
+//            System.out.println("fileInfo = " + fileInfo);
             //获取图纸类型
             //获取编号的前6个字符
             String itemType = itemTypeMap.get(itemCode.substring(0,6));
@@ -710,6 +711,9 @@ class DingdingDemoApplicationTests {
             specification.setStatus(1);
             specification.setCreateTime(LocalDateTime.now());
             specification.setUpdateTime(LocalDateTime.now());
+
+
+//            System.out.println("specification = " + specification);
             specificationService.saveOrUpdate(specification);
 
 

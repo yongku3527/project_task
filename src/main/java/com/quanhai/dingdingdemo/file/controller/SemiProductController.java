@@ -233,6 +233,7 @@ public class SemiProductController {
             for (SemiProduct semiProduct : semiProductList) {
                 dtoList.add(convertToDTO(semiProduct));
             }
+
             
             return ResultUtil.success(dtoList);
         } catch (Exception e) {
@@ -254,7 +255,7 @@ public class SemiProductController {
         dto.setCreateTime(semiProduct.getCreateTime());
         dto.setUpdateTime(semiProduct.getUpdateTime());
         
-        // 设置线路板信息
+        // 设置线路板信息q
         if (semiProduct.getCircuitBoardId() != null) {
             CircuitBoard circuitBoard = circuitBoardService.getById(semiProduct.getCircuitBoardId());
             if (circuitBoard != null) {
@@ -271,6 +272,7 @@ public class SemiProductController {
                 dto.setSchematicFileUrl(schematicFile.getFileUrl());
             }
         }
+
 
         if (semiProduct.getSmtFileId() != null) {
             FileInfo smtFile = fileInfoService.getById(semiProduct.getSmtFileId());
