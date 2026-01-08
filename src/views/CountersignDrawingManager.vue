@@ -7,19 +7,19 @@
             <div class="search-bar-inline">
               <el-form :inline="true" size="small">
                 <el-form-item label="图纸来源:">
-                  <el-input v-model="searchForm.drawingSource" placeholder="请输入图纸来源" clearable />
+                  <el-input v-model="searchForm.drawingSource" placeholder="请输入图纸来源" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="产品类别:">
-                  <el-input v-model="searchForm.productCategory" placeholder="请输入产品类别" clearable />
+                  <el-input v-model="searchForm.productCategory" placeholder="请输入产品类别" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="客户名称:">
-                  <el-input v-model="searchForm.customerName" placeholder="请输入客户名称" clearable />
+                  <el-input v-model="searchForm.customerName" placeholder="请输入客户名称" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="产品名称:">
-                  <el-input v-model="searchForm.prodName" placeholder="请输入产品名称" clearable />
+                  <el-input v-model="searchForm.prodName" placeholder="请输入产品名称" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="零部件号:">
-                  <el-input v-model="searchForm.partNo" placeholder="请输入零部件号" clearable style="width: 150px;" />
+                  <el-input v-model="searchForm.partNo" placeholder="请输入零部件号" clearable style="width: 150px;" @keydown.enter="handleSearch" />
                 </el-form-item>
                 
                 <el-form-item>

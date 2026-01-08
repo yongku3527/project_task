@@ -7,13 +7,13 @@
             <div class="search-bar-inline">
               <el-form :inline="true" size="small">
                 <el-form-item label="成品编号:">
-                  <el-input v-model="searchForm.pid" placeholder="请输入成品编号" clearable />
+                  <el-input v-model="searchForm.pid" placeholder="请输入成品编号" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="物料名称:">
-                  <el-input v-model="searchForm.itemName" placeholder="请输入物料名称" clearable />
+                  <el-input v-model="searchForm.itemName" placeholder="请输入物料名称" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="规格型号:">
-                  <el-input v-model="searchForm.model" placeholder="请输入规格型号" clearable />
+                  <el-input v-model="searchForm.model" placeholder="请输入规格型号" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="文件类别:">
                   <el-select v-model="searchForm.drawingType" placeholder="请选择文件类别" clearable style="width: 150px;">

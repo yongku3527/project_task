@@ -7,16 +7,16 @@
             <div class="search-bar-inline">
               <el-form :inline="true" size="small">
                 <el-form-item label="线路板编码:">
-                  <el-input v-model="searchForm.boardCode" placeholder="请输入线路板编码" clearable />
+                  <el-input v-model="searchForm.boardCode" placeholder="请输入线路板编码" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="线路板名称:">
-                  <el-input v-model="searchForm.boardName" placeholder="请输入线路板名称" clearable />
+                  <el-input v-model="searchForm.boardName" placeholder="请输入线路板名称" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="半成品编号:">
-                  <el-input v-model="searchForm.semiProductCode" placeholder="请输入半成品编号" clearable />
+                  <el-input v-model="searchForm.semiProductCode" placeholder="请输入半成品编号" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="半成品名称:">
-                  <el-input v-model="searchForm.semiProductName" placeholder="请输入半成品名称" clearable />
+                  <el-input v-model="searchForm.semiProductName" placeholder="请输入半成品名称" clearable @keydown.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item>
                   <el-button type="primary" @click="handleSearch">查询</el-button>
