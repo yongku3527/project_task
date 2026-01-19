@@ -26,7 +26,7 @@ class Request {
   }
 
   // 响应拦截器
-  private interceptResponse(response: any) {
+  private async interceptResponse(response: any) {
     // 如果是登录接口，直接返回数据
     if (response.url && response.url.includes('/auth/login')) {
       return response.json()
@@ -34,21 +34,49 @@ class Request {
     
     // 检查响应状态
     if (response.ok) {
-      return response.json()
+      const data = await response.json()
+      // 检查响应体中的 code 字段（后端定义的业务状态码）
+      if (data.code === 401) {
+        // 未登录或 Token 过期
+        this.handleTokenInvalid(data.msg || '登录已过期，请重新登录')
+      }
+      return data
     } else {
       // 处理错误响应
       if (response.status === 401) {
-        // 未授权，跳转到登录页
-        localStorage.removeItem('token')
-        localStorage.removeItem('username')
-        window.location.href = '/login'
-        ElMessage.error('登录已过期，请重新登录')
+        // 未授权，Token 过期或无效
+        this.handleTokenInvalid('登录已过期，请重新登录')
       } else if (response.status === 403) {
-        ElMessage.error('没有权限访问')
+        // 无权访问，Token 无效或权限不足
+        this.handleTokenInvalid('登录状态无效，请重新登录')
+      } else if (response.status === 419) {
+        // Token 过期
+        this.handleTokenInvalid('登录已过期，请重新登录')
+      } else if (response.status === 500) {
+        // 服务端错误
+        ElMessage.error('服务端错误，请稍后重试')
       } else {
         ElMessage.error('请求失败，请稍后重试')
       }
       throw new Error(`HTTP error! status: ${response.status}`)
+    }
+  }
+
+  // 处理 Token 无效的情况
+  private handleTokenInvalid(message: string) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('username')
+    localStorage.removeItem('userInfo')
+    
+    // 清除 Cookie 中的 token
+    document.cookie = 'satoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    
+    // 提示用户
+    ElMessage.error(message)
+    
+    // 跳转到登录页（如果当前不在登录页）
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login'
     }
   }
 

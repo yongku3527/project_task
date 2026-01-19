@@ -82,7 +82,7 @@
           </el-table-column>
         </el-table>
 
-        <!-- <div class="pagination-container" >
+        <div class="pagination-container" >
           <el-pagination
             v-model:current-page="pagination.current"
             v-model:page-size="pagination.size"
@@ -92,7 +92,7 @@
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
           />
-        </div> -->
+        </div>
       </div>
     </el-card>
 
