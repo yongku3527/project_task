@@ -37,7 +37,9 @@ public class MyExceptionHandler {
 
         log.warn("未登录异常: IP={}, URI={}, Method={}, 报错原因: {}", ipAddress, requestURI, method, message);
 
-        return ResultUtil.fail(message);
+//        return ResultUtil.fail(message);
+        return ResultUtil.defineFail(401, "请重新登录，在登录页面多刷新几次");
+
     }
     @ExceptionHandler(value = SaTokenContextException.class)
     public Result saTokenContextHandler(SaTokenContextException e, HttpServletRequest request){
