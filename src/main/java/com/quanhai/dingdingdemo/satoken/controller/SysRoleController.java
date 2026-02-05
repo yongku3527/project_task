@@ -9,8 +9,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.satoken.model.SysRole;
+import com.quanhai.dingdingdemo.satoken.model.SysUserRole;
 import com.quanhai.dingdingdemo.satoken.service.SysRoleService;
+import com.quanhai.dingdingdemo.satoken.service.SysUserRoleService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +28,9 @@ public class SysRoleController {
 
     @Autowired
     private SysRoleService sysRoleService;
+
+    @Autowired
+    private SysUserRoleService sysUserRoleService;
 
     /**
      * 获取角色列表
@@ -74,7 +81,19 @@ public class SysRoleController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission("role:delete")
+    @Transactional
     public Result<Boolean> delete(@PathVariable Long id) {
+        // 1. 检查是否有用户关联该角色
+        QueryWrapper<SysUserRole> userRoleQueryWrapper = new QueryWrapper<>();
+        userRoleQueryWrapper.eq("role_id", id);
+        Long userCount = sysUserRoleService.count(userRoleQueryWrapper);
+        
+        if (userCount > 0) {
+            return ResultUtil.defineFail(401, "该角色已被 " + userCount + " 个用户使用，无法删除");
+        }
+
+        
+        // 2. 删除角色
         return ResultUtil.success(sysRoleService.removeById(id));
     }
 

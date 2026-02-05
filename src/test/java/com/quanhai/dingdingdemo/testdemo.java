@@ -172,12 +172,25 @@ public class testdemo {
         String roleStr = String.join(",", roleList);
 
         LambdaQueryWrapper<ItemType> itemTypeLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        //获取所有包含角色名称的物料类型
+
         List<ItemType> itemTypeList = itemTypeMapper.selectList(itemTypeLambdaQueryWrapper.like(ItemType::getTypeName, roleStr));
     }
 
     @Autowired
     private DongWuOperation operation;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -8,8 +8,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.satoken.model.SysUser;
+import com.quanhai.dingdingdemo.satoken.model.SysUserRole;
+import com.quanhai.dingdingdemo.satoken.service.SysUserRoleService;
 import com.quanhai.dingdingdemo.satoken.service.SysUserService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +27,9 @@ public class SysUserController {
 
     @Autowired
     private SysUserService sysUserService;
+
+    @Autowired
+    private SysUserRoleService sysUserRoleService;
 
     /**
      * 获取用户列表
@@ -73,7 +80,14 @@ public class SysUserController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission("user:delete")
+    @Transactional
     public Result<Boolean> delete(@PathVariable Long id) {
+        // 1. 删除用户关联的角色数据
+        QueryWrapper<SysUserRole> userRoleQueryWrapper = new QueryWrapper<>();
+        userRoleQueryWrapper.eq("user_id", id);
+        sysUserRoleService.remove(userRoleQueryWrapper);
+        
+        // 2. 删除用户
         return ResultUtil.success(sysUserService.removeById(id));
     }
 
