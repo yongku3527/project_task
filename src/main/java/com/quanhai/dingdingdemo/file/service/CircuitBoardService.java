@@ -23,4 +23,5 @@ public interface CircuitBoardService extends IService<CircuitBoard> {
      * @return 包含分页信息和数据列表的Map
      */
     Map<String, Object> getAllCircuitBoardsWithDetails(Integer page, Integer size);
+
 }

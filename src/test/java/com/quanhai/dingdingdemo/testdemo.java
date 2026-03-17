@@ -181,19 +181,6 @@ public class testdemo {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
         @Test
         public void testWeiFan() {
             operation.照顾动物们();

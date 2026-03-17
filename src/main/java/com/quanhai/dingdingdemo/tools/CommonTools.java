@@ -137,11 +137,13 @@ public class CommonTools {
 
         /* 4. 发送 */
         email.send();
+        
         log.info("附件发送成功：  收件人"+to+"  内容：\n"+msg);
     }
 
     /**
      * 发送带附件的邮件（彻底修复 .dat 问题，使用原生 JavaMail）
+     * 使用的此方法发送的邮件
      */
     public void javaMailSend(String downloadUrl,
                      String attachFileName,
