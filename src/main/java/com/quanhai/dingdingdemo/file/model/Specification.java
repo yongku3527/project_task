@@ -41,10 +41,10 @@ public class Specification {
     private String model;
 
     /**
-     * 文件ID
+     * 文件ID（多个文件用逗号分隔）
      */
     @TableField("file_id")
-    private Long fileId;
+    private String fileId;
 
     /**
      * 备注

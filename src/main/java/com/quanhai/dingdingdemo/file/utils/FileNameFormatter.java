@@ -52,8 +52,8 @@ public class FileNameFormatter {
     public static String generateFormattedFileNameForDocProdDrawing(String number, String name, String originalFilename) {
         LocalDateTime now = LocalDateTime.now();
         String date = now.format(DATE_FORMATTER);
-        String time = now.format(TIME_FORMATTER);
-        String timestamp = String.valueOf(System.currentTimeMillis());
+        // 生成4位短随机码，确保同批次上传文件名不重复
+        String shortCode = UUID.randomUUID().toString().replace("-", "").substring(0, 4);
 
         // 获取文件扩展名
         String extension = "";
@@ -62,9 +62,10 @@ public class FileNameFormatter {
         }
 
         // 构建新文件名
-        return String.format("%s~%s%s",
+        return String.format("%s~%s~%s%s",
                 sanitizeFileName(number),
                 date,
+                shortCode,
                 extension);
 
     }

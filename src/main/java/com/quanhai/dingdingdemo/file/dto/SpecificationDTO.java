@@ -3,6 +3,7 @@ package com.quanhai.dingdingdemo.file.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 规格书DTO
@@ -35,9 +36,9 @@ public class SpecificationDTO {
     private String model;
 
     /**
-     * 文件ID
+     * 文件ID（多个文件用逗号分隔）
      */
-    private Long fileId;
+    private String fileId;
 
     /**
      * 文件URL
@@ -48,6 +49,11 @@ public class SpecificationDTO {
      * 文件名称
      */
     private String fileName;
+
+    /**
+     * 文件列表（用于前端展示多个文件）
+     */
+    private List<FileInfoDTO> fileList;
 
     /**
      * 状态（0：停用，1：启用）

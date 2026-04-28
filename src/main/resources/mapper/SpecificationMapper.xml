@@ -10,17 +10,15 @@
         <result property="itemName" column="item_name"/>
         <result property="model" column="model"/>
         <result property="fileId" column="file_id"/>
-        <result property="fileUrl" column="file_url"/>
-        <result property="fileName" column="file_name"/>
         <result property="status" column="status"/>
         <result property="remark" column="remark"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
-    <!-- 根据ID查询规格书及其文件信息 -->
+    <!-- 根据ID查询规格书 -->
     <select id="selectSpecificationById" parameterType="java.lang.Long" resultMap="SpecificationResultMap">
-        SELECT 
+        SELECT
             s.id,
             s.material_id,
             s.drawing_type,
@@ -30,20 +28,16 @@
             s.status,
             s.remark,
             s.create_time,
-            s.update_time,
-            f.file_url as file_url,
-            f.file_name as file_name
-        FROM 
+            s.update_time
+        FROM
             doc_specification s
-        LEFT JOIN 
-            file_info f ON s.file_id = f.id
-        WHERE 
+        WHERE
             s.id = #{id}
     </select>
 
     <!-- 根据原材料ID查询规格书列表 -->
     <select id="selectSpecificationsByMaterialId" parameterType="java.lang.String" resultMap="SpecificationResultMap">
-        SELECT 
+        SELECT
             s.id,
             s.material_id,
             s.drawing_type,
@@ -53,20 +47,16 @@
             s.status,
             s.remark,
             s.create_time,
-            s.update_time,
-            f.file_url as file_url,
-            f.file_name as file_name
-        FROM 
+            s.update_time
+        FROM
             doc_specification s
-        LEFT JOIN 
-            file_info f ON s.file_id = f.id
-        WHERE 
+        WHERE
             s.material_id = #{materialId}
     </select>
 
-    <!-- 查询所有规格书及其文件信息 -->
+    <!-- 查询所有规格书 -->
     <select id="selectAllSpecificationsWithFiles" resultMap="SpecificationResultMap">
-        SELECT 
+        SELECT
             s.id,
             s.material_id,
             s.drawing_type,
@@ -76,12 +66,8 @@
             s.status,
             s.remark,
             s.create_time,
-            s.update_time,
-            f.file_url as file_url,
-            f.file_name as file_name
-        FROM 
+            s.update_time
+        FROM
             doc_specification s
-        LEFT JOIN 
-            file_info f ON s.file_id = f.id
     </select>
 </mapper>
