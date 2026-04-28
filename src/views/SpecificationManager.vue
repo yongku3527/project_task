@@ -52,10 +52,20 @@
         <el-table-column prop="model" label="规格型号" min-width="150" />
         
         <el-table-column prop="fileName" label="文件名称" min-width="200">
-          
           <template #default="scope">
+            <div v-if="scope.row.fileList && scope.row.fileList.length > 0" class="file-list">
+              <el-link 
+                v-for="(file, index) in scope.row.fileList" 
+                :key="file.id"
+                type="primary" 
+                @click="downloadFile(file.fileUrl, file.fileName)"
+                style="word-break: break-all; display: block; margin-bottom: 4px;"
+              >
+                {{ file.fileName }}
+              </el-link>
+            </div>
             <el-link 
-              v-if="scope.row.fileUrl" 
+              v-else-if="scope.row.fileUrl" 
               type="primary" 
               @click="downloadFile(scope.row.fileUrl, scope.row.fileName)"
               style="word-break: break-all; display: inline-block; max-width: 100%;"
@@ -269,7 +279,8 @@
           <el-upload
             ref="fileUploadRef"
             :action="`/minio/upload/${specificationBucket}`"
-            :limit="1"
+            :limit="10"
+            multiple
             :on-success="handleFileUploadSuccess"
             :on-remove="handleFileRemove"
             :file-list="dialog.fileList"
@@ -284,7 +295,7 @@
             </el-button>
             <template #tip>
               <div class="el-upload__tip">
-                支持上传PDF、Word、DWG文件，单个文件大小不超过100MB
+                支持多文件上传PDF、Word、DWG文件，单个文件大小不超过100MB
               </div>
             </template>
           </el-upload>
@@ -349,7 +360,7 @@ const dialog = reactive({
     drawingType: '',
     itemName: '',
     model: '',
-    fileId: null,
+    fileId: '',
     fileUrl: '',
     fileName: '',
     remark: '',
@@ -362,7 +373,8 @@ const dialog = reactive({
     model: [{ required: true, message: '请输入规格型号', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   },
-  fileList: []
+  fileList: [],
+  fileIds: []
 })
 
 // 响应式数据
@@ -481,12 +493,13 @@ const handleAdd = () => {
     drawingType: '',
     itemName: '',
     model: '',
-    fileId: null,
+    fileId: '',
     fileUrl: '',
     fileName: '',
     status: 1
   }
   dialog.fileList = []
+  dialog.fileIds = []
   dialog.visible = true
 }
 
@@ -499,16 +512,28 @@ const handleEdit = (row) => {
     drawingType: row.drawingType,
     itemName: row.itemName,
     model: row.model,
-    fileId: row.fileId,
+    fileId: row.fileId || '',
     fileUrl: row.fileUrl,
     fileName: row.fileName,
     remark: row.remark || '',
     status: row.status
   }
   
-  // 设置文件列表
+  // 设置文件列表（支持多文件）
   dialog.fileList = []
-  if (row.fileUrl && row.fileName) {
+  dialog.fileIds = []
+  
+  if (row.fileList && row.fileList.length > 0) {
+    row.fileList.forEach(file => {
+      dialog.fileList.push({
+        name: file.fileName,
+        url: file.fileUrl,
+        id: file.id
+      })
+      dialog.fileIds.push(file.id)
+    })
+  } else if (row.fileUrl && row.fileName) {
+    // 兼容旧数据（单文件）
     dialog.fileList.push({
       name: row.fileName,
       url: row.fileUrl
@@ -526,13 +551,14 @@ const handleDialogClose = () => {
     drawingType: '',
     itemName: '',
     model: '',
-    fileId: null,
+    fileId: '',
     fileUrl: '',
     fileName: '',
     remark: '',
     status: 1
   }
   dialog.fileList = []
+  dialog.fileIds = []
   if (formRef.value) {
     formRef.value.resetFields()
   }
@@ -546,6 +572,13 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     
     const data = { ...dialog.form }
+    
+    // 将多个文件ID用逗号分隔
+    if (dialog.fileIds.length > 0) {
+      data.fileId = dialog.fileIds.join(',')
+    } else {
+      data.fileId = ''
+    }
     
     let response
     if (data.id) {
@@ -581,8 +614,15 @@ const handleDelete = async (id) => {
       type: 'warning'
     })
     
-    // 如果有文件，先删除MinIO文件
-    if (row && row.fileUrl) {
+    // 如果有多个文件，先删除所有MinIO文件
+    if (row && row.fileList && row.fileList.length > 0) {
+      for (const file of row.fileList) {
+        if (file.fileUrl && file.id) {
+          await deleteFileFromMinIO(file.fileUrl, '规格书', file.id)
+        }
+      }
+    } else if (row && row.fileUrl) {
+      // 兼容旧数据（单文件）
       await deleteFileFromMinIO(row.fileUrl, '规格书', row.fileId)
     }
     
@@ -793,14 +833,23 @@ const handleFileUpload = async (options) => {
 // 文件上传成功
 const handleFileUploadSuccess = (response, uploadFile) => {
   if (response.code === 200) {
-    dialog.form.fileId = response.data.id
-    dialog.form.fileUrl = response.data.fileUrl
-    dialog.form.fileName = response.data.fileName
-    // 更新文件列表
-    dialog.fileList = [{
+    // 添加文件ID到列表
+    if (response.data.id) {
+      dialog.fileIds.push(response.data.id)
+    }
+    
+    // 更新文件列表显示
+    dialog.fileList.push({
       name: response.data.fileName,
-      url: response.data.fileUrl
-    }]
+      url: response.data.fileUrl,
+      id: response.data.id
+    })
+    
+    // 更新表单中的文件信息（兼容旧逻辑）
+    if (!dialog.form.fileUrl) {
+      dialog.form.fileUrl = response.data.fileUrl
+      dialog.form.fileName = response.data.fileName
+    }
   } else {
     ElMessage.error('文件上传失败: ' + response.msg)
   }
@@ -852,17 +901,29 @@ const deleteFileFromMinIO = async (fileUrl, fileType = '规格书', fileId = nul
 }
 
 // 文件移除
-const handleFileRemove = async () => {
-  // 如果有文件ID和URL，先删除数据库和MinIO文件
-  if (dialog.form.fileId && dialog.form.fileUrl) {
-    await deleteFileFromMinIO(dialog.form.fileUrl, '规格书', dialog.form.fileId)
+const handleFileRemove = async (uploadFile) => {
+  // 找到要删除的文件信息
+  const fileItem = dialog.fileList.find(f => f.name === uploadFile.name && f.url === uploadFile.url)
+  const fileId = fileItem?.id
+  const fileUrl = fileItem?.url
+  
+  // 先删除数据库和MinIO文件
+  if (fileId && fileUrl) {
+    await deleteFileFromMinIO(fileUrl, '规格书', fileId)
   }
   
-  // 重置文件信息
-  dialog.form.fileId = null
-  dialog.form.fileUrl = ''
-  dialog.form.fileName = ''
-  dialog.fileList = []
+  // 从 fileIds 和 fileList 中移除
+  dialog.fileIds = dialog.fileIds.filter(id => id !== fileId)
+  dialog.fileList = dialog.fileList.filter(f => !(f.name === uploadFile.name && f.url === uploadFile.url))
+  
+  // 更新兼容字段
+  if (dialog.fileList.length > 0) {
+    dialog.form.fileUrl = dialog.fileList[0].url
+    dialog.form.fileName = dialog.fileList[0].name
+  } else {
+    dialog.form.fileUrl = ''
+    dialog.form.fileName = ''
+  }
 }
 
 // 输入防抖定时器
