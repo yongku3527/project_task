@@ -17,6 +17,8 @@ import com.quanhai.dingdingdemo.bom.service.BomDetailService;
 import com.quanhai.dingdingdemo.bom.service.BomInfoService;
 import com.quanhai.dingdingdemo.bom.service.BomMesService;
 import com.quanhai.dingdingdemo.bom.service.BomOperationLogService;
+import com.quanhai.dingdingdemo.satoken.model.SysUser;
+import com.quanhai.dingdingdemo.satoken.service.SysUserService;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import jakarta.servlet.ServletOutputStream;
@@ -25,6 +27,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +35,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * BOM信息管理控制器
@@ -53,6 +58,9 @@ public class BomController {
 
     @Autowired
     private BomMesService bomMesService;
+
+    @Autowired
+    private SysUserService sysUserService;
 
     /**
      * 获取BOM列表
@@ -148,7 +156,7 @@ public class BomController {
         }
         bomInfoService.updateById(exist);
 
-        // 处理明细：对比旧值，记录位号变更日志
+        // 处理明细：对比旧值，记录变更日志
         List<BomDetail> newDetails = parseDetails(request, bomInfo.getId());
         if (newDetails != null) {
             List<BomDetail> oldDetails = bomDetailService.listByBomId(bomInfo.getId());
@@ -157,25 +165,65 @@ public class BomController {
                 oldMap.put(old.getId(), old);
             }
 
+            // 保存原始ID（用于日志对比），然后清除ID重新插入
+            List<Long> originalIds = new ArrayList<>();
+            for (BomDetail detail : newDetails) {
+                originalIds.add(detail.getId());
+                detail.setId(null);
+                detail.setBomId(bomInfo.getId());
+            }
+
             // 删除旧明细
             bomDetailService.removeByIds(oldDetails.stream().map(BomDetail::getId).toList());
 
             // 保存新明细
-            for (BomDetail detail : newDetails) {
-                detail.setId(null);
-                detail.setBomId(bomInfo.getId());
-            }
             if (CollUtil.isNotEmpty(newDetails)) {
                 bomDetailService.saveBatch(newDetails);
             }
 
-            // 记录位号变更日志
-            for (BomDetail newDetail : newDetails) {
-                BomDetail oldDetail = oldMap.get(newDetail.getId());
-                if (oldDetail != null && !Objects.equals(oldDetail.getDesignators(), newDetail.getDesignators())) {
-                    saveOperationLog(bomInfo.getId(), newDetail.getId(), "UPDATE", "designators",
+            // 对比并记录变更日志（使用原始ID匹配旧数据）
+            for (int i = 0; i < newDetails.size(); i++) {
+                Long originalId = originalIds.get(i);
+                BomDetail newDetail = newDetails.get(i);
+                if (originalId == null) {
+                    // 新增的明细
+                    saveOperationLog(bomInfo.getId(), newDetail.getId(), "ADD", null,
+                            null, null,
+                            "新增明细，物料编码：" + newDetail.getItemCode() + "，位号：" + newDetail.getDesignators(), null);
+                    continue;
+                }
+                BomDetail oldDetail = oldMap.get(originalId);
+                if (oldDetail == null) {
+                    continue;
+                }
+                // 对比位号
+                if (!Objects.equals(oldDetail.getDesignators(), newDetail.getDesignators())) {
+                    saveOperationLog(bomInfo.getId(), newDetail.getId(), "UPDATE", "位号",
                             oldDetail.getDesignators(), newDetail.getDesignators(),
                             "物料编码：" + newDetail.getItemCode() + " 位号变更", null);
+                }
+                // 对比数量
+                if (!Objects.equals(oldDetail.getQuantity(), newDetail.getQuantity())) {
+                    saveOperationLog(bomInfo.getId(), newDetail.getId(), "UPDATE", "数量",
+                            oldDetail.getQuantity() != null ? oldDetail.getQuantity().toString() : null,
+                            newDetail.getQuantity() != null ? newDetail.getQuantity().toString() : null,
+                            "物料编码：" + newDetail.getItemCode() + " 数量变更", null);
+                }
+                // 对比物料编码
+                if (!Objects.equals(oldDetail.getItemCode(), newDetail.getItemCode())) {
+                    saveOperationLog(bomInfo.getId(), newDetail.getId(), "UPDATE", "物料编码",
+                            oldDetail.getItemCode(), newDetail.getItemCode(),
+                            "物料编码变更", null);
+                }
+            }
+
+            // 检查被删除的旧明细（在旧数据中存在但新数据中不存在）
+            Set<Long> newOriginalIds = new HashSet<>(originalIds);
+            for (BomDetail oldDetail : oldDetails) {
+                if (!newOriginalIds.contains(oldDetail.getId())) {
+                    saveOperationLog(bomInfo.getId(), oldDetail.getId(), "DELETE", null,
+                            null, null,
+                            "删除明细，物料编码：" + oldDetail.getItemCode() + "，位号：" + oldDetail.getDesignators(), null);
                 }
             }
         }
@@ -322,7 +370,7 @@ public class BomController {
 
             // 记录上传日志
             saveOperationLog(bomId, "UPLOAD",
-                    "批量导入BOM明细，共 " + detailList.size() + " 条记录", loginId);
+                    "批量导入BOM明细，共 " + detailList.size() + " 条记录", resolveUserName(loginId));
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -357,12 +405,51 @@ public class BomController {
     }
 
     /**
-     * 查询BOM操作日志
+     * 字段名英文转中文映射
+     */
+    private static final Map<String, String> FIELD_NAME_MAP = Map.of(
+            "designators", "位号",
+            "quantity", "数量",
+            "itemCode", "物料编码"
+    );
+
+    /**
+     * 查询BOM操作日志（支持搜索）
      */
     @GetMapping("/log/{bomId}")
     @SaCheckPermission("bom:view")
-    public Result<List<BomOperationLog>> getLogs(@PathVariable Long bomId) {
-        return ResultUtil.success(bomOperationLogService.listByBomId(bomId));
+    public Result<List<BomOperationLog>> getLogs(
+            @PathVariable Long bomId,
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String operateBy,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
+        QueryWrapper<BomOperationLog> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("bom_id", bomId);
+        if (operationType != null && !operationType.trim().isEmpty()) {
+            queryWrapper.eq("operation_type", operationType);
+        }
+        if (operateBy != null && !operateBy.trim().isEmpty()) {
+            queryWrapper.like("operate_by", operateBy);
+        }
+        if (startTime != null) {
+            queryWrapper.ge("operate_time", startTime);
+        }
+        if (endTime != null) {
+            queryWrapper.le("operate_time", endTime);
+        }
+        queryWrapper.orderByDesc("operate_time");
+        List<BomOperationLog> logs = bomOperationLogService.list(queryWrapper);
+        // 对旧数据做兼容处理：operateBy转用户名、fieldName转中文
+        for (BomOperationLog logItem : logs) {
+            if (logItem.getOperateBy() != null && logItem.getOperateBy().matches("\\d+")) {
+                logItem.setOperateBy(resolveUserName(logItem.getOperateBy()));
+            }
+            if (logItem.getFieldName() != null && FIELD_NAME_MAP.containsKey(logItem.getFieldName())) {
+                logItem.setFieldName(FIELD_NAME_MAP.get(logItem.getFieldName()));
+            }
+        }
+        return ResultUtil.success(logs);
     }
 
     /**
@@ -438,10 +525,24 @@ public class BomController {
     private String getCurrentUserName() {
         try {
             Object loginId = StpUtil.getLoginIdDefaultNull();
-            return loginId != null ? loginId.toString() : "system";
+            if (loginId == null) return "系统";
+            return resolveUserName(loginId.toString());
         } catch (Exception e) {
-            return "system";
+            return "系统";
         }
+    }
+
+    private String resolveUserName(String userId) {
+        try {
+            SysUser user = sysUserService.getById(userId);
+            if (user != null) {
+                return user.getNickname() != null && !user.getNickname().isEmpty()
+                        ? user.getNickname() : user.getUsername();
+            }
+        } catch (Exception e) {
+            log.warn("查询用户信息失败，userId={}", userId);
+        }
+        return userId;
     }
 
     private void saveOperationLog(Long bomId, String operationType, String remark) {
@@ -463,6 +564,7 @@ public class BomController {
             operationLog.setOldValue(oldValue);
             operationLog.setNewValue(newValue);
             operationLog.setOperateBy(operateBy != null ? operateBy : getCurrentUserName());
+            operationLog.setOperateTime(LocalDateTime.now());
             operationLog.setRemark(remark);
             bomOperationLogService.save(operationLog);
         } catch (Exception e) {
