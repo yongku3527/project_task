@@ -61,8 +61,10 @@ public class SaTokenConfig implements WebMvcConfigurer {
                             ,"/semi-product/**"
                             ,"/doc-prod-drawing/**"
                             ,"/knowledge-info/**"
+                            ,"/bom/**"
 
                             )
+                    .notMatch("/bom/import/**")
                     .check(r -> StpUtil.checkLogin());
 
 
