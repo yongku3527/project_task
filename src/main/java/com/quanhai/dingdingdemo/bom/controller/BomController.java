@@ -251,16 +251,40 @@ public class BomController {
     }
 
     /**
+     * Excel导入预览（只解析不保存）
+     */
+    @PostMapping("/import/preview/{bomId}")
+    public Result<Map<String, Object>> previewImport(@PathVariable Long bomId,
+                                                      @RequestParam("file") MultipartFile file,
+                                                      HttpServletRequest request) {
+        String tokenValue = getTokenValue(request);
+        try {
+            StpUtil.getLoginIdByToken(tokenValue);
+        } catch (Exception e) {
+            return ResultUtil.defineFail(401, "未登录或登录已过期");
+        }
+
+        BomInfo bomInfo = bomInfoService.getById(bomId);
+        if (bomInfo == null || bomInfo.getDeleted() == 1) {
+            return ResultUtil.fail("BOM信息不存在");
+        }
+        if (file == null || file.isEmpty()) {
+            return ResultUtil.fail("上传文件不能为空");
+        }
+
+        return parseExcelForPreview(bomId, file);
+    }
+
+    /**
      * 批量导入BOM明细（Excel模板）
-     * 由于 multipart/form-data 请求与 Sa-Token 上下文在 Spring Boot 3 + webflux 混合环境下存在兼容性问题，
-     * 此处采用手动从 HttpServletRequest 读取 token 并校验的方式。
+     * 支持 importMode 参数：REPLACE（覆盖） / APPEND（增量追加），默认 REPLACE
      */
     @PostMapping("/import/{bomId}")
     @Transactional
     public Result<Map<String, Object>> importDetail(@PathVariable Long bomId,
                                                     @RequestParam("file") MultipartFile file,
+                                                    @RequestParam(defaultValue = "REPLACE") String importMode,
                                                     HttpServletRequest request) {
-        // 手动读取并校验 token（兼容 multipart/form-data 请求）
         String tokenValue = getTokenValue(request);
         String loginId;
         try {
@@ -273,114 +297,71 @@ public class BomController {
         if (bomInfo == null || bomInfo.getDeleted() == 1) {
             return ResultUtil.fail("BOM信息不存在");
         }
-
         if (file == null || file.isEmpty()) {
             return ResultUtil.fail("上传文件不能为空");
         }
 
-        try (ExcelReader reader = ExcelUtil.getReader(file.getInputStream())) {
-            List<List<Object>> rows = reader.read();
-            if (CollUtil.isEmpty(rows) || rows.size() < 2) {
-                return ResultUtil.fail("Excel文件为空或缺少数据行");
+        try {
+            // 解析Excel并校验
+            List<BomDetail> detailList = parseAndValidateExcel(bomId, file);
+            if (detailList == null) {
+                // null 表示有错误，错误信息已在 parseAndValidateExcel 中包装进 Result
+                return parseExcelForPreview(bomId, file);
             }
 
-            // 校验表头
-            List<Object> header = rows.get(0);
-            if (header.size() < 3
-                    || !"物料编码".equals(String.valueOf(header.get(0)).trim())
-                    || !"位号".equals(String.valueOf(header.get(1)).trim())
-                    || !"数量".equals(String.valueOf(header.get(2)).trim())) {
-                return ResultUtil.fail("Excel模板格式不正确，请使用标准模板");
-            }
+            int newCount = detailList.size();
+            String modeText;
 
-            List<Map<String, Object>> errorList = new ArrayList<>();
-            List<BomDetail> detailList = new ArrayList<>();
-
-            for (int i = 1; i < rows.size(); i++) {
-                List<Object> row = rows.get(i);
-                if (CollUtil.isEmpty(row) || row.stream().allMatch(Objects::isNull)) {
-                    continue;
-                }
-
-                String itemCode = row.size() > 0 && row.get(0) != null ? String.valueOf(row.get(0)).trim() : "";
-                String designators = row.size() > 1 && row.get(1) != null ? String.valueOf(row.get(1)).trim() : "";
-                Integer quantity = null;
-
-                if (row.size() > 2 && row.get(2) != null) {
-                    try {
-                        quantity = Integer.parseInt(String.valueOf(row.get(2)).trim());
-                    } catch (NumberFormatException e) {
-                        errorList.add(buildError(i, itemCode, designators, "数量格式不正确"));
-                        continue;
-                    }
-                }
-
-                if (itemCode.isEmpty()) {
-                    errorList.add(buildError(i, itemCode, designators, "物料编码不能为空"));
-                    continue;
-                }
-
-                // 位号按逗号拆分，计算实际位号数量
-                int designatorCount = 0;
-                if (!designators.isEmpty()) {
-                    designatorCount = designators.split(",").length;
-                }
-
-                // 校验位号个数和数量是否一致
-                if (quantity == null) {
-                    quantity = designatorCount;
-                } else if (!quantity.equals(designatorCount)) {
-                    errorList.add(buildError(i, itemCode, designators,
-                            "位号个数（" + designatorCount + "）与数量（" + quantity + "）不一致"));
-                    continue;
-                }
-
-                BomDetail detail = new BomDetail();
-                detail.setBomId(bomId);
-                detail.setItemCode(itemCode);
-                detail.setDesignators(designators);
-                detail.setQuantity(quantity);
-                detail.setSortOrder(i);
-                detail.setStatus(1);
-
-                // 查询MES获取物料名称和规格型号
-                Map<String, Object> mesInfo = bomMesService.getItemInfo(itemCode);
-                detail.setItemName((String) mesInfo.get("itemName"));
-                detail.setItemSpec((String) mesInfo.get("itemSpec"));
-
-                detailList.add(detail);
-            }
-
-            if (CollUtil.isNotEmpty(errorList)) {
-                Map<String, Object> result = new HashMap<>();
-                result.put("success", false);
-                result.put("errors", errorList);
-                return ResultUtil.success(result);
-            }
-
-            // 清除旧明细并保存新明细
-            List<BomDetail> oldDetails = bomDetailService.listByBomId(bomId);
-            if (CollUtil.isNotEmpty(oldDetails)) {
-                bomDetailService.removeByIds(oldDetails.stream().map(BomDetail::getId).toList());
-            }
-
-            if (CollUtil.isNotEmpty(detailList)) {
+            if ("APPEND".equalsIgnoreCase(importMode)) {
+                // 增量模式：不删除旧数据，追加
                 bomDetailService.saveBatch(detailList);
+                modeText = "增量导入";
+            } else {
+                // 覆盖模式：删除旧数据，插入新数据
+                List<BomDetail> oldDetails = bomDetailService.listByBomId(bomId);
+                if (CollUtil.isNotEmpty(oldDetails)) {
+                    bomDetailService.removeByIds(oldDetails.stream().map(BomDetail::getId).toList());
+                }
+                bomDetailService.saveBatch(detailList);
+                modeText = "覆盖导入";
             }
 
-            // 记录上传日志
             saveOperationLog(bomId, "UPLOAD",
-                    "批量导入BOM明细，共 " + detailList.size() + " 条记录", resolveUserName(loginId));
+                    modeText + "BOM明细，共 " + newCount + " 条记录", resolveUserName(loginId));
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
-            result.put("count", detailList.size());
+            result.put("count", newCount);
+            result.put("importMode", importMode.toUpperCase());
             return ResultUtil.success(result);
 
         } catch (IOException e) {
             log.error("读取Excel文件失败", e);
             return ResultUtil.fail("读取Excel文件失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 批量删除BOM明细
+     */
+    @PostMapping("/detail/batch-delete/{bomId}")
+    @SaCheckPermission("bom:update")
+    @Transactional
+    public Result<Boolean> batchDeleteDetails(@PathVariable Long bomId,
+                                               @RequestBody Map<String, List<Long>> request) {
+        List<Long> ids = request.get("ids");
+        if (CollUtil.isEmpty(ids)) {
+            return ResultUtil.fail("请选择要删除的明细");
+        }
+
+        // 获取明细信息用于记录日志
+        List<BomDetail> toDelete = bomDetailService.listByIds(ids);
+        int count = toDelete.size();
+        bomDetailService.removeByIds(ids);
+
+        saveOperationLog(bomId, "DELETE",
+                "批量删除BOM明细，共 " + count + " 条记录");
+        return ResultUtil.success(true);
     }
 
     /**
@@ -596,5 +577,180 @@ public class BomController {
         error.put("designators", designators);
         error.put("message", message);
         return error;
+    }
+
+    /**
+     * 解析Excel并校验，返回预览数据（所有行均显示，错误行标记 valid=false 和 errorMessage），不保存
+     */
+    private Result<Map<String, Object>> parseExcelForPreview(Long bomId, MultipartFile file) {
+        try (ExcelReader reader = ExcelUtil.getReader(file.getInputStream())) {
+            List<List<Object>> rows = reader.read();
+            if (CollUtil.isEmpty(rows) || rows.size() < 2) {
+                return ResultUtil.fail("Excel文件为空或缺少数据行");
+            }
+
+            List<Object> header = rows.get(0);
+            if (header.size() < 3
+                    || !"物料编码".equals(String.valueOf(header.get(0)).trim())
+                    || !"位号".equals(String.valueOf(header.get(1)).trim())
+                    || !"数量".equals(String.valueOf(header.get(2)).trim())) {
+                return ResultUtil.fail("Excel模板格式不正确，请使用标准模板");
+            }
+
+            int errorCount = 0;
+            List<Map<String, Object>> previewList = new ArrayList<>();
+
+            for (int i = 1; i < rows.size(); i++) {
+                List<Object> row = rows.get(i);
+                if (CollUtil.isEmpty(row) || row.stream().allMatch(Objects::isNull)) {
+                    continue;
+                }
+
+                String itemCode = row.size() > 0 && row.get(0) != null ? String.valueOf(row.get(0)).trim() : "";
+                String designators = row.size() > 1 && row.get(1) != null ? String.valueOf(row.get(1)).trim() : "";
+                String errorMessage = null;
+                Integer quantity = null;
+
+                if (row.size() > 2 && row.get(2) != null) {
+                    try {
+                        quantity = Integer.parseInt(String.valueOf(row.get(2)).trim());
+                    } catch (NumberFormatException e) {
+                        errorMessage = "数量格式不正确";
+                    }
+                }
+
+                if (errorMessage == null && itemCode.isEmpty()) {
+                    errorMessage = "物料编码不能为空";
+                }
+
+                int designatorCount = 0;
+                if (errorMessage == null && !designators.isEmpty()) {
+                    designatorCount = designators.split(",").length;
+                }
+
+                if (errorMessage == null && quantity == null) {
+                    quantity = designatorCount;
+                } else if (errorMessage == null && !quantity.equals(designatorCount)) {
+                    errorMessage = "位号个数（" + designatorCount + "）与数量（" + quantity + "）不一致";
+                }
+
+                boolean valid = (errorMessage == null);
+                if (!valid) {
+                    errorCount++;
+                }
+
+                Map<String, Object> previewItem = new HashMap<>();
+                previewItem.put("rowNum", i + 1);
+                previewItem.put("itemCode", itemCode);
+                previewItem.put("designators", designators);
+                previewItem.put("quantity", quantity != null ? quantity : "");
+                previewItem.put("valid", valid);
+                previewItem.put("errorMessage", errorMessage != null ? errorMessage : "");
+
+                // 查询MES获取物料名称和规格型号（只在有效行或有物料编码时查询）
+                if (valid && !itemCode.isEmpty()) {
+                    Map<String, Object> mesInfo = bomMesService.getItemInfo(itemCode);
+                    previewItem.put("itemName", mesInfo.getOrDefault("itemName", ""));
+                    previewItem.put("itemSpec", mesInfo.getOrDefault("itemSpec", ""));
+                } else {
+                    previewItem.put("itemName", "");
+                    previewItem.put("itemSpec", "");
+                }
+
+                previewList.add(previewItem);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", errorCount == 0);
+            result.put("preview", previewList);
+            result.put("errorCount", errorCount);
+            result.put("totalRows", previewList.size());
+            return ResultUtil.success(result);
+
+        } catch (IOException e) {
+            log.error("预览Excel文件失败", e);
+            return ResultUtil.fail("读取Excel文件失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 解析Excel并校验，返回 BomDetail 列表。
+     * 如果有校验错误则返回 null（调用方需自行处理错误展示）。
+     */
+    @SuppressWarnings("unchecked")
+    private List<BomDetail> parseAndValidateExcel(Long bomId, MultipartFile file) throws IOException {
+        List<BomDetail> detailList = new ArrayList<>();
+
+        try (ExcelReader reader = ExcelUtil.getReader(file.getInputStream())) {
+            List<List<Object>> rows = reader.read();
+            if (CollUtil.isEmpty(rows) || rows.size() < 2) {
+                return detailList;
+            }
+
+            List<Object> header = rows.get(0);
+            if (header.size() < 3
+                    || !"物料编码".equals(String.valueOf(header.get(0)).trim())
+                    || !"位号".equals(String.valueOf(header.get(1)).trim())
+                    || !"数量".equals(String.valueOf(header.get(2)).trim())) {
+                return null;
+            }
+
+            boolean hasError = false;
+            for (int i = 1; i < rows.size(); i++) {
+                List<Object> row = rows.get(i);
+                if (CollUtil.isEmpty(row) || row.stream().allMatch(Objects::isNull)) {
+                    continue;
+                }
+
+                String itemCode = row.size() > 0 && row.get(0) != null ? String.valueOf(row.get(0)).trim() : "";
+                String designators = row.size() > 1 && row.get(1) != null ? String.valueOf(row.get(1)).trim() : "";
+                Integer quantity = null;
+
+                if (row.size() > 2 && row.get(2) != null) {
+                    try {
+                        quantity = Integer.parseInt(String.valueOf(row.get(2)).trim());
+                    } catch (NumberFormatException e) {
+                        hasError = true;
+                        continue;
+                    }
+                }
+
+                if (itemCode.isEmpty()) {
+                    hasError = true;
+                    continue;
+                }
+
+                int designatorCount = 0;
+                if (!designators.isEmpty()) {
+                    designatorCount = designators.split(",").length;
+                }
+
+                if (quantity == null) {
+                    quantity = designatorCount;
+                } else if (!quantity.equals(designatorCount)) {
+                    hasError = true;
+                    continue;
+                }
+
+                BomDetail detail = new BomDetail();
+                detail.setBomId(bomId);
+                detail.setItemCode(itemCode);
+                detail.setDesignators(designators);
+                detail.setQuantity(quantity);
+                detail.setSortOrder(i);
+                detail.setStatus(1);
+
+                Map<String, Object> mesInfo = bomMesService.getItemInfo(itemCode);
+                detail.setItemName((String) mesInfo.get("itemName"));
+                detail.setItemSpec((String) mesInfo.get("itemSpec"));
+
+                detailList.add(detail);
+            }
+
+            if (hasError) {
+                return null;
+            }
+        }
+        return detailList;
     }
 }
