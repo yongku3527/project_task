@@ -196,11 +196,12 @@ public class BomController {
                 if (oldDetail == null) {
                     continue;
                 }
-                // 对比位号
+                // 对比位号（显示添加/删除/未变的差异）
                 if (!Objects.equals(oldDetail.getDesignators(), newDetail.getDesignators())) {
+                    String diffRemark = buildDesignatorDiffRemark(oldDetail.getDesignators(), newDetail.getDesignators(), newDetail.getItemCode());
                     saveOperationLog(bomInfo.getId(), newDetail.getId(), "UPDATE", "位号",
                             oldDetail.getDesignators(), newDetail.getDesignators(),
-                            "物料编码：" + newDetail.getItemCode() + " 位号变更", null);
+                            diffRemark, null);
                 }
                 // 对比数量
                 if (!Objects.equals(oldDetail.getQuantity(), newDetail.getQuantity())) {
@@ -577,6 +578,45 @@ public class BomController {
         error.put("designators", designators);
         error.put("message", message);
         return error;
+    }
+
+    /**
+     * 计算位号变更的具体差异（新增/删除/未变）
+     */
+    private String buildDesignatorDiffRemark(String oldDesignators, String newDesignators, String itemCode) {
+        Set<String> oldSet = parseDesignatorSet(oldDesignators);
+        Set<String> newSet = parseDesignatorSet(newDesignators);
+
+        Set<String> added = new HashSet<>(newSet);
+        added.removeAll(oldSet);
+
+        Set<String> removed = new HashSet<>(oldSet);
+        removed.removeAll(newSet);
+
+        Set<String> unchanged = new HashSet<>(oldSet);
+        unchanged.retainAll(newSet);
+
+        StringBuilder sb = new StringBuilder("物料编码：").append(itemCode).append(" 位号变更");
+        if (!added.isEmpty()) {
+            sb.append("；新增: ").append(String.join(",", added));
+        }
+        if (!removed.isEmpty()) {
+            sb.append("；删除: ").append(String.join(",", removed));
+        }
+        if (!unchanged.isEmpty()) {
+            sb.append("；未变: ").append(String.join(",", unchanged));
+        }
+        return sb.toString();
+    }
+
+    private Set<String> parseDesignatorSet(String designators) {
+        if (designators == null || designators.trim().isEmpty()) {
+            return new HashSet<>();
+        }
+        return Arrays.stream(designators.split(","))
+                .map(s -> s.trim())
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
     }
 
     /**
