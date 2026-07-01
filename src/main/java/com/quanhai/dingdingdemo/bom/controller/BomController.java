@@ -360,8 +360,20 @@ public class BomController {
         int count = toDelete.size();
         bomDetailService.removeByIds(ids);
 
-        saveOperationLog(bomId, "DELETE",
-                "批量删除BOM明细，共 " + count + " 条记录");
+        // 构建详细的删除日志
+        StringBuilder remark = new StringBuilder("批量删除BOM明细，共 " + count + " 条：");
+        int maxShow = Math.min(count, 10);
+        for (int i = 0; i < maxShow; i++) {
+            BomDetail d = toDelete.get(i);
+            remark.append("[").append(d.getItemCode())
+                    .append(" 位号:").append(d.getDesignators() != null ? d.getDesignators() : "-")
+                    .append("]");
+            if (i < maxShow - 1) remark.append(", ");
+        }
+        if (count > maxShow) {
+            remark.append("...等").append(count).append("条");
+        }
+        saveOperationLog(bomId, "DELETE", remark.toString());
         return ResultUtil.success(true);
     }
 
