@@ -431,7 +431,8 @@ public class BomController {
                 logItem.setFieldName(FIELD_NAME_MAP.get(logItem.getFieldName()));
             }
         }
-        return ResultUtil.success(logs);
+        // 合并同一秒内同一明细的多字段UPDATE日志
+        return ResultUtil.success(mergeUpdateLogs(logs));
     }
 
     /**
@@ -578,6 +579,97 @@ public class BomController {
         error.put("designators", designators);
         error.put("message", message);
         return error;
+    }
+
+    /**
+     * 合并同一秒内同一明细的多字段UPDATE日志为单条记录
+     */
+    private List<BomOperationLog> mergeUpdateLogs(List<BomOperationLog> logs) {
+        if (CollUtil.isEmpty(logs)) {
+            return logs;
+        }
+
+        // 使用 LinkedHashMap 保持顺序
+        Map<String, List<BomOperationLog>> grouped = new LinkedHashMap<>();
+        List<BomOperationLog> result = new ArrayList<>();
+
+        for (BomOperationLog logItem : logs) {
+            if ("UPDATE".equals(logItem.getOperationType()) && logItem.getOperateTime() != null && logItem.getDetailId() != null) {
+                // 分组 key：操作时间截断到秒 + detailId
+                String key = logItem.getOperateTime().truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()
+                        + "_" + logItem.getDetailId();
+                grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(logItem);
+            } else {
+                result.add(logItem);
+            }
+        }
+
+        // 合并每组
+        for (List<BomOperationLog> group : grouped.values()) {
+            if (group.size() == 1) {
+                result.add(group.get(0));
+            } else {
+                result.add(mergeGroup(group));
+            }
+        }
+
+        // 按操作时间倒序重排
+        result.sort((a, b) -> {
+            if (a.getOperateTime() == null) return 1;
+            if (b.getOperateTime() == null) return -1;
+            return b.getOperateTime().compareTo(a.getOperateTime());
+        });
+
+        return result;
+    }
+
+    /**
+     * 将一组同明细同时间的UPDATE日志合并为一条
+     */
+    private BomOperationLog mergeGroup(List<BomOperationLog> group) {
+        BomOperationLog merged = new BomOperationLog();
+        BomOperationLog first = group.get(0);
+
+        merged.setId(first.getId());
+        merged.setBomId(first.getBomId());
+        merged.setDetailId(first.getDetailId());
+        merged.setOperationType(first.getOperationType());
+        merged.setOperateBy(first.getOperateBy());
+        merged.setOperateTime(first.getOperateTime());
+
+        // 合并字段名、旧值、新值、备注
+        List<String> fieldNames = new ArrayList<>();
+        List<String> oldValues = new ArrayList<>();
+        List<String> newValues = new ArrayList<>();
+        List<String> remarks = new ArrayList<>();
+
+        for (BomOperationLog logItem : group) {
+            if (logItem.getFieldName() != null && !logItem.getFieldName().isEmpty()) {
+                fieldNames.add(logItem.getFieldName());
+            }
+            if (logItem.getOldValue() != null) {
+                oldValues.add(logItem.getOldValue());
+            }
+            if (logItem.getNewValue() != null) {
+                newValues.add(logItem.getNewValue());
+            }
+            if (logItem.getRemark() != null && !logItem.getRemark().isEmpty()) {
+                remarks.add(logItem.getRemark());
+            }
+        }
+
+        merged.setFieldName(String.join("\n", fieldNames));
+        merged.setOldValue(String.join("\n", oldValues));
+        merged.setNewValue(String.join("\n", newValues));
+        // 备注取差异汇总（位号变更那条）
+        if (!remarks.isEmpty()) {
+            merged.setRemark(remarks.stream()
+                    .filter(r -> r.contains("新增") || r.contains("删除"))
+                    .findFirst()
+                    .orElse(remarks.get(0)));
+        }
+
+        return merged;
     }
 
     /**
