@@ -378,6 +378,42 @@ public class BomController {
     }
 
     /**
+     * 导出BOM明细为Excel
+     */
+    @GetMapping("/export/{bomId}")
+    @SaCheckPermission("bom:view")
+    public void exportDetails(@PathVariable Long bomId, HttpServletResponse response) throws IOException {
+        BomInfo bomInfo = bomInfoService.getById(bomId);
+        if (bomInfo == null || bomInfo.getDeleted() == 1) {
+            response.setStatus(404);
+            response.getWriter().write("BOM信息不存在");
+            return;
+        }
+
+        List<BomDetail> details = bomDetailService.listByBomId(bomId);
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        String fileName = URLEncoder.encode("BOM明细_" + bomInfo.getItemCode() + ".xlsx", StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
+        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+
+        try (ExcelWriter writer = ExcelUtil.getWriter(true);
+             ServletOutputStream out = response.getOutputStream()) {
+            // 写入标题行
+            writer.addHeaderAlias("itemCode", "物料编码");
+            writer.addHeaderAlias("itemName", "物料名称");
+            writer.addHeaderAlias("itemSpec", "规格型号");
+            writer.addHeaderAlias("designators", "位号");
+            writer.addHeaderAlias("quantity", "数量");
+            // 只导出已设置别名（白名单）的字段
+            writer.setOnlyAlias(true);
+
+            writer.write(details, true);
+            writer.flush(out, true);
+        }
+    }
+
+    /**
      * 下载导入模板
      */
     @GetMapping("/template")
