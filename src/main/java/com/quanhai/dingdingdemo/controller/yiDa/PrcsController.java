@@ -9,11 +9,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.quanhai.dingdingdemo.config.MailConfig;
 import com.quanhai.dingdingdemo.mapper.yiDa.PrcsMapper;
 import com.quanhai.dingdingdemo.mapper.yiDa.ReminderInfoMapper;
+import com.quanhai.dingdingdemo.mapper.yiDa.YiDaPrcsCreationLogMapper;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.model.yiDa.CodeAndPrcsIns;
 import com.quanhai.dingdingdemo.model.yiDa.ReminderInfo;
 import com.quanhai.dingdingdemo.model.yiDa.ReminderInfoDto;
+import com.quanhai.dingdingdemo.model.yiDa.YiDaPrcsCreationLog;
 import com.quanhai.dingdingdemo.service.TaskService;
 import com.quanhai.dingdingdemo.service.yiDa.PrcsServiceImpl;
 import com.quanhai.dingdingdemo.task.yiDaTask;
@@ -55,6 +57,9 @@ public class PrcsController {
 
 
 
+    @Autowired
+    private YiDaPrcsCreationLogMapper prcsCreationLogMapper;
+
     @PostMapping("/addOrSave")
     public Result addOrSave( String itemCode, String prcsInstance) {
         //传入   物料编码、流程实例
@@ -64,15 +69,43 @@ public class PrcsController {
             //直接存数据库 记日志 返回
             prcsMapper.insert(new CodeAndPrcsIns(null,itemCode,prcsInstance));
 
+            // 记录到流程创建日志表（待创建状态）
+            YiDaPrcsCreationLog creationLog = new YiDaPrcsCreationLog();
+            creationLog.setItemCode(itemCode);
+            creationLog.setPrcsInstanceCode(prcsInstance);
+            creationLog.setStatus(0);
+            creationLog.setCreateTime(LocalDateTime.now());
+            prcsCreationLogMapper.insert(creationLog);
+
             logger.info("工单在产数为零，存数据库");
             return ResultUtil.success("工单在产数为零，存数据库");
         }else {
             //工单在产数不为零
             //查询表单详情，
             try {
-                prcsService.creatNewInterface(prcsInstance);
+                String newInstanceId = prcsService.creatNewInterface(prcsInstance);
+
+                // 记录到流程创建日志表（创建成功）
+                YiDaPrcsCreationLog creationLog = new YiDaPrcsCreationLog();
+                creationLog.setItemCode(itemCode);
+                creationLog.setPrcsInstanceCode(prcsInstance);
+                creationLog.setNewInstanceId(newInstanceId);
+                creationLog.setStatus(1);
+                creationLog.setCreateTime(LocalDateTime.now());
+                prcsCreationLogMapper.insert(creationLog);
+
             } catch (Exception e) {
                 logger.error(e.getMessage());
+
+                // 记录到流程创建日志表（创建失败）
+                YiDaPrcsCreationLog creationLog = new YiDaPrcsCreationLog();
+                creationLog.setItemCode(itemCode);
+                creationLog.setPrcsInstanceCode(prcsInstance);
+                creationLog.setStatus(2);
+                creationLog.setErrorMsg(e.getMessage());
+                creationLog.setCreateTime(LocalDateTime.now());
+                prcsCreationLogMapper.insert(creationLog);
+
                 try {
                     commonTools.send("接口创建新流程失败",mailConfig.getBadTo(),"参数详情：itemCode:"+itemCode+"prcsInstance:"+prcsInstance+"\n报错信息： "+e.getMessage());
                 } catch (EmailException ex) {

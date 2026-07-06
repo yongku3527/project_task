@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.quanhai.dingdingdemo.config.MailConfig;
 import com.quanhai.dingdingdemo.mapper.yiDa.PrcsMapper;
 import com.quanhai.dingdingdemo.mapper.yiDa.ReminderInfoMapper;
+import com.quanhai.dingdingdemo.mapper.yiDa.YiDaPrcsCreationLogMapper;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.model.yiDa.CodeAndPrcsIns;
 import com.quanhai.dingdingdemo.model.yiDa.ReminderInfo;
+import com.quanhai.dingdingdemo.model.yiDa.YiDaPrcsCreationLog;
 import com.quanhai.dingdingdemo.service.TaskService;
 import com.quanhai.dingdingdemo.service.msg.MsgService;
 import com.quanhai.dingdingdemo.service.yiDa.PrcsServiceImpl;
@@ -23,7 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-//@Component
+@Component
 public class yiDaTask {
     @Autowired
     private PrcsServiceImpl prcsService;
@@ -36,6 +38,9 @@ public class yiDaTask {
 
     @Autowired
     private MailConfig mailConfig;
+
+    @Autowired
+    private YiDaPrcsCreationLogMapper prcsCreationLogMapper;
 
     private Logger logger = LoggerFactory.getLogger(yiDaTask.class);
 
@@ -67,15 +72,43 @@ public class yiDaTask {
 
                             logger.error("报错邮件,发送失败 ："+ex.getMessage()+"\n");
                         }
+                    // 更新日志表为失败
+                    updatePrcsCreationLogStatus(codeAndPrcsIns.getItemCode(), codeAndPrcsIns.getPrcsInstanceCode(), 2, e.getMessage());
                     continue;
                 }
 
                 prcsMapper.deleteById(codeAndPrcsIns.getId());
+                // 更新日志表为成功
+                updatePrcsCreationLogStatus(codeAndPrcsIns.getItemCode(), codeAndPrcsIns.getPrcsInstanceCode(), 1, null, interfaceId);
                 logger.info("创建新流程 projectNum："+itemNum+"   流程实例号："+interfaceId+"\n");
 
             }else {
                 logger.info("不做任何处理 projectNum："+itemNum+"\n");
             }
+        }
+    }
+
+    /**
+     * 更新流程创建日志表状态（供定时任务使用）
+     */
+    private void updatePrcsCreationLogStatus(String itemCode, String prcsInstanceCode, Integer status, String errorMsg) {
+        updatePrcsCreationLogStatus(itemCode, prcsInstanceCode, status, errorMsg, null);
+    }
+
+    private void updatePrcsCreationLogStatus(String itemCode, String prcsInstanceCode, Integer status, String errorMsg, String newInstanceId) {
+        LambdaQueryWrapper<YiDaPrcsCreationLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(YiDaPrcsCreationLog::getItemCode, itemCode)
+               .eq(YiDaPrcsCreationLog::getPrcsInstanceCode, prcsInstanceCode)
+               .eq(YiDaPrcsCreationLog::getStatus, 0)
+               .orderByDesc(YiDaPrcsCreationLog::getCreateTime)
+               .last("limit 1");
+        YiDaPrcsCreationLog log = prcsCreationLogMapper.selectOne(wrapper);
+        if (log != null) {
+            log.setStatus(status);
+            if (errorMsg != null) log.setErrorMsg(errorMsg);
+            if (newInstanceId != null) log.setNewInstanceId(newInstanceId);
+            log.setUpdateTime(LocalDateTime.now());
+            prcsCreationLogMapper.updateById(log);
         }
     }
 

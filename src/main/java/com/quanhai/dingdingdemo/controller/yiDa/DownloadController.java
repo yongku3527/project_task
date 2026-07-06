@@ -2,10 +2,12 @@ package com.quanhai.dingdingdemo.controller.yiDa;
 
 import cn.hutool.json.JSONUtil;
 import com.quanhai.dingdingdemo.config.MailConfig;
+import com.quanhai.dingdingdemo.mapper.yiDa.YiDaMailLogMapper;
 import com.quanhai.dingdingdemo.model.Resp.Result;
 import com.quanhai.dingdingdemo.model.Resp.ResultUtil;
 import com.quanhai.dingdingdemo.model.excption.MyExcption;
 import com.quanhai.dingdingdemo.model.yiDa.SendMailDto;
+import com.quanhai.dingdingdemo.model.yiDa.YiDaMailLog;
 import com.quanhai.dingdingdemo.tools.CommonTools;
 import org.apache.commons.mail.EmailException;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @RestController
@@ -23,6 +26,9 @@ public class DownloadController {
     private CommonTools commonTools;
     @Autowired
     private MailConfig mailConfig;
+
+    @Autowired
+    private YiDaMailLogMapper mailLogMapper;
 
     private Logger logger = LoggerFactory.getLogger(DownloadController.class);
 
@@ -98,9 +104,16 @@ public class DownloadController {
         try {
             commonTools.javaMailSend(fileUrl,FileName,"钢网邮件",mailConfig.getTo(),msg);
 
+            // 记录邮件发送日志（成功）
+            saveMailLog(fileUrl, FileName, pcbName, gangWangName, gangWangCode, userId, userName, 1, null);
+
         } catch (Exception e) {
 
-            logger.error("钢网邮件发送失败："+e.getMessage()+e.getMessage());
+            logger.error("钢网邮件发送失败："+e.getMessage());
+
+            // 记录邮件发送日志（失败）
+            saveMailLog(fileUrl, FileName, pcbName, gangWangName, gangWangCode, userId, userName, 2, e.getMessage());
+
             commonTools.send("钢网邮件发送失败",mailConfig.getBadTo(),"报错信息: "+e.getMessage()+"\n"+"内容:\n"+msg);
         }
 
@@ -110,7 +123,7 @@ public class DownloadController {
 
 
 
-    @PostMapping("/v3")
+//    @PostMapping("/v3")
     public Result sendMailV3(@RequestBody String FileUrl, String FileName, String pcbName, String gangWangName, String gangWangCode, String originatorUser) throws EmailException {
         logger.info("FileUrl = " + FileUrl +
                 ", FileName = " + FileName +
@@ -155,6 +168,30 @@ public class DownloadController {
         return ResultUtil.defineSuccess(200,"ok");
     }
 
+    /**
+     * 保存邮件发送日志
+     */
+    private void saveMailLog(String fileUrl, String fileName, String pcbName, String gangWangName,
+                             String gangWangCode, String originatorUser, String userName, Integer status, String errorMsg) {
+        try {
+            YiDaMailLog mailLog = new YiDaMailLog();
+            mailLog.setFileUrl(fileUrl);
+            mailLog.setFileName(fileName);
+            mailLog.setPcbName(pcbName);
+            mailLog.setGangWangName(gangWangName);
+            mailLog.setGangWangCode(gangWangCode);
+            mailLog.setOriginatorUser(originatorUser);
+            mailLog.setUserName(userName);
+            mailLog.setRecipient(mailConfig.getTo());
+            mailLog.setSubject("钢网邮件");
+            mailLog.setStatus(status);
+            mailLog.setErrorMsg(errorMsg);
+            mailLog.setSendTime(LocalDateTime.now());
+            mailLogMapper.insert(mailLog);
+        } catch (Exception ex) {
+            logger.error("保存邮件发送日志失败: " + ex.getMessage());
+        }
+    }
 
 
 
