@@ -233,18 +233,18 @@ public class BomController {
     }
 
     /**
-     * 删除BOM（逻辑删除）
+     * 删除BOM（逻辑删除，由 @TableLogic 自动处理）
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission("bom:delete")
     @Transactional
     public Result<Boolean> delete(@PathVariable Long id) {
         BomInfo exist = bomInfoService.getById(id);
-        if (exist == null || exist.getDeleted() == 1) {
+        if (exist == null) {
             return ResultUtil.fail("BOM信息不存在");
         }
-        exist.setDeleted(1);
-        bomInfoService.updateById(exist);
+        // @TableLogic 会将 removeById 转为 UPDATE SET deleted=1
+        bomInfoService.removeById(id);
 
         saveOperationLog(id, "DELETE",
                 "删除BOM，物料编码：" + exist.getItemCode());
@@ -360,7 +360,7 @@ public class BomController {
         int count = toDelete.size();
         bomDetailService.removeByIds(ids);
 
-        // 构建详细的删除日志
+        // 构建详细的删除日志（最大 500 字符）
         StringBuilder remark = new StringBuilder("批量删除BOM明细，共 " + count + " 条：");
         int maxShow = Math.min(count, 10);
         for (int i = 0; i < maxShow; i++) {
@@ -373,7 +373,12 @@ public class BomController {
         if (count > maxShow) {
             remark.append("...等").append(count).append("条");
         }
-        saveOperationLog(bomId, "DELETE", remark.toString());
+        // 截断到 480 字符，超出部分追加 ...
+        String finalRemark = remark.toString();
+        if (finalRemark.length() > 480) {
+            finalRemark = finalRemark.substring(0, 480) + "...";
+        }
+        saveOperationLog(bomId, "DELETE", finalRemark);
         return ResultUtil.success(true);
     }
 
