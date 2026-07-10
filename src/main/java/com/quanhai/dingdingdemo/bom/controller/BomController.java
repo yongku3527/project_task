@@ -285,6 +285,7 @@ public class BomController {
     public Result<Map<String, Object>> importDetail(@PathVariable Long bomId,
                                                     @RequestParam("file") MultipartFile file,
                                                     @RequestParam(defaultValue = "REPLACE") String importMode,
+                                                    @RequestParam(defaultValue = "false") boolean forceImport,
                                                     HttpServletRequest request) {
         String tokenValue = getTokenValue(request);
         String loginId;
@@ -303,22 +304,28 @@ public class BomController {
         }
 
         try {
-            // 解析Excel并校验
             List<BomDetail> detailList = parseAndValidateExcel(bomId, file);
+            // 有错误行时的处理
             if (detailList == null) {
-                // null 表示有错误，错误信息已在 parseAndValidateExcel 中包装进 Result
-                return parseExcelForPreview(bomId, file);
+                if (forceImport) {
+                    // 强制导入：全部导入，不跳过任何行
+                    detailList = parseAllRows(bomId, file);
+                    if (CollUtil.isEmpty(detailList)) {
+                        return ResultUtil.fail("没有数据可导入");
+                    }
+                } else {
+                    return parseExcelForPreview(bomId, file);
+                }
             }
 
             int newCount = detailList.size();
             String modeText;
+            String forceText = forceImport ? "（跳过错误行）" : "";
 
             if ("APPEND".equalsIgnoreCase(importMode)) {
-                // 增量模式：不删除旧数据，追加
                 bomDetailService.saveBatch(detailList);
                 modeText = "增量导入";
             } else {
-                // 覆盖模式：删除旧数据，插入新数据
                 List<BomDetail> oldDetails = bomDetailService.listByBomId(bomId);
                 if (CollUtil.isNotEmpty(oldDetails)) {
                     bomDetailService.removeByIds(oldDetails.stream().map(BomDetail::getId).toList());
@@ -328,7 +335,7 @@ public class BomController {
             }
 
             saveOperationLog(bomId, "UPLOAD",
-                    modeText + "BOM明细，共 " + newCount + " 条记录", resolveUserName(loginId));
+                    modeText + forceText + "BOM明细，共 " + newCount + " 条记录", resolveUserName(loginId));
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -765,6 +772,23 @@ public class BomController {
     }
 
     /**
+     * 物料编码以 001009 开头时自动追加\"线路板\"位号
+     */
+    private String appendLineBoardDesignator(String itemCode, String designators) {
+        if (itemCode != null && itemCode.startsWith("001009")) {
+            String lb = "线路板";
+            if (designators == null || designators.trim().isEmpty()) {
+                return lb;
+            }
+            Set<String> set = parseDesignatorSet(designators);
+            if (!set.contains(lb)) {
+                return designators + "," + lb;
+            }
+        }
+        return designators;
+    }
+
+    /**
      * 解析Excel并校验，返回预览数据（所有行均显示，错误行标记 valid=false 和 errorMessage），不保存
      */
     private Result<Map<String, Object>> parseExcelForPreview(Long bomId, MultipartFile file) {
@@ -827,13 +851,19 @@ public class BomController {
                 Map<String, Object> previewItem = new HashMap<>();
                 previewItem.put("rowNum", i + 1);
                 previewItem.put("itemCode", itemCode);
-                previewItem.put("designators", designators);
-                previewItem.put("quantity", quantity != null ? quantity : "");
+                // 001009 前缀自动添加"线路板"位号，数量同步+1
+                String displayDesignators = appendLineBoardDesignator(itemCode, designators);
+                previewItem.put("designators", displayDesignators);
+                int displayQty = (quantity != null ? quantity : 0);
+                if (!displayDesignators.equals(designators)) {
+                    displayQty++;
+                }
+                previewItem.put("quantity", displayQty);
                 previewItem.put("valid", valid);
                 previewItem.put("errorMessage", errorMessage != null ? errorMessage : "");
 
-                // 查询MES获取物料名称和规格型号（只在有效行或有物料编码时查询）
-                if (valid && !itemCode.isEmpty()) {
+                // 查询MES获取物料名称和规格型号（有物料编码就查，不区分有效/无效行）
+                if (!itemCode.isEmpty()) {
                     Map<String, Object> mesInfo = bomMesService.getItemInfo(itemCode);
                     previewItem.put("itemName", mesInfo.getOrDefault("itemName", ""));
                     previewItem.put("itemSpec", mesInfo.getOrDefault("itemSpec", ""));
@@ -920,8 +950,14 @@ public class BomController {
                 BomDetail detail = new BomDetail();
                 detail.setBomId(bomId);
                 detail.setItemCode(itemCode);
-                detail.setDesignators(designators);
-                detail.setQuantity(quantity);
+                // 001009 前缀自动添加"线路板"位号，数量同步+1
+                String finalDesignators = appendLineBoardDesignator(itemCode, designators);
+                detail.setDesignators(finalDesignators);
+                int finalQty = (quantity != null ? quantity : 0);
+                if (!finalDesignators.equals(designators)) {
+                    finalQty++;
+                }
+                detail.setQuantity(finalQty);
                 detail.setSortOrder(i);
                 detail.setStatus(1);
 
@@ -934,6 +970,124 @@ public class BomController {
 
             if (hasError) {
                 return null;
+            }
+        }
+        return detailList;
+    }
+
+    /**
+     * 解析Excel全部行，不做校验直接导入（仅跳过全空行）
+     */
+    private List<BomDetail> parseAllRows(Long bomId, MultipartFile file) throws IOException {
+        List<BomDetail> detailList = new ArrayList<>();
+
+        try (ExcelReader reader = ExcelUtil.getReader(file.getInputStream())) {
+            List<List<Object>> rows = reader.read();
+            if (CollUtil.isEmpty(rows) || rows.size() < 2) {
+                return detailList;
+            }
+
+            for (int i = 1; i < rows.size(); i++) {
+                List<Object> row = rows.get(i);
+                if (CollUtil.isEmpty(row) || row.stream().allMatch(Objects::isNull)) {
+                    continue;
+                }
+
+                String itemCode = row.size() > 0 && row.get(0) != null ? String.valueOf(row.get(0)).trim() : "";
+                String designators = row.size() > 1 && row.get(1) != null ? String.valueOf(row.get(1)).trim() : "";
+                Integer quantity = null;
+                if (row.size() > 2 && row.get(2) != null) {
+                    try {
+                        quantity = Integer.parseInt(String.valueOf(row.get(2)).trim());
+                    } catch (NumberFormatException e) {
+                        quantity = 0;
+                    }
+                }
+                if (quantity == null) {
+                    quantity = (designators.isEmpty() ? 0 : designators.split(",").length);
+                }
+
+                BomDetail detail = new BomDetail();
+                detail.setBomId(bomId);
+                detail.setItemCode(itemCode);
+                String finalDesignators = appendLineBoardDesignator(itemCode, designators);
+                detail.setDesignators(finalDesignators);
+                int finalQty = quantity;
+                if (!finalDesignators.equals(designators)) finalQty++;
+                detail.setQuantity(finalQty);
+                detail.setSortOrder(i);
+                detail.setStatus(1);
+                if (!itemCode.isEmpty()) {
+                    Map<String, Object> mesInfo = bomMesService.getItemInfo(itemCode);
+                    detail.setItemName((String) mesInfo.getOrDefault("itemName", ""));
+                    detail.setItemSpec((String) mesInfo.getOrDefault("itemSpec", ""));
+                }
+                detailList.add(detail);
+            }
+        }
+        return detailList;
+    }
+
+    /**
+     * 解析Excel，跳过所有错误行，只返回通过校验的行（永远不会返回 null）
+     */
+    private List<BomDetail> parseAllValidRows(Long bomId, MultipartFile file) throws IOException {
+        List<BomDetail> detailList = new ArrayList<>();
+
+        try (ExcelReader reader = ExcelUtil.getReader(file.getInputStream())) {
+            List<List<Object>> rows = reader.read();
+            if (CollUtil.isEmpty(rows) || rows.size() < 2) {
+                return detailList;
+            }
+
+            List<Object> header = rows.get(0);
+            if (header.size() < 3) {
+                return detailList;
+            }
+
+            for (int i = 1; i < rows.size(); i++) {
+                List<Object> row = rows.get(i);
+                if (CollUtil.isEmpty(row) || row.stream().allMatch(Objects::isNull)) {
+                    continue;
+                }
+
+                String itemCode = row.size() > 0 && row.get(0) != null ? String.valueOf(row.get(0)).trim() : "";
+                if (itemCode.isEmpty()) continue;
+
+                String designators = row.size() > 1 && row.get(1) != null ? String.valueOf(row.get(1)).trim() : "";
+                Integer quantity = null;
+                if (row.size() > 2 && row.get(2) != null) {
+                    try {
+                        quantity = Integer.parseInt(String.valueOf(row.get(2)).trim());
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
+
+                int designatorCount = 0;
+                if (!designators.isEmpty()) {
+                    designatorCount = designators.split(",").length;
+                }
+                if (quantity == null) {
+                    quantity = designatorCount;
+                } else if (!quantity.equals(designatorCount)) {
+                    continue;
+                }
+
+                BomDetail detail = new BomDetail();
+                detail.setBomId(bomId);
+                detail.setItemCode(itemCode);
+                String finalDesignators = appendLineBoardDesignator(itemCode, designators);
+                detail.setDesignators(finalDesignators);
+                int finalQty = quantity;
+                if (!finalDesignators.equals(designators)) finalQty++;
+                detail.setQuantity(finalQty);
+                detail.setSortOrder(i);
+                detail.setStatus(1);
+                Map<String, Object> mesInfo = bomMesService.getItemInfo(itemCode);
+                detail.setItemName((String) mesInfo.get("itemName"));
+                detail.setItemSpec((String) mesInfo.get("itemSpec"));
+                detailList.add(detail);
             }
         }
         return detailList;
