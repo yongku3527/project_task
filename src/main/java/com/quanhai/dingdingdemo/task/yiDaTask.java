@@ -14,6 +14,7 @@ import com.quanhai.dingdingdemo.service.TaskService;
 import com.quanhai.dingdingdemo.service.msg.MsgService;
 import com.quanhai.dingdingdemo.service.yiDa.PrcsServiceImpl;
 import com.quanhai.dingdingdemo.tools.CommonTools;
+import com.aliyun.dingtalkyida_2_0.models.GetInstanceByIdResponseBody;
 import org.apache.commons.mail.EmailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +109,25 @@ public class yiDaTask {
             if (errorMsg != null) log.setErrorMsg(errorMsg);
             if (newInstanceId != null) log.setNewInstanceId(newInstanceId);
             log.setUpdateTime(LocalDateTime.now());
+            // 尝试填充发起人信息（失败不影响主流程）
+            enrichOriginatorInfo(log);
             prcsCreationLogMapper.updateById(log);
+        }
+    }
+
+    /**
+     * 填充发起人信息（调用钉钉宜搭API，失败不抛异常）
+     */
+    private void enrichOriginatorInfo(YiDaPrcsCreationLog log) {
+        try {
+            GetInstanceByIdResponseBody body = prcsService.getInterfaceInfo(log.getPrcsInstanceCode());
+            if (body != null && body.getOriginator() != null) {
+                log.setOriginatorName(body.getOriginator().getName() != null
+                        ? body.getOriginator().getName().toString() : null);
+                log.setInstanceCreateTime(body.getCreateTimeGMT());
+            }
+        } catch (Exception e) {
+            logger.warn("填充发起人信息失败（不影响主流程）: itemCode={}, error={}", log.getItemCode(), e.getMessage());
         }
     }
 

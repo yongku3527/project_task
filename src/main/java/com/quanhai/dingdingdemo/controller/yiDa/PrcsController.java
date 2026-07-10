@@ -5,6 +5,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;
+import com.aliyun.dingtalkyida_2_0.models.GetInstanceByIdResponseBody;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.quanhai.dingdingdemo.config.MailConfig;
 import com.quanhai.dingdingdemo.mapper.yiDa.PrcsMapper;
@@ -75,6 +76,7 @@ public class PrcsController {
             creationLog.setPrcsInstanceCode(prcsInstance);
             creationLog.setStatus(0);
             creationLog.setCreateTime(LocalDateTime.now());
+            enrichOriginatorInfo(creationLog);
             prcsCreationLogMapper.insert(creationLog);
 
             logger.info("工单在产数为零，存数据库");
@@ -92,6 +94,7 @@ public class PrcsController {
                 creationLog.setNewInstanceId(newInstanceId);
                 creationLog.setStatus(1);
                 creationLog.setCreateTime(LocalDateTime.now());
+                enrichOriginatorInfo(creationLog);
                 prcsCreationLogMapper.insert(creationLog);
 
             } catch (Exception e) {
@@ -104,6 +107,7 @@ public class PrcsController {
                 creationLog.setStatus(2);
                 creationLog.setErrorMsg(e.getMessage());
                 creationLog.setCreateTime(LocalDateTime.now());
+                enrichOriginatorInfo(creationLog);
                 prcsCreationLogMapper.insert(creationLog);
 
                 try {
@@ -116,6 +120,22 @@ public class PrcsController {
 
             logger.info("工单在产数不为零,已创建新流程");
             return ResultUtil.success("工单在产数不为零,已创建新流程");
+        }
+    }
+
+    /**
+     * 填充发起人信息（调用钉钉宜搭API获取，失败不抛异常）
+     */
+    private void enrichOriginatorInfo(YiDaPrcsCreationLog log) {
+        try {
+            GetInstanceByIdResponseBody body = prcsService.getInterfaceInfo(log.getPrcsInstanceCode());
+            if (body != null && body.getOriginator() != null) {
+                log.setOriginatorName(body.getOriginator().getName() != null
+                        ? body.getOriginator().getName().toString() : null);
+                log.setInstanceCreateTime(body.getCreateTimeGMT());
+            }
+        } catch (Exception e) {
+            logger.warn("填充发起人信息失败（不影响主流程）: itemCode={}, error={}", log.getItemCode(), e.getMessage());
         }
     }
 

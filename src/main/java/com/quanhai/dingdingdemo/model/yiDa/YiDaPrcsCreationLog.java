@@ -21,6 +21,10 @@ public class YiDaPrcsCreationLog {
     private Integer status;
     /** 错误信息 */
     private String errorMsg;
+    /** 原实例发起人姓名 */
+    private String originatorName;
+    /** 原实例创建时间 */
+    private String instanceCreateTime;
     /** 创建时间 */
     private LocalDateTime createTime;
     /** 更新时间 */
